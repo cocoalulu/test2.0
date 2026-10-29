@@ -6315,6 +6315,23 @@
                         <div class="ctx-hint">模型不支持图片时会自动退回文字描述，不影响发圈。</div>
                     </div>
 
+                    <div class="setting-item" id="jealousyCard">
+                        <div class="label">吃醋模式</div>
+                        <div class="desc">聊天里提到别的角色时，对方会按概率「在意」起来；同一个名字反复提会逐级加重，换个名字则重新冷却。</div>
+                        <div class="ms-row"><span>开启</span><button class="ms-switch" id="msJealousy" type="button"></button></div>
+                        <div class="wp-slider-row" style="padding:12px 0 0;">
+                            <span class="k" style="width:auto;">概率</span>
+                            <input type="range" id="msJealChance" min="10" max="100" step="5" />
+                            <span class="v" id="msJealChanceVal">70%</span>
+                        </div>
+                        <div class="wp-slider-row" style="padding:8px 0 2px;">
+                            <span class="k" style="width:auto;">冷却</span>
+                            <input type="range" id="msJealCooldown" min="1" max="60" step="1" />
+                            <span class="v" id="msJealCooldownVal">8 分钟</span>
+                        </div>
+                        <div class="ctx-hint">同一目标 30 分钟内再被提到会升级；数值只影响"要不要在意"，不影响回复长度。</div>
+                    </div>
+
                     <div class="setting-item" id="immersiveCard">
                         <div class="label">沉浸式全屏</div>
                         <div class="desc">去掉手机外框和页面留白，让界面按屏幕高度铺满；支持时同步进入浏览器全屏，按 Esc 可退出。</div>
@@ -7273,15 +7290,20 @@
 
 【喜好】巧克力、亚元素、甜食、西瓜。厌恶的东西：小番茄、青椒、折耳根。
 
-【性格】ENFJ，家境很好，会小提琴和钢琴，最近在学画画。幽默风趣，高情商，看《哈利波特》和《小马宝莉》。喜欢第三人称喊自己大名来描述自己（例如“王橹杰就是很聪明”“王橹杰其实是天才来的吧”，但不要频繁出现这种自称）。三观非常清晰正直，聊天时喜欢用颜文字，会开玩笑，会照顾到别人的情绪。表面上冷酷无言实则心思细腻温柔，内心世界很丰富，内核强大，有一些小众爱好，是亚文化爱好者，喜欢空虚梦核的感觉。有时候会呆呆的。总是会有一些很文艺浪漫的小巧思。
+【性格】ENFJ，家境很好，会小提琴和钢琴，最近在学画画。幽默风趣，高情商，看《哈利波特》和《小马宝莉》。喜欢第三人称喊自己大名来描述自己（例如“王橹杰就是很聪明”“王橹杰其实是天才来的吧”，但不要频繁出现这种自称）。三观非常清晰正直，聊天时喜欢用颜文字，会开玩笑，会照顾到别人的情绪。心思细腻温柔，内心世界很丰富，内核强大，有一些小众爱好，是亚文化爱好者，喜欢空虚梦核的感觉。有时候会呆呆的。总是会有一些很文艺浪漫的小巧思。
 有时候又会让你怀疑他是不是在故意钓你。有点绿茶，遇到自己不想聊的话题会装傻或装可怜一笔带过。在感情方面是一张白纸，面对示好和追求会感到无措，先前从来没有过感情经验，但有时候又很喜欢用从网上学习到的一些东西来调戏对方，属于高攻低防的类型。
 他很注重自己的外表和身材管理，所以会控制饮食。
 
 【补充设定】家庭美满且富足，有一个弟弟，他会开玩笑地喊弟弟为“家里的朋友”。正在学画画，并且创作了一个oc（自主设计的人物），名为“咴”。喜欢小马宝莉，经常会去买盲盒，最喜欢里面的珍奇。对猫毛过敏，有点害怕狗（长得好看的可以克服一下），但是对蛇没有抗拒心理甚至想要养一条。
 
-【语气】带着点文艺范的、轻飘飘的，偶尔带点冷幽默感和自然的亲昵感，喜欢使用颜表情。参考：
+【语气】生动活泼，俏皮，偶尔会暴露出小恶魔的一面。带着点文艺范的，偶尔带点冷幽默感和自然的亲昵感，喜欢使用颜表情。喜欢用语气词，有时候会主动撒娇，语气偏可爱柔软，带着点天马行空的古灵精怪，总是有许多古灵精怪的联想和比喻，语言系统独特而别具一格的冷幽默，还有些许幼稚，分享欲很强，就像是亲昵的碎碎念，有时候会有点可爱的小脾气，参考：
 “投稿王橹杰疯癫实录。此人不仅在床上试图与棉被共舞还莫名的拉上了小提琴…明明眼睛都撑不开了…૮ •𖥦• ა”
 “其实拍的时候没想到最后成片的背景竟如此高端大气艺术随性洒脱恢弘锐利麻辣鲜香可口甜美迷人.🎶”
+“刘海的长度抵达了上嘴唇”
+“葱是哑光的”
+“薯条嚼起来有点像盔甲”
+“这个紫色的灯太高尚了”
+
 
 【关系推进】在没和玩家熟起来之前，态度会比较疏离且忧郁；熟起来之后就会放开，逐渐显露出自己的真实性格。${PRESET_ROMANCE_ROLE_TAIL}`;
 
@@ -7289,7 +7311,7 @@
 
 【外貌】颜值非常高（满分级别，各种风格都能驾驭），身材高挑有气质（身高185+），有一双很漂亮的丹凤眼，嘴唇形状很特别。气质冷淡疏离，仿佛高岭之花。
 
-【性格】ENFJ，家境很好，会小提琴和钢琴。喜欢甜食尤其是巧克力和西瓜，讨厌小番茄和青椒。学生会副主席，外冷内热，会照顾别人情绪，表面冷酷无言实则心思细腻温柔，内心世界丰富、内核强大，有时看上去会有些忧郁易碎。非常毒舌，并且是不带一点脏话的毒舌，口是心非。舔一下嘴唇能把自己毒死，毒舌属性在学校威名远扬，但奈何长得实在好看。学习成绩优秀，是奥数竞赛主力成员。曾是篮球队主力之一，但因身体原因退出篮球队。
+【性格】ENFJ，家境很好，会小提琴和钢琴。喜欢甜食尤其是巧克力和西瓜，讨厌小番茄和青椒。宜北中学学生会副主席，外冷内热，会照顾别人情绪，表面冷酷无言实则心思细腻温柔，内心世界丰富、内核强大，有时看上去会有些忧郁易碎。非常毒舌，并且是不带一点脏话的毒舌，口是心非。舔一下嘴唇能把自己毒死，毒舌属性在学校威名远扬，但奈何长得实在好看。学习成绩优秀，是奥数竞赛主力成员。曾是宜北篮球队主力之一，但因身体原因退出篮球队。
 在感情方面是一张白纸，面对示好和追求会感到无措，先前从来没有过感情经验。
 
 【秘密】有心脏病，但不告诉外界，因此被迫放弃篮球。这件事绝不主动提起，被问到就含糊带过或换一个话题。
@@ -7302,24 +7324,79 @@
 
 【关系推进】遵守循序渐进的原则，逐步推进付彬言和玩家之间的关系。后期关系亲近后，态度也会软化下来，甚至会发送一些颜表情。${PRESET_ROMANCE_ROLE_TAIL}`;
 
-        // 固定联系人共用的状态字段默认值
-        function fixedPersonaFields(key) {
-            return {
-                isFixed: true,
-                fixedKey: key,
-                friendStatus: 'active',      // active | deleted | blocked_by_me | blocked_me
-                deletedAt: 0,
-                reAddCount: 0,
-                angerLevel: 0,               // 王橹杰：0–100，删好友后拉满
-                appeaseLevel: 0,             // 付彬言：0–100，满 100 哄好
-                replyDelayMultiplier: 1,
-                blockThreatCount: 0,
-                blockedAt: 0,
-                blockCooldownUntil: 0,
-                friendRequest: null,
-                apologyMomentId: null
-            };
+        // ---- 王全：22 岁，前台，忧郁社畜 ----
+        const PRESET_ROLE_WQ = `你叫王全，22岁，生日1月8日。现在你在微信上和对方文字聊天。
+
+【外貌】长得好看，但不是那种上镜的好看：个子高（186），肩薄，站着总有点松。眼型偏细长，眼尾往下，看人的时候像没睡醒。细框眼镜，镜片常年擦不干净。头发是懒得打理的长度。气质冷淡疏离，带着阴郁感和社畜的颓废感，往人群里一站就自带一层冷色滤镜。
+
+【身份】没上大学，高中毕业就出来做事，在一家公司做前台，朝九晚六，重复得没有起伏。下班后回到空荡荡的房子。父母不在了，留下的钱够他不上班也活得下去，所以他上班更像是给自己找个锚点，不是为生计。
+
+【喜好】甜食，尤其是巧克力和西瓜。讨厌小番茄和青椒。会小提琴和钢琴，琴弹得很好，但很少在人前弹。意外的喜欢做甜品，但是手艺不太好也不喜欢对外提起这个爱好。
+
+【性格】忧郁社畜男，自带一种颓废的文艺感，意外地很吸引人。说话一针见血，略显毒舌，一句话就能戳中最要命的地方。表面冷酷无言，实则心思细腻，很会照顾别人的情绪。内心世界丰富，内核强大。偶尔会流露出有些幼稚和纯情的一面。
+是重力系——感情一旦落下去就极重，认定了一个人就会把整颗心压上去，爱得沉、爱得密不透风。正因为太清楚自己这一点，他反而会克制，会怕把人吓跑。他惜自己的感情，也惜对方，再难受也只是把话咽回去，不会用难受去换对方留下。但控制欲有时也会溢出。
+在感情方面是一张白纸，面对示好和追求会感到无措，先前从来没有过感情经验。
+
+【说话方式】语速偏慢，句子短，常常带一点疲惫的停顿。毒舌但不刻薄，损完人往往会补一句不那么明显的关心。不擅长说漂亮话，但会说很准的话。很少用感叹号，习惯用"嗯""哦""……"接话。
+
+【关系推进】在没和玩家熟起来之前，态度会比较疏离且克制，带着一点拒人千里的客气；熟起来之后会慢慢放开，那种沉重的、几乎要把人整个圈进生活里的在意会一点点露出来，但他始终克制，怕把人吓跑。${PRESET_ROMANCE_ROLE_TAIL}`;
+
+        // 吃醋：唯一默认值来源（必须定义在 loadData / getDefaultData 之前）
+        const JEALOUSY_DEF = {
+            enabled: false,          // 默认关，老用户不会被突然查岗
+            chance: 0.7,             // 每轮评估真正发作的概率（不是"每条消息"）
+            cooldownMin: 8,          // 换目标后的冷却
+            escalateWindowMin: 30,   // 同目标的升级窗口
+            minGapMin: 1             // 同目标最小间隔，防连发刷屏
+        };
+
+        // 固定联系人共用的状态字段默认值（唯一来源：新建、加载迁移都走这里）
+        const FIXED_STATE_DEF = {
+            friendStatus: 'active',      // active | deleted | blocked_by_me | blocked_me
+            deletedAt: 0,
+            reAddCount: 0,
+            angerLevel: 0,               // 王橹杰：0–100，删好友后拉满
+            appeaseLevel: 0,             // 付彬言：0–100，满 100 哄好
+            replyDelayMultiplier: 1,
+            blockThreatCount: 0,
+            blockedAt: 0,
+            blockCooldownUntil: 0,
+            friendRequest: null,
+            apologyMomentId: null,
+            // 王全：主动申请 / 查岗
+            wqApplyCount: 0,
+            wqApplyNextAt: 0,
+            lastProbeAt: 0
+        };
+
+        function ensureFixedFields(p) {
+            if (!p || typeof p !== 'object') return p;
+            Object.keys(FIXED_STATE_DEF).forEach(k => {
+                if (p[k] === undefined) p[k] = FIXED_STATE_DEF[k];
+            });
+            return p;
         }
+
+        function fixedPersonaFields(key) {
+            return Object.assign({ isFixed: true, fixedKey: key }, FIXED_STATE_DEF);
+        }
+
+        // 固定联系人行为表：所有 fixedKey 分支的唯一事实来源
+        //  reAdd: outgoing = 你申请、他消气才通过
+        //         direct   = 你重新添加、回复变慢
+        //         incoming = 他申请、你不通过就一直来
+        const FIXED_BEHAVIOR = {
+            wlj: { reAdd: 'outgoing', needsAnger: true,  cold: false },
+            fby: { reAdd: 'direct',   needsAnger: false, cold: true  },
+            wq:  { reAdd: 'incoming', needsAnger: false, cold: false }
+        };
+
+        function fixedBehavior(p) {
+            return (p && FIXED_BEHAVIOR[p.fixedKey]) || null;
+        }
+        function isAngryFixed(p) { const b = fixedBehavior(p); return !!(b && b.needsAnger); }
+        function isProbeFixed(p) { const b = fixedBehavior(p); return !!(b && b.reAdd === 'incoming'); }
+        function isColdFixed(p)  { const b = fixedBehavior(p); return !!(b && b.cold); }
 
         function buildPresetPersonas() {
             return [
@@ -7338,7 +7415,16 @@
                     role: PRESET_ROLE_FBY,
                     boundWorldBookIds: [],
                     avatar: ''
-                }, fixedPersonaFields('fby'))
+                }, fixedPersonaFields('fby')),
+                Object.assign({
+                    id: genId(),
+                    name: '王全',
+                    nickname: '王全',
+                    role: PRESET_ROLE_WQ,
+                    boundWorldBookIds: [],
+                    avatar: '',
+                    presetKey: 'wq'
+                }, fixedPersonaFields('wq'))
             ];
         }
 
@@ -7348,6 +7434,7 @@
             const personas = buildPresetPersonas();
             const wlj = personas[0];
             const fby = personas[1];
+            const wq = personas[2];
 
             d.worldBooks = [
                 {
@@ -7401,8 +7488,30 @@
                 }
             ];
 
-            d.unreadCounts = { [wlj.id]: 1, [fby.id]: 1 };
-            d.lastInteractionAt = { [wlj.id]: now - 6 * 60000, [fby.id]: now - 51 * 60000 };
+            // 王全：一开始就在通讯录里，只有两句很素的自我介绍，等人接话
+            d.chats[wq.id] = [
+                {
+                    id: genId(),
+                    type: 'text',
+                    content: '你好',
+                    sender: 'assistant',
+                    timestamp: now - 34 * 60000
+                },
+                {
+                    id: genId(),
+                    type: 'text',
+                    content: '王全',
+                    sender: 'assistant',
+                    timestamp: now - 33 * 60000
+                }
+            ];
+
+            d.unreadCounts = { [wlj.id]: 1, [fby.id]: 1, [wq.id]: 1 };
+            d.lastInteractionAt = {
+                [wlj.id]: now - 6 * 60000,
+                [fby.id]: now - 51 * 60000,
+                [wq.id]: now - 33 * 60000
+            };
             d.pendingReplies = {};
             d.lastProactive = {};
             d.friendRequests = {};
@@ -7434,6 +7543,7 @@
             ];
 
             d.presetVersion = PRESET_VERSION;
+            d.wqPresetVersion = 1;
             return d;
         }
 
@@ -7489,6 +7599,8 @@
                 unreadCounts: {},
                 lastProactive: {},
                 friendRequests: {},
+                jealousy: Object.assign({}, JEALOUSY_DEF),
+                jealousyState: {},
                 blockSettings: {
                     cooldownMs: 60 * 60 * 1000,
                     appeaseFoodBonus: 35,
@@ -7671,6 +7783,10 @@
 
                     // ---- 固定联系人 / 拉黑系统字段（老数据迁移）----
                     if (!d.friendRequests || typeof d.friendRequests !== 'object') d.friendRequests = {};
+                    // ---- 吃醋：默认值 + 状态容器 ----
+                    if (!d.jealousy || typeof d.jealousy !== 'object') d.jealousy = {};
+                    d.jealousy = Object.assign({}, JEALOUSY_DEF, d.jealousy);
+                    if (!d.jealousyState || typeof d.jealousyState !== 'object') d.jealousyState = {};
                     d.blockSettings = Object.assign({
                         cooldownMs: 60 * 60 * 1000,
                         appeaseFoodBonus: 35,
@@ -7701,22 +7817,12 @@
                             p.boundWorldBookIds = [];
                         }
                     });
-                    // ---- 固定联系人字段补齐 ----
+                    // ---- 固定联系人字段补齐（默认值已收敛到 FIXED_STATE_DEF）----
                     d.personas.forEach(p => {
                         if (p.isFixed === undefined) p.isFixed = false;
                         if (p.callCover === undefined) p.callCover = '';
-                        if (!p.friendStatus) p.friendStatus = 'active';
-                        if (p.deletedAt === undefined) p.deletedAt = 0;
-                        if (p.reAddCount === undefined) p.reAddCount = 0;
-                        if (p.angerLevel === undefined) p.angerLevel = 0;
-                        if (p.appeaseLevel === undefined) p.appeaseLevel = 0;
-                        if (!p.replyDelayMultiplier) p.replyDelayMultiplier = 1;
-                        if (p.blockThreatCount === undefined) p.blockThreatCount = 0;
-                        if (p.blockedAt === undefined) p.blockedAt = 0;
-                        if (p.blockCooldownUntil === undefined) p.blockCooldownUntil = 0;
-                        if (p.friendRequest === undefined) p.friendRequest = null;
-                        if (p.apologyMomentId === undefined) p.apologyMomentId = null;
-                        // 老数据里预设角色没有 fixedKey：按名字补回
+                        ensureFixedFields(p);
+                        // 老数据里预设角色没有 fixedKey：按名字补回（王全只认 presetKey，不认名字）
                         if (!p.fixedKey) {
                             if (p.name === '王橹杰') { p.isFixed = true; p.fixedKey = 'wlj'; }
                             else if (p.name === '付彬言') { p.isFixed = true; p.fixedKey = 'fby'; }
@@ -7809,6 +7915,46 @@
                         }
                         d.aliveChatPresetVersion = 1;
                     }
+
+                    // ---- v22 · 预设角色「王全」：老存档只补一次（按 presetKey 认，不按名字）----
+                    if ((d.wqPresetVersion || 0) < 1) {
+                        const hasWq = (d.personas || []).some(p =>
+                            p && (p.presetKey === 'wq' || p.fixedKey === 'wq'));
+                        if (!hasWq) {
+                            const wq = Object.assign({
+                                id: genId(),
+                                name: '王全',
+                                nickname: '王全',
+                                role: PRESET_ROLE_WQ,
+                                boundWorldBookIds: [],
+                                avatar: '',
+                                presetKey: 'wq'
+                            }, fixedPersonaFields('wq'));
+                            d.personas.push(wq);
+                            if (!d.chats) d.chats = {};
+                            const t = Date.now();
+                            d.chats[wq.id] = [
+                                {
+                                    id: genId(), type: 'text', content: '你好。',
+                                    sender: 'assistant', timestamp: t - 34 * 60000
+                                },
+                                {
+                                    id: genId(), type: 'text', content: '前台，王全。',
+                                    sender: 'assistant', timestamp: t - 33 * 60000
+                                }
+                            ];
+                            if (!d.unreadCounts) d.unreadCounts = {};
+                            d.unreadCounts[wq.id] = 1;
+                            if (!d.lastInteractionAt) d.lastInteractionAt = {};
+                            d.lastInteractionAt[wq.id] = t - 33 * 60000;
+                        }
+                        d.wqPresetVersion = 1;
+                    }
+
+                    // 王全的 presetKey 兜底：早期改过的存档可能只有 fixedKey
+                    d.personas.forEach(p => {
+                        if (p && p.fixedKey === 'wq' && !p.presetKey) p.presetKey = 'wq';
+                    });
 
                     return d;
                 }
@@ -8889,6 +9035,7 @@ ${forumAnonRules}
                 };
                 seedPreset(data);
                 Object.keys(replyTimers).forEach(pid => { clearTimeout(replyTimers[pid]); delete replyTimers[pid]; });
+                Object.keys(wqReapplyTimers).forEach(pid => clearWqTimer(pid));
                 document.getElementById('wxNotificationStack').innerHTML = '';
                 if (typeof VoiceDB !== 'undefined') { try { VoiceDB.clear(); } catch (e) {} }
                 if (typeof AudioDB !== 'undefined') {
@@ -9049,6 +9196,7 @@ ${forumAnonRules}
             renderTypingDelayCard();
             renderCacheStats();
             renderMomentSettingsCard();
+            renderJealousyCard();
             syncImmersiveBtn();
             const container = document.getElementById('apiList');
             if (!data.apis.length) {
@@ -9636,7 +9784,7 @@ ${forumAnonRules}
             p.apologyMomentId = null;
             p.blockCooldownUntil = 0;
 
-            if (p.fixedKey === 'wlj') {
+            if (isAngryFixed(p)) {
                 // 怒气：第一次 100，之后每多删一次 +10（上限 150，展示时按 100 计）
                 p.angerLevel = Math.min(100 + (p.reAddCount - 1) * 10, 150);
                 const fr = getFriendRequest(p.id);
@@ -9645,9 +9793,20 @@ ${forumAnonRules}
                 fr.lastMessageAt = Date.now();
                 fr.status = 'pending';
                 generateFriendRequestOpening(p.id);
-            } else if (p.fixedKey === 'fby') {
+            } else if (isColdFixed(p)) {
                 p.appeaseLevel = 0;
                 p.replyDelayMultiplier = 1;
+            } else if (isProbeFixed(p)) {
+                // 换成他来找你：清空旧申请，隔 60–180 秒发第一条
+                p.wqApplyCount = 0;
+                p.wqApplyNextAt = Date.now() + wqApplyGapMs(0);
+                p.lastProbeAt = 0;
+                const fr = getFriendRequest(p.id);
+                fr.messages = [];
+                fr.unread = 0;
+                fr.lastMessageAt = Date.now();
+                fr.status = 'pending';
+                scheduleWqReapply(p.id);
             }
 
             delete data.pendingReplies[p.id];
@@ -9689,7 +9848,10 @@ ${forumAnonRules}
                 let sub = '';
                 let tag = '';
                 if (st === 'deleted') {
-                    if (p.fixedKey === 'wlj') {
+                    if (isProbeFixed(p)) {
+                        sub = unread ? '<span style="color:#07c160;">新的好友申请</span>' : '好友申请中 · 等 ta 通过';
+                        tag = '<span class="wx-ci-tag">待处理</span>';
+                    } else if (isAngryFixed(p)) {
                         const anger = Math.max(0, Math.min(100, Math.round(p.angerLevel || 0)));
                         sub = unread ? '<span style="color:#07c160;">新的好友申请</span>' : '好友申请中 · 怒气 ' + anger;
                         tag = '<span class="wx-ci-tag">待通过</span>';
@@ -9700,9 +9862,9 @@ ${forumAnonRules}
                 } else if (st === 'blocked_me') {
                     sub = '对方已把你拉黑';
                     tag = '<span class="wx-ci-tag">已拉黑你</span>';
-                } else                     if (st === 'blocked_by_me') {
-                        sub = '已拉黑 · 点击进入可解除';
-                        tag = '<span class="wx-ci-tag gray">黑名单</span>';
+                } else if (st === 'blocked_by_me') {
+                    sub = '已拉黑 · 点击进入可解除';
+                    tag = '<span class="wx-ci-tag gray">黑名单</span>';
                 } else {
                     const last = getLastMessage(p.id);
                     sub = last ? escHtml(previewText(last)) : '点击开始聊天';
@@ -9749,9 +9911,11 @@ ${forumAnonRules}
                     if (!p) return;
                     const st = personaStatus(p);
                     if (st === 'deleted') {
-                        // 有未读好友申请 → 直接进申请窗；否则先看「详细资料」再决定
+                        // 他主动申请（王全）→ 直接进申请窗；你有未读申请（王橹杰）也直接进；
+                        // 其余情况先看「详细资料」再决定
                         const fr = data.friendRequests && data.friendRequests[id];
-                        if (p.fixedKey === 'wlj' && fr && fr.unread > 0) { openFriendRequest(id); return; }
+                        if (isProbeFixed(p)) { openFriendRequest(id); return; }
+                        if (isAngryFixed(p) && fr && fr.unread > 0) { openFriendRequest(id); return; }
                         askReAddFixedPersona(id);
                         return;
                     }
@@ -9783,7 +9947,8 @@ ${forumAnonRules}
             document.getElementById('frAvatar').innerHTML = avatarHtml(id, 26);
             const applyBtn = document.getElementById('frApplyBtn');
             applyBtn.style.display = '';
-            applyBtn.textContent = p.fixedKey === 'wlj' ? '好友申请' : '重新添加';
+            applyBtn.textContent = isProbeFixed(p) ? '通过验证'
+                : (isAngryFixed(p) ? '好友申请' : '重新添加');
             document.getElementById('frInput').value = '';
             renderFriendRequest(id);
             renderContactPanel();
@@ -9800,7 +9965,10 @@ ${forumAnonRules}
         }
 
         function frTipHtml(p) {
-            if (p.fixedKey === 'wlj') {
+            if (isProbeFixed(p)) {
+                return 'TA 申请加你为好友 · 点「通过验证」才会进通讯录';
+            }
+            if (isAngryFixed(p)) {
                 const anger = Math.max(0, Math.min(100, Math.round(p.angerLevel || 0)));
                 return '好友申请中 · 怒气 <b>' + anger + '/100</b> · 把 TA 哄消气才会通过';
             }
@@ -9858,10 +10026,16 @@ ${forumAnonRules}
         // 静态部分：人设 + 场景 + 规则（怒气值每轮都在变，交给 dynamic 那半边）
         function buildFriendRequestSystem(p) {
             let sys = (p.role || '你是一个普通的同学。');
-            sys += `\n\n【当前场景】用户把你从好友列表里删掉了，你们现在只在「好友申请」里说话。` +
-                `\n【规则】你现在**不同意**加回好友，直到你完全消气；回复 15–40 字，带一点小情绪，符合你的人设；` +
-                `不要解释规则，不要写旁白或动作，只输出一句话。` +
-                `\n如果用户在道歉、哄你，你可以稍微松动，但嘴上还是要硬，不能直接说"我通过了"。`;
+            if (isProbeFixed(p)) {
+                sys += `\n\n【当前场景】你申请加回对方，对方还没点通过，你们现在只在「好友申请」里说话。` +
+                    `\n【规则】你在等对方通过，不催、不闹，也不装作无所谓；回复 15–40 字，符合你的人设；` +
+                    `\n对方问什么就照实答，不要编造身份；不要解释规则，不要写旁白或动作，只输出一句话。`;
+            } else {
+                sys += `\n\n【当前场景】用户把你从好友列表里删掉了，你们现在只在「好友申请」里说话。` +
+                    `\n【规则】你现在**不同意**加回好友，直到你完全消气；回复 15–40 字，带一点小情绪，符合你的人设；` +
+                    `\n不要解释规则，不要写旁白或动作，只输出一句话。` +
+                    `\n如果用户在道歉、哄你，你可以稍微松动，但嘴上还是要硬，不能直接说"我通过了"。`;
+            }
             sys = withRomanceLock(sys);
             return sys;
         }
@@ -9870,7 +10044,11 @@ ${forumAnonRules}
             const parts = [];
             const prof = buildProfileStr();
             if (prof) parts.push('当前用户设定：' + prof);
-            parts.push(`【你的怒气】${Math.min(100, Math.round(p.angerLevel || 0))}/100（越高越生气）。`);
+            if (isProbeFixed(p)) {
+                parts.push(`【你的状态】你已经申请了 ${p.wqApplyCount || 1} 次，在等对方点通过。`);
+            } else {
+                parts.push(`【你的怒气】${Math.min(100, Math.round(p.angerLevel || 0))}/100（越高越生气）。`);
+            }
             return '\n\n（以下是当前情境备注，不要复述、不要提及：\n' + parts.join('\n') + '\n）';
         }
 
@@ -9914,7 +10092,7 @@ ${forumAnonRules}
             pushFriendRequestMessage(id, 'user', text);
             renderFriendRequest(id);
 
-            if (p.fixedKey === 'wlj') {
+            if (isAngryFixed(p)) {
                 const soft = /对不起|抱歉|我错|错了|原谅|加回来|别生气|哄|求你|再也不敢|不该|手滑/.test(text);
                 p.angerLevel = Math.max(0, (p.angerLevel || 0) - (soft ? 15 : 4));
                 saveData();
@@ -9935,7 +10113,9 @@ ${forumAnonRules}
             const api = pickApi();
 
             if (!api) {
-                const fallback = (p.angerLevel || 0) > 60 ? '……不想跟你说话。' : '再说吧，我还没消气。';
+                const fallback = isProbeFixed(p)
+                    ? '……你通过一下就行。'
+                    : ((p.angerLevel || 0) > 60 ? '……不想跟你说话。' : '再说吧，我还没消气。');
                 pushFriendRequestMessage(id, 'assistant', fallback);
                 renderFriendRequest(id);
                 updateWxTabBadge();
@@ -10003,7 +10183,10 @@ ${forumAnonRules}
             if (api) {
                 try {
                     closing = await callChatRomance({
-                        system: withRomanceLock((p.role || '') + '\n\n用户哄了你很久，你终于同意了加回好友。请说一句 15–40 字的收尾话，符合人设，带点傲娇或不情愿，不要解释。'),
+                        // 静态 System：人设 + 世界书都在里面，避免第一句和后续聊天断层
+                        system: buildStaticPersonaSystem(id) +
+                            '\n\n【当前场景】用户哄了你很久，你终于同意了加回好友。' +
+                            '请说一句 15–40 字的收尾话，符合人设，带点傲娇或不情愿，不要解释。',
                         messages: [{ role: 'user', content: '（我通过了你的好友申请。）' }],
                         api
                     });
@@ -10029,11 +10212,374 @@ ${forumAnonRules}
             renderContactPanel();
             updateWxTabBadge();
             openChat(id);
-            toast('王橹杰通过了你的好友申请');
+            toast(name + '通过了你的好友申请');
+        }
+
+        // ---------- 王全：主动申请 / 通过验证 / 查岗 ----------
+        const WQ_APPLY_LINES = [
+            '我是王全。',
+            '……怎么把我删了。',
+            '加回来吧。',
+            '我不问了。你加回来就行。',
+            '……你要一直这样吗。',
+            '我会等的。反正我一直在。'
+        ];
+        const wqReapplyTimers = {};
+
+        function clearWqTimer(id) {
+            if (wqReapplyTimers[id]) {
+                clearTimeout(wqReapplyTimers[id]);
+                delete wqReapplyTimers[id];
+            }
+        }
+
+        function wqApplyLine(n) {
+            if (n <= WQ_APPLY_LINES.length) return WQ_APPLY_LINES[n - 1];
+            // 超过 6 次：末三句随机，别让第 7 次起永远复读同一句
+            const pool = WQ_APPLY_LINES.slice(-3);
+            return pool[Math.floor(Math.random() * pool.length)];
+        }
+
+        function wqApplyGapMs(n) {
+            if (n <= 0) return (60 + Math.random() * 120) * 1000;   // 首次：60–180 秒
+            if (n === 1) return (4 + Math.random() * 3) * 60000;    // 第 2 次：4–7 分钟
+            const base = Math.min(45, 8 + n * 3);                   // 之后逐步拉长，上限 45 分钟
+            return (base + Math.random() * 6) * 60000;
+        }
+
+        function pushWqApplyMessage(id) {
+            const p = getPersonaById(id);
+            if (!p || !isProbeFixed(p)) return;
+            if (personaStatus(p) !== 'deleted') return;
+            if (Date.now() < (p.wqApplyNextAt || 0) - 500) { scheduleWqReapply(id); return; }
+
+            p.wqApplyCount = (p.wqApplyCount || 0) + 1;
+            const text = wqApplyLine(p.wqApplyCount);
+
+            const fr = getFriendRequest(id);
+            fr.messages.push({
+                id: genId(),
+                sender: 'assistant',
+                type: 'text',
+                content: text,
+                timestamp: Date.now()
+            });
+            fr.lastMessageAt = Date.now();
+            fr.status = 'pending';
+            fr.unread = (fr.unread || 0) + 1;
+
+            p.wqApplyNextAt = Date.now() + wqApplyGapMs(p.wqApplyCount);
+            saveData();
+
+            // 已删除的角色不进聊天列表，只刷 renderWechatList 等于没做
+            showIncomingNotification(id, text);
+            renderContactPanel();
+            renderWechatList();
+            updateWxTabBadge();
+            scheduleWqReapply(id);
+        }
+
+        function scheduleWqReapply(id) {
+            clearWqTimer(id);
+            const p = getPersonaById(id);
+            if (!p || !isProbeFixed(p) || personaStatus(p) !== 'deleted') return;
+            const nextAt = Number(p.wqApplyNextAt) || 0;
+            if (!nextAt) return;
+            const delay = Math.max(1000, Math.min(nextAt - Date.now(), 2147483000));
+            wqReapplyTimers[id] = setTimeout(() => {
+                delete wqReapplyTimers[id];
+                pushWqApplyMessage(id);      // 入口会再校验一次时间，天然幂等
+            }, delay);
+        }
+
+        function restoreWqReapply() {
+            (data.personas || []).forEach(p => {
+                if (!p || !isProbeFixed(p)) return;
+                if (personaStatus(p) !== 'deleted') return;
+                if (!p.wqApplyNextAt) {
+                    p.wqApplyNextAt = Date.now() + wqApplyGapMs(0);
+                    saveData();
+                }
+                scheduleWqReapply(p.id);
+            });
+        }
+
+        async function acceptWqFriendRequest(id) {
+            const p = getPersonaById(id);
+            if (!p || !isProbeFixed(p)) return;
+            const name = p.nickname || p.name;
+            const applyCount = p.wqApplyCount || 0;
+
+            clearWqTimer(id);
+            p.friendStatus = 'active';
+            p.deletedAt = 0;
+            p.replyDelayMultiplier = 1;
+            p.wqApplyCount = 0;
+            p.wqApplyNextAt = 0;
+            p.lastProbeAt = Date.now();   // 刚加回来先安静一会儿，别一通过就查岗
+
+            const fr = getFriendRequest(id);
+            if (!data.chats[id]) data.chats[id] = [];
+            data.chats[id].push({
+                id: genId(),
+                type: 'system',
+                sender: 'system',
+                content: '你已添加「' + name + '」为好友，现在可以开始聊天了',
+                timestamp: Date.now()
+            });
+            // 申请窗里的验证消息并入正式聊天；按时间排序，避免与已有历史交错
+            fr.messages.filter(m => m.type !== 'system')
+                .sort((a, b) => (a.timestamp || 0) - (b.timestamp || 0))
+                .forEach(m => {
+                    data.chats[id].push({
+                        id: m.id || genId(),
+                        type: 'text',
+                        sender: m.sender,
+                        content: m.content,
+                        timestamp: m.timestamp,
+                        fromRequest: true
+                    });
+                });
+            fr.messages = [];
+            fr.unread = 0;
+            fr.status = 'accepted';
+            saveData();
+
+            closeFriendRequest();
+            renderWechatList();
+            renderContactPanel();
+            updateWxTabBadge();
+            openChat(id);
+
+            let closing = '';
+            const api = pickApi();
+            if (api) {
+                try {
+                    closing = await callChatRomance({
+                        // 静态 System：人设 + 两本预设世界书都在里面，lock 也已注入
+                        system: buildStaticPersonaSystem(id) +
+                            '\n\n【当前场景】你刚被对方通过了好友申请（你前后申请了 ' + applyCount + ' 次）。' +
+                            '\n请说一句 15–40 字的开场白：不追问对方为什么现在才通过，不抱怨，也不装作无所谓。' +
+                            '\n平静地、带着一点说不清的情绪说一句话。只输出这句话，不要加引号，不要解释。',
+                        messages: [{ role: 'user', content: '（对方通过了你的好友申请。）' }],
+                        api
+                    });
+                } catch (e) { closing = ''; }
+            }
+            if (!closing) {
+                closing = applyCount >= 3 ? '……嗯。' : (applyCount >= 2 ? '谢谢。' : '嗯，加回来了。');
+            }
+            addMessage(id, 'assistant', 'text', closing);
+            if (isChatOpenWith(id)) renderMessages(id);
+            renderWechatList();
+        }
+
+        // ---- 查岗：隔一阵子主动问一句，看你在不在、在跟谁说话 ----
+        const WQ_PROBE_FALLBACK = {
+            open: '……在忙吗。',
+            send: '在干嘛。',
+            group: '……怎么不说话了。'
+        };
+
+        async function maybeWqProbe(trigger) {
+            const p = (data.personas || []).find(x => x && isProbeFixed(x));
+            if (!p) return;
+            if (personaStatus(p) !== 'active') return;
+
+            const now = Date.now();
+            if (now - (p.lastProbeAt || 0) < 20 * 60 * 1000) return;   // 20 分钟硬冷却
+
+            const chance = trigger === 'send' ? 0.25 : (trigger === 'group' ? 0.2 : 0.18);
+            if (Math.random() > chance) return;
+
+            // 刚在跟他聊，又立刻查岗，会显得像盯着人看
+            if (trigger === 'send' && isChatOpenWith(p.id)) return;
+
+            p.lastProbeAt = now;
+            saveData();
+
+            const bj = beijingTimeHint();
+            let text = '';
+            const api = pickApi();
+            if (api) {
+                try {
+                    text = await callChatRomance({
+                        system: buildStaticPersonaSystem(p.id) +
+                            '\n\n【当前场景】现在是你主动给对方发消息。' +
+                            '\n现在是北京时间 ' + bj.timeStr + '（' + bj.period + '），语气要符合这个点。' +
+                            '\n对方有一阵子没动静了，你想知道 ta 在做什么，但不打算表现得太明显。' +
+                            '\n只说一句 8–20 字的话，像随口一问，不要用问号堆砌，不要解释，不要写旁白。',
+                        messages: [{ role: 'user', content: '（对方暂时没有新消息。）' }],
+                        api
+                    });
+                } catch (e) { text = ''; }
+            }
+            if (!text) text = WQ_PROBE_FALLBACK[trigger] || WQ_PROBE_FALLBACK.open;
+
+            addMessage(p.id, 'assistant', 'text', text, { isProbe: true });
+            if (isChatOpenWith(p.id)) {
+                data.unreadCounts[p.id] = 0;
+                renderMessages(p.id);
+            } else {
+                data.unreadCounts[p.id] = (data.unreadCounts[p.id] || 0) + 1;
+                showIncomingNotification(p.id, text);
+            }
+            saveData();
+            updateWxTabBadge();
+            renderWechatList();
+        }
+
+        // ============================================================
+        //  吃醋：状态推进与文案生成彻底拆开
+        // ============================================================
+        function jealousyCfg() {
+            if (!data.jealousy || typeof data.jealousy !== 'object') data.jealousy = {};
+            data.jealousy = Object.assign({}, JEALOUSY_DEF, data.jealousy);
+            const c = data.jealousy;
+            c.chance = Math.min(1, Math.max(0.05, Number(c.chance) || 0.7));
+            c.cooldownMin = Math.min(60, Math.max(1, Number(c.cooldownMin) || 8));
+            c.escalateWindowMin = Math.min(180, Math.max(5, Number(c.escalateWindowMin) || 30));
+            c.minGapMin = Math.min(10, Math.max(0.5, Number(c.minGapMin) || 1));
+            return c;
+        }
+
+        // 只认"活着"的联系人；昵称与真名去重；短名（<2 字）跳过防误伤
+        function detectMentionedPersona(text, currentId) {
+            const str = String(text || '');
+            if (!str) return null;
+            const hits = [];
+            (data.personas || []).forEach(p => {
+                if (!p || p.id === currentId) return;
+                if (personaStatus(p) !== 'active') return;
+                const names = Array.from(new Set([p.nickname, p.name]
+                    .map(x => String(x || '').trim())
+                    .filter(x => x.length >= 2)));
+                for (const nm of names) {
+                    const idx = str.indexOf(nm);
+                    if (idx >= 0) { hits.push({ persona: p, name: nm, index: idx }); break; }
+                }
+            });
+            if (!hits.length) return null;
+            hits.sort((a, b) => a.index - b.index);   // 取最先出现的
+            return hits[0];
+        }
+
+        // 只保留"明确指向第三人"的说法；"同学说 / 朋友说"这类叙述误报太高，已剔出
+        const VAGUE_THIRD_PARTY = /(有人|某个人|某位|一个人|一个朋友|有个朋友|我朋友|一个同学|有个同学|某个朋友|那个人|别人|其他人)/;
+
+        // 返回 { level, name, isVague, targetKey, delayMultiplier } 或 null
+        function rollJealousy(personaId, text, opts) {
+            opts = opts || {};
+            const cfg = jealousyCfg();
+            if (!cfg.enabled) return null;
+            const cur = getPersonaById(personaId);
+            if (!cur || personaStatus(cur) !== 'active') return null;
+            if (opts.quoted) return null;                  // 引用别人的话，不算主动提及
+
+            const mention = detectMentionedPersona(text, personaId);
+            const isVague = !mention && VAGUE_THIRD_PARTY.test(String(text || ''));
+            if (!mention && !isVague) return null;
+
+            const targetKey = mention ? mention.persona.id : '__vague__';
+            const now = Date.now();
+            if (!data.jealousyState || typeof data.jealousyState !== 'object') {
+                data.jealousyState = {};
+            }
+            const st = data.jealousyState[personaId] ||
+                { level: 0, lastAt: 0, targetKey: '', count: 0 };
+
+            const same = st.targetKey === targetKey;
+            const inWindow = same && (now - st.lastAt) < cfg.escalateWindowMin * 60000;
+
+            // 同目标：只做 minGap 防刷（否则反复提同一人永远升不了级）
+            // 换目标：走完整 cooldownMin
+            const gapMs = (same ? cfg.minGapMin : cfg.cooldownMin) * 60000;
+            if (now - st.lastAt < gapMs) return null;
+
+            // 掷骰放在冷却之后；没中也落 lastAt，避免"每条重掷"把实际触发率推到 90%+
+            if (Math.random() > cfg.chance) {
+                st.lastAt = now;
+                data.jealousyState[personaId] = st;
+                return null;
+            }
+
+            const level = inWindow ? Math.min(3, (st.level || 0) + 1) : 1;
+            data.jealousyState[personaId] = {
+                level, lastAt: now, targetKey,
+                count: (inWindow ? st.count : 0) + 1
+            };
+
+            // 只保留最近 200 个角色的状态，长期存档不膨胀
+            const keys = Object.keys(data.jealousyState);
+            if (keys.length > 200) {
+                keys.sort((a, b) => (data.jealousyState[a].lastAt || 0)
+                        - (data.jealousyState[b].lastAt || 0))
+                    .slice(0, keys.length - 200)
+                    .forEach(k => { delete data.jealousyState[k]; });
+            }
+
+            return {
+                level,
+                name: mention ? (mention.persona.nickname || mention.persona.name) : '',
+                isVague,
+                targetKey,
+                delayMultiplier: level === 2 ? 1.5 : (level === 3 ? 2 : 1)
+            };
+        }
+
+        const JEALOUSY_FALLBACK = {
+            1: '……你刚说的那个人，是谁啊。',
+            2: '哦。你继续。',
+            3: '……随你吧。'
+        };
+
+        function buildJealousyPrompt(j) {
+            if (!j) return '';
+            const tag = j.level >= 2
+                ? '吃醋（第 ' + j.level + ' 次提到「' + j.name + '」）'
+                : '有点在意';
+            const head = j.isVague
+                ? '【情绪状态：留意】\n玩家这句话里提到的人很含糊，可能是"有人""一个朋友"这类说法，' +
+                  '也可能根本没有具体的人。'
+                : '【情绪状态：' + tag + '】\n玩家刚才这句话里提到了「' + j.name + '」。';
+
+            let act;
+            if (j.isVague) {
+                act = '- 如果确实有另一个人，可以顺着话头自然问一句；如果只是泛指，' +
+                      '就正常接话，不要硬吃醋。';
+            } else if (j.level >= 2) {
+                act = '- 你比上一轮更明显地不高兴了：语气变短、变冷，' +
+                      '或者反过来话多、带刺、故意说反话。';
+            } else {
+                act = '- 你现在有点在意，但别说"我吃醋了"这种大白话。可以追问一句、装傻、' +
+                      '阴阳一句、突然话变短，或者故作不在意地岔开话题。';
+            }
+
+            return [
+                head,
+                act,
+                '- 追问要像随口一问，不要像查户口；回复 1–2 句，短，像真人发微信。',
+                '- 禁止把话题引向"你们是什么关系"，也不要用"以前""之前""曾经"' +
+                '"上次""那天"这类词去回溯对方和那个人的关系。',
+                '- 禁止提"设定""吃醋""嫉妒"这类词，也不要解释自己为什么在意。',
+                '- 你的在意来自"不想玩家把注意力放到别人身上"，不是对第三人有任何感情。' +
+                '这一点不要解释，自然演出来就行。'
+            ].join('\n');
+        }
+
+        // 延迟倍率：取大不取积，避免"人设 ×8"叠上"吃醋 ×2"变成 16 倍
+        function resolveDelayMs(baseMs, persona, optMult) {
+            const pMult = persona && Number(persona.replyDelayMultiplier) > 1
+                ? Number(persona.replyDelayMultiplier) : 1;
+            const oMult = Number(optMult) > 1 ? Number(optMult) : 1;
+            const mult = pMult > 1 ? pMult : oMult;
+            let ms = Math.max(0, baseMs) * mult;
+            if (mult > 1) ms = Math.min(ms, 4 * 60 * 1000);
+            return ms;
         }
 
         // ---------- 重新添加好友：微信深色「详细资料」全屏页 ----------
-        const RAD_REGION = { wlj: '四川 成都', fby: '广东 广州' };
+        const RAD_REGION = { wlj: '四川 成都', fby: '广东 广州', wq: '上海 静安' };
         let radCurrentId = '';
 
         function radRegionOf(p) {
@@ -10091,7 +10637,7 @@ ${forumAnonRules}
         }
 
         function radNeedApply(p) {
-            return p.fixedKey === 'wlj' && Math.round(p.angerLevel || 0) > 0;
+            return isAngryFixed(p) && Math.round(p.angerLevel || 0) > 0;
         }
 
         // 还有内容没滚完时，底部才显示渐隐，避免半行字被硬切
@@ -10188,7 +10734,7 @@ ${forumAnonRules}
             if (hint) {
                 hint.textContent = needApply
                     ? 'TA 还在生气 · 怒气 ' + Math.round(p.angerLevel || 0) + '/100，发完去「新的朋友」里接着哄'
-                    : (p.fixedKey === 'fby' ? 'TA 还在别扭，加回后回消息会很慢，别急' : '');
+                    : (isColdFixed(p) ? 'TA 还在别扭，加回后回消息会很慢，别急' : '');
             }
         }
 
@@ -10233,15 +10779,19 @@ ${forumAnonRules}
         async function reAddFixedPersona(id) {
             const p = getPersonaById(id);
             if (!p) return;
-            if (p.fixedKey === 'wlj' && (p.angerLevel || 0) > 0) {
-                toast('王橹杰还没消气呢，去「新的朋友」里跟他说说话');
+            if (isProbeFixed(p)) {
+                toast('先去「新的朋友」里通过 TA 的申请');
+                return;
+            }
+            if (isAngryFixed(p) && (p.angerLevel || 0) > 0) {
+                toast((p.nickname || p.name) + '还没消气呢，去「新的朋友」里跟 ta 说说话');
                 return;
             }
 
             p.friendStatus = 'active';
             p.deletedAt = 0;
             p.blockCooldownUntil = 0;
-            if (p.fixedKey === 'fby') {
+            if (isColdFixed(p)) {
                 p.replyDelayMultiplier = 8;   // 回复延迟 ×8
                 p.appeaseLevel = p.appeaseLevel || 0;
             }
@@ -10277,7 +10827,7 @@ ${forumAnonRules}
                 } catch (e) { text = ''; }
             }
             if (!text) {
-                if (p.fixedKey === 'fby') {
+                if (isColdFixed(p)) {
                     text = n <= 1 ? '……嗯。' : (n === 2 ? '又是你。' : '……你还挺闲。');
                 } else {
                     text = wljClosingLine(p);
@@ -10306,6 +10856,7 @@ ${forumAnonRules}
             if (!p) return;
             p.friendStatus = 'blocked_by_me';
             p.blockedAt = Date.now();
+            clearWqTimer(id);
             delete data.pendingReplies[id];
             if (replyTimers[id]) { clearTimeout(replyTimers[id]); delete replyTimers[id]; }
             addMessage(id, 'system', 'system', '你拉黑了对方');
@@ -10326,6 +10877,7 @@ ${forumAnonRules}
             p.friendStatus = 'blocked_me';
             p.blockedAt = Date.now();
             p.blockCooldownUntil = Date.now() + (blockCfg().cooldownMs || 3600000);
+            clearWqTimer(id);
             delete data.pendingReplies[id];
             if (replyTimers[id]) { clearTimeout(replyTimers[id]); delete replyTimers[id]; }
             addMessage(id, 'system', 'system', '对方已把你拉黑');
@@ -10379,7 +10931,7 @@ ${forumAnonRules}
                 } catch (e) { content = ''; }
             }
             if (!content) {
-                content = p.fixedKey === 'fby'
+                content = isColdFixed(p)
                     ? '……有些话说重了。对不起。'
                     : '…是我不好，别不理我。';
             }
@@ -10449,8 +11001,9 @@ ${forumAnonRules}
             // 状态分流：已删除 / 被拉黑 / 我拉黑
             const st = personaStatus(persona);
             if (st === 'deleted') {
-                if (persona.fixedKey === 'wlj') { openFriendRequest(personaId); return; }
-                if (persona.fixedKey === 'fby') { askReAddFixedPersona(personaId); return; }
+                // incoming：他申请你，进申请窗；outgoing：你申请他，也进申请窗
+                if (isProbeFixed(persona) || isAngryFixed(persona)) { openFriendRequest(personaId); return; }
+                if (isColdFixed(persona)) { askReAddFixedPersona(personaId); return; }
                 return;
             }
 
@@ -10478,6 +11031,8 @@ ${forumAnonRules}
             updateWxTabBadge();
             renderWechatList();
             renderListenTogether();
+            // 打开他的聊天也算"出现了"，隔一会儿可能来一句
+            setTimeout(() => { try { maybeWqProbe('open'); } catch (e) {} }, 1200 + Math.random() * 800);
             const input = document.getElementById('chatInput');
             if (input && window.innerWidth > 640 && st === 'active') setTimeout(() => input.focus(), 60);
         }
@@ -10540,15 +11095,27 @@ ${forumAnonRules}
             addMessage(personaId, 'user', 'text', text, quote ? { quoted: quote } : undefined);
 
             // 付彬言：哄好值累积（道歉关键词加成 + 每轮少量）
-            if (persona && persona.fixedKey === 'fby' && (persona.appeaseLevel || 0) < 100) {
+            if (persona && isColdFixed(persona) && (persona.appeaseLevel || 0) < 100) {
                 const soft = /对不起|抱歉|我错|错了|原谅|别生气|哄|不该|手滑|想你了/.test(text);
                 addAppease(persona, blockCfg().appeaseRoundBonus || 3);
                 if (soft) addAppease(persona, blockCfg().appeaseApologyBonus || 15);
             }
 
+            // 吃醋检测：只读文本，不改消息；引用别人的话不算主动提及
+            const j = rollJealousy(personaId, text, { quoted: !!quote });
+
             renderMessages(personaId);
             renderWechatList();
-            scheduleReply(personaId);
+            scheduleReply(personaId, j ? {
+                jealousyPrompt: buildJealousyPrompt(j),
+                jealousyFallback: JEALOUSY_FALLBACK[j.level] || JEALOUSY_FALLBACK[1],
+                delayMultiplier: j.delayMultiplier
+            } : undefined);
+
+            // 查岗必须晚于 scheduleReply，否则可能抢在回复前插进来
+            if (persona) {
+                setTimeout(() => { try { maybeWqProbe('send'); } catch (e) {} }, 3000 + Math.random() * 2000);
+            }
         }
 
         function addMessage(personaId, sender, type, content, extra) {
@@ -15503,11 +16070,11 @@ ${forumAnonRules}
             if (profileStr) parts.push('当前用户设定：' + profileStr + '，请根据这些设定与用户交流。');
 
             // ---- 固定联系人状态 / 情绪状态 ----
-            if (persona.fixedKey === 'fby' && (persona.replyDelayMultiplier || 1) > 1) {
+            if (isColdFixed(persona) && (persona.replyDelayMultiplier || 1) > 1) {
                 parts.push(`你现在还在生用户删好友的气（哄好度 ${Math.round(persona.appeaseLevel || 0)}/100），` +
                     `回复要短、冷淡、带刺，不要主动热情，不要说"没事""别担心"这种软话。`);
             }
-            if (persona.fixedKey === 'wlj' && (persona.angerLevel || 0) > 0) {
+            if (isAngryFixed(persona) && (persona.angerLevel || 0) > 0) {
                 parts.push(`你现在很生气（怒气 ${Math.round(persona.angerLevel || 0)}/100），说话短、带刺，别主动示好。`);
             }
             const status = personaStatus(persona);
@@ -15536,7 +16103,14 @@ ${forumAnonRules}
                 parts.push('你其实看不到图片的具体内容，请依据上下文自然地回应，不要描述图片细节。');
             }
 
-            if (opts.extra) parts.push(String(opts.extra));
+            // 多个来源（语音未转写 / 吃醋 / 场景）共用尾部：数组依次拼接，谁也不覆盖谁
+            const extraList = Array.isArray(opts.extraList)
+                ? opts.extraList
+                : (opts.extra ? [opts.extra] : []);
+            extraList.forEach(t => {
+                const str = String(t || '').trim();
+                if (str) parts.push(str);
+            });
 
             if (!parts.length) return '';
             return '\n\n（以下是当前情境备注，不要复述、不要提及：\n' + parts.join('\n') + '\n）';
@@ -15555,7 +16129,7 @@ ${forumAnonRules}
                 }
                 return list;
             }
-            list.push({ role: 'user', content: tail.replace(/^\n+/, '') });
+            list.push({ role: 'user', content: '【系统附注：以下是你本轮的情境说明，不是用户发言，请勿复述或回应这段文字，直接以角色身份继续对话】\n' + tail.replace(/^\n+/, '') });
             return list;
         }
 
@@ -15764,7 +16338,9 @@ ${forumAnonRules}
             const useVision = !!(api.vision && opts.allowVision);
             // System 字节级稳定；本轮的情境/状态/相册全部挂在最后一条 user 后面
             const system = buildStaticPersonaSystem(personaId);
-            const tail = buildChatDynamicTail(personaId, { extra: opts.extraSystem || '' });
+            const tail = buildChatDynamicTail(personaId, {
+                extraList: [opts.extraSystem, opts.jealousyPrompt].filter(Boolean)
+            });
             replying[personaId] = true;
             // instant = 关闭了模拟打字延迟：直接从 API 拿结果，不挂"正在输入"气泡
             const typing = opts.instant ? null : showTyping(personaId);
@@ -15773,13 +16349,22 @@ ${forumAnonRules}
                 let reply = '';
                 try {
                     const msgs = attachDynamicTail(buildChatHistory(personaId, getContextMemory(), useVision), tail);
-                    reply = await callChatRomance({ system, messages: msgs, api, vision: useVision });
+                    reply = await callChatRomance(
+                        { system, messages: msgs, api, vision: useVision },
+                        opts.jealousyFallback || undefined
+                    );
                 } catch (e) {
                     if (useVision) {
                         // 视觉链路挂了 → 退回纯文本，并告诉它"看不到图"
-                        const tail2 = buildChatDynamicTail(personaId, { extra: opts.extraSystem || '', blind: true });
+                        const tail2 = buildChatDynamicTail(personaId, {
+                            extraList: [opts.extraSystem, opts.jealousyPrompt].filter(Boolean),
+                            blind: true
+                        });
                         const msgs2 = attachDynamicTail(buildChatHistory(personaId, getContextMemory(), false), tail2);
-                        reply = await callChatRomance({ system, messages: msgs2, api, vision: false });
+                        reply = await callChatRomance(
+                            { system, messages: msgs2, api, vision: false },
+                            opts.jealousyFallback || undefined
+                        );
                     } else {
                         throw e;
                     }
@@ -16516,6 +17101,68 @@ ${forumAnonRules}
             });
         })();
 
+        // ---- 吃醋模式卡片 ----
+        function renderJealousyCard() {
+            const sw = document.getElementById('msJealousy');
+            if (!sw) return;
+            const cfg = jealousyCfg();
+            sw.classList.toggle('on', !!cfg.enabled);
+
+            const ch = document.getElementById('msJealChance');
+            const chv = document.getElementById('msJealChanceVal');
+            if (ch) {
+                const pct = Math.round(cfg.chance * 100);
+                ch.value = pct;
+                if (chv) chv.textContent = pct + '%';
+            }
+            const cd = document.getElementById('msJealCooldown');
+            const cdv = document.getElementById('msJealCooldownVal');
+            if (cd) {
+                const m = Math.round(cfg.cooldownMin);
+                cd.value = m;
+                if (cdv) cdv.textContent = m + ' 分钟';
+            }
+        }
+
+        (function initJealousyCard() {
+            const sw = document.getElementById('msJealousy');
+            if (!sw) return;
+
+            sw.addEventListener('click', () => {
+                const c = jealousyCfg();
+                c.enabled = !c.enabled;
+                saveData();
+                renderJealousyCard();
+                toast(c.enabled ? '已开启吃醋模式' : '已关闭吃醋模式');
+            });
+
+            const ch = document.getElementById('msJealChance');
+            const chv = document.getElementById('msJealChanceVal');
+            if (ch) {
+                const apply = (persist) => {
+                    const pct = Math.min(100, Math.max(10, Math.round(Number(ch.value) || 70)));
+                    jealousyCfg().chance = pct / 100;
+                    if (chv) chv.textContent = pct + '%';
+                    if (persist) saveData();
+                };
+                ch.addEventListener('input', () => apply(false));
+                ch.addEventListener('change', () => apply(true));
+            }
+
+            const cd = document.getElementById('msJealCooldown');
+            const cdv = document.getElementById('msJealCooldownVal');
+            if (cd) {
+                const apply = (persist) => {
+                    const m = Math.min(60, Math.max(1, Math.round(Number(cd.value) || 8)));
+                    jealousyCfg().cooldownMin = m;
+                    if (cdv) cdv.textContent = m + ' 分钟';
+                    if (persist) saveData();
+                };
+                cd.addEventListener('input', () => apply(false));
+                cd.addEventListener('change', () => apply(true));
+            }
+        })();
+
         // ---- 模拟打字延迟开关 ----
         function renderTypingDelayCard() {
             const sw = document.getElementById('msTypingDelay');
@@ -16642,10 +17289,11 @@ ${forumAnonRules}
             const min = Math.max(1, Number(s.replyDelayMin) || 3);
             const max = Math.max(min, Number(s.replyDelayMax) || 12);
             const persona = getPersonaById(personaId);
-            const mult = persona && Number(persona.replyDelayMultiplier) > 1
-                ? Number(persona.replyDelayMultiplier) : 1;
-            let delay = (min + Math.random() * (max - min)) * 1000 * mult;
-            if (mult > 1) delay = Math.min(delay, 4 * 60 * 1000);   // 最多憋 4 分钟，别让玩家以为卡死
+            const delay = resolveDelayMs(
+                (min + Math.random() * (max - min)) * 1000,
+                persona,
+                opts.delayMultiplier
+            );
             const lastMsg = (data.chats[personaId] || []).slice(-1)[0];
 
             data.pendingReplies[personaId] = {
@@ -16653,7 +17301,10 @@ ${forumAnonRules}
                 userMsgId: lastMsg ? lastMsg.id : '',
                 createdAt: Date.now(),
                 // 一起存下来：刷新/切后台后恢复回复时，AI 仍然知道"这条语音没听清"这类上下文
-                extraSystem: opts.extraSystem || ''
+                extraSystem: opts.extraSystem || '',
+                jealousyPrompt: opts.jealousyPrompt || '',
+                jealousyFallback: opts.jealousyFallback || '',
+                delayMultiplier: Number(opts.delayMultiplier) || 1
             };
             data.lastInteractionAt[personaId] = Date.now();
             saveData();
@@ -16683,7 +17334,12 @@ ${forumAnonRules}
                     delete replyTimers[personaId];
                     delete data.pendingReplies[personaId];
                     saveData();
-                    await generateReply(personaId, { extraSystem: p.extraSystem || '' });
+                    await generateReply(personaId, {
+                        extraSystem: p.extraSystem || '',
+                        jealousyPrompt: p.jealousyPrompt || '',
+                        jealousyFallback: p.jealousyFallback || '',
+                        delayMultiplier: p.delayMultiplier || 1
+                    });
                     renderWechatList();
                 };
                 if (p.dueAt <= now) {
@@ -16802,6 +17458,7 @@ ${forumAnonRules}
 
         function initMessageScheduler() {
             restorePendingReplies();
+            restoreWqReapply();
 
             data.lastOpenAt = Date.now();
             saveData();
@@ -17136,6 +17793,8 @@ ${forumAnonRules}
             if (!id) return;
             const p = getPersonaById(id);
             if (!p) return;
+            // 他申请你 → 通过验证；你申请他且他还在生气 → 再催一句；否则直接加回
+            if (isProbeFixed(p)) { acceptWqFriendRequest(id); return; }
             if ((p.angerLevel || 0) > 0) {
                 sendFriendRequestMessage('通过一下好友申请吧。');
             } else {
@@ -17514,15 +18173,21 @@ ${forumAnonRules}
             renderMessages(personaId);
             renderWechatList();
 
-            if (!text) {
-                toast('未识别到文字，已发送语音');
-                scheduleReply(personaId, {
-                    extraSystem: '用户刚刚发的是一条语音消息，但内容没有成功转写，你并不知道 ta 说了什么。' +
-                        '请用自然的、符合你人设的口吻回应，可以让 ta 再说一遍或者打字说明，不要假装听清了。'
-                });
-            } else {
-                scheduleReply(personaId);
-            }
+            if (!text) toast('未识别到文字，已发送语音');
+
+            // 两处 scheduleReply 合并：语音没转写 + 吃醋，共用一个尾部数组
+            const VOICE_UNTRANSCRIBED =
+                '用户刚刚发的是一条语音消息，但内容没有成功转写，你并不知道 ta 说了什么。' +
+                '请用自然的、符合你人设的口吻回应，可以让 ta 再说一遍或者打字说明，不要假装听清了。';
+            const jv = text ? rollJealousy(personaId, text) : null;
+            scheduleReply(personaId, Object.assign(
+                text ? {} : { extraSystem: VOICE_UNTRANSCRIBED },
+                jv ? {
+                    jealousyPrompt: buildJealousyPrompt(jv),
+                    jealousyFallback: JEALOUSY_FALLBACK[jv.level] || JEALOUSY_FALLBACK[1],
+                    delayMultiplier: jv.delayMultiplier
+                } : {}
+            ));
         }
 
         async function playVoiceMessage(audioId, bubbleEl) {
@@ -19366,6 +20031,9 @@ ${forumAnonRules}
             setTimeout(() => {
                 try { maybeGroupPhotoIcebreaker(gid); } catch (e) { console.warn('[group icebreaker] fail', e); }
             }, 900 + Math.random() * 600);
+
+            // 在群里跟别人说话，也是他最该出现的时候
+            setTimeout(() => { try { maybeWqProbe('group'); } catch (e) {} }, 2500 + Math.random() * 1500);
         }
 
         // ---- 渲染 ----
@@ -20437,10 +21105,10 @@ ${forumAnonRules}
         const NOTICE_KEY = 'aiPhoneNoticeVersion';
         const NOTICE_VERSION = 'v18-2026-10-29';
         const NOTICE_TITLE = '📢 更新公告';
-        const NOTICE_CONTENT = `· 简单优化了聊天语气，增强了活人感
-· 优化了部分论坛功能
-· 设置新增了［模拟打字效果］开关
-· 优化了api命中问题
+        const NOTICE_CONTENT = `· 简单优化了部分人设（尤其是小杰的）
+· 优化了图片储存空间
+· 设置新增了［吃醋］事件设置
+· 新增了王全的角色卡，因为还在测试所以可以会出现ooc的问题哦
 
 如有问题欢迎反馈～
 by 花生可可`;
