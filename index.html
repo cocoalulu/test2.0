@@ -6334,12 +6334,9 @@
 
                     <div class="setting-item" id="presetSyncCard">
                         <div class="label">预设角色卡</div>
-                        <div class="desc">同步代码里的最新人设文案。只会更新你没手动改过的字段，改过的会原样保留。</div>
+                        <div class="desc">没改过的角色卡会随版本自动更新；改过的保留你的版本，想换回预设可以点下面按钮。</div>
                         <div class="ctx-hint" id="presetSyncText">检查中…</div>
-                        <div style="display:flex;gap:8px;margin-top:10px;flex-wrap:wrap;">
-                            <button class="btn btn-primary btn-sm" id="presetSyncBtn" type="button">同步预设</button>
-                            <button class="btn btn-sm" id="presetForceBtn" type="button" style="display:none;">覆盖我的改动</button>
-                        </div>
+                        <button class="btn btn-primary btn-sm mt-8" id="presetSyncBtn" type="button">用预设覆盖</button>
                     </div>
 
                     <div class="setting-item" id="immersiveCard">
@@ -7397,8 +7394,6 @@
 
         // 参与「字段级合并」的字段。以后预设多一个字段，往这里塞个名字即可。
         const PRESET_SYNC_FIELDS = ['role', 'nickname'];
-        // 这些字段被改过时才值得打扰用户（改个备注名不该弹提示）
-        const PRESET_PROMPT_FIELDS = ['role'];
 
         // FNV-1a：够用、够快，不依赖任何库
         function presetHashText(s) {
@@ -7418,33 +7413,45 @@
         }
 
         // ============================================================
-        //  预设角色卡定向升级
+        //  预设角色卡同步
         //  ------------------------------------------------------------
-        //  判脏规则：presetHashes 里存的是「最后一次与预设对齐时的原文指纹」。
-        //    · 当前值指纹 == 基线   → 干净，可以静默覆盖
-        //    · 当前值指纹 != 基线   → 脏，保留用户版本
-        //  关键：脏字段不刷新基线（否则第二次跑就会误判成干净），
-        //  只有真正对齐之后才更新指纹。整个函数幂等。
+        //  判定原则：只认「明确的用户改动」，其余一律当作没改过。
+        //    · 内容和当前预设一字不差           → 干净
+        //    · 用户在编辑弹窗里存过（打过标记） → 脏
+        //    · 有基线指纹且对不上               → 脏
+        //    · 老存档：既没指纹也没标记         → 当作没改过，直接覆盖
+        //  干净字段静默换成新版；脏字段保留，弹一次窗提醒去设置手动覆盖。
+        //  整个迁移幂等，跑多少次结果都一样。
         // ============================================================
+
+        // 预设内容签名：改了文案却忘了加 version，也能被当成新版
+        function presetSignature(preset) {
+            return presetHashText([
+                preset.version,
+                preset.name || '',
+                preset.nickname || '',
+                preset.role || '',
+                (preset.openingMessages || []).map(m => m.content).join('\u0001')
+            ].join('\u0002'));
+        }
+
         function presetFieldDirty(p, field, preset) {
             const now = String(p[field] == null ? '' : p[field]);
-            const hashes = (p.presetHashes && typeof p.presetHashes === 'object') ? p.presetHashes : {};
-            const baseline = typeof hashes[field] === 'string' ? hashes[field] : '';
             const src = String(preset[field] == null ? '' : preset[field]);
-
-            // 和当前预设一字不差 → 没有要同步的东西，直接算干净
-            // （用户手工把预设原文贴回去、或改完又改回来，都会走到这里）
+            // 和当前预设完全一致 → 没有要同步的东西
             if (now === src) return false;
-
-            // 有基线就只认指纹
-            if (baseline) return presetHashText(now) !== baseline;
+            // 用户保存过这个字段
             if (p.presetDirty && p.presetDirty[field] === true) return true;
 
-            // 老存档首次接入：没有指纹，只能保守推断
-            if (!now) return false;                       // 空值不算改过
-            // 昵称与角色本名一致也视为没改过（历史数据里备注可能就是本名）
-            if (field === 'nickname' && now === String(preset.name || '')) return false;
-            return true;
+            const hashes = (p.presetHashes && typeof p.presetHashes === 'object') ? p.presetHashes : {};
+            const baseline = typeof hashes[field] === 'string' ? hashes[field] : '';
+            if (baseline) return presetHashText(now) !== baseline;
+
+            // 老存档：没有指纹也没有标记
+            //  · 昵称：种子值一定是本名，出现别的值只可能是用户自己填的
+            //  · 角色设定等长文本：无法证明被改过，按「没改过」处理（直接覆盖）
+            if (field === 'nickname') return !!now && now !== String(preset.name || '');
+            return false;
         }
 
         function migratePersonaPresets(d) {
@@ -7459,67 +7466,58 @@
                 const p = presetFindPersona(d, key);
                 if (!p) return;   // 不存在 → 交给 seed / wqPresetVersion 补漏
 
+                const sig = presetSignature(preset);
                 const verNow = Number(p.presetVersion) || 0;
-                const needUpgrade = verNow < preset.version;
 
                 if (!p.presetKey) { p.presetKey = key; touched = true; }
                 if (!p.presetHashes || typeof p.presetHashes !== 'object') { p.presetHashes = {}; touched = true; }
                 if (!p.presetDirty || typeof p.presetDirty !== 'object') { p.presetDirty = {}; touched = true; }
 
+                // 版本号没加、但文案改了 → 同样算新版
+                const stale = p.presetSig !== sig || verNow < preset.version;
+                if (!stale) return;   // 已经对齐，什么都不用写
+
                 const dirty = {};
                 PRESET_SYNC_FIELDS.forEach(f => { dirty[f] = presetFieldDirty(p, f, preset); });
-                // 没有基线指纹 → 只能靠「内容 != 预设原文」推断，结论是猜的，文案要说清
-                const inferred = PRESET_SYNC_FIELDS.some(f =>
-                    dirty[f] && typeof p.presetHashes[f] !== 'string');
 
-                // ---- 字段级合并：只覆盖干净的字段 ----
-                if (needUpgrade) {
-                    PRESET_SYNC_FIELDS.forEach(f => {
-                        if (dirty[f]) return;
-                        if (p[f] === preset[f]) return;
-                        p[f] = preset[f];
-                        touched = true;
-                    });
-                    // name 是身份字段，只补空值，不覆盖
-                    if (!p.name || !String(p.name).trim()) { p.name = preset.name; touched = true; }
-                }
-
-                // ---- 刷新指纹：只刷新干净的字段 ----
-                // 脏字段保留旧基线，这样下一次仍然判脏，不会「越跑越干净」
+                // ---- 干净字段：直接换成新版 ----
                 PRESET_SYNC_FIELDS.forEach(f => {
                     if (dirty[f]) return;
+                    if (p[f] !== preset[f]) {
+                        // 覆盖前留一份旧文案，万一是误判还能捞回来
+                        if (f === 'role' && p.role) p.presetPrevRole = p.role;
+                        p[f] = preset[f];
+                        touched = true;
+                    }
                     const h = presetHashText(p[f]);
                     if (p.presetHashes[f] !== h) { p.presetHashes[f] = h; touched = true; }
                     if (p.presetDirty[f]) { p.presetDirty[f] = false; touched = true; }
                 });
-                if (dirty.role && !p.roleEdited) { p.roleEdited = true; touched = true; }
+                // name 是身份字段，只补空值，不覆盖
+                if (!p.name || !String(p.name).trim()) { p.name = preset.name; touched = true; }
 
-                const promptDirty = PRESET_PROMPT_FIELDS.some(f => dirty[f]);
-
-                if (needUpgrade && promptDirty) {
-                    // 有用户改动 + 有新版：不推进 presetVersion，挂 pending 等用户决定
+                if (dirty.role) {
+                    // 角色设定被改过 → 保留，挂 pending，等用户去设置手动覆盖
+                    if (!p.roleEdited) { p.roleEdited = true; touched = true; }
                     const prev = d.presetPending[key];
                     const shape = {
                         from: verNow,
                         to: preset.version,
                         at: (prev && prev.at) || Date.now(),
-                        inferred: inferred,
-                        fields: { role: !!dirty.role, nickname: !!dirty.nickname }
+                        sig: sig,
+                        fields: { role: true, nickname: !!dirty.nickname }
                     };
-                    if (!prev || prev.from !== shape.from || prev.to !== shape.to ||
-                        !!prev.inferred !== shape.inferred ||
-                        !prev.fields || prev.fields.role !== shape.fields.role ||
-                        prev.fields.nickname !== shape.fields.nickname) {
+                    if (!prev || prev.to !== shape.to || prev.sig !== shape.sig ||
+                        !prev.fields || prev.fields.nickname !== shape.fields.nickname) {
                         d.presetPending[key] = shape;
                         touched = true;
                     }
                 } else {
-                    // 全干净（或本来就没新版）→ 版本推进到位，pending 撤掉
-                    if (needUpgrade && p.presetVersion !== preset.version) {
-                        p.presetVersion = preset.version;
-                        touched = true;
-                    }
-                    if (d.presetPending[key] && !promptDirty) { delete d.presetPending[key]; touched = true; }
+                    // 角色设定没被动过 → 版本和签名一起对齐，pending 撤销
+                    if (p.presetVersion !== preset.version) { p.presetVersion = preset.version; touched = true; }
+                    if (p.presetSig !== sig) { p.presetSig = sig; touched = true; }
+                    if (d.presetPending[key]) { delete d.presetPending[key]; touched = true; }
+                    if (d.presetNotified && d.presetNotified[key]) { delete d.presetNotified[key]; touched = true; }
                 }
 
                 if (d.presetSchema[key] !== preset.version) { d.presetSchema[key] = preset.version; touched = true; }
@@ -7529,10 +7527,10 @@
         }
 
         // ============================================================
-        //  开场白升级
+        //  开场白同步
         //  ------------------------------------------------------------
         //  只在「用户还没开始聊天」时才重写，否则会吞掉真实对话。
-        //  已聊过 / 已清空 / 已删好友 → 只推进版本号，不碰聊天记录。
+        //  已聊过 / 已清空 / 已删好友 → 只记标记，不碰聊天记录。
         // ============================================================
         function migrateOpeningMessages(d) {
             if (!d || !Array.isArray(d.personas)) return false;
@@ -7547,17 +7545,17 @@
                 const p = presetFindPersona(d, key);
                 if (!p) return;
 
-                const curVer = Number(d.openingVersion[key]) || 0;
-                if (curVer >= preset.version) return;
+                const openHash = presetHashText(preset.openingMessages.map(m => m.content).join('\u0001'));
+                const st = d.openingState[key];
+                const bump = () => {
+                    if (d.openingVersion[key] !== preset.version) { d.openingVersion[key] = preset.version; touched = true; }
+                };
 
-                const bump = () => { d.openingVersion[key] = preset.version; touched = true; };
+                if (st && st.played) return bump();             // 已经聊过，永远不重写
+                if (st && st.presetHash === openHash) return;   // 这批开场白同步过了
 
                 // 好友被删/拉黑过：不复活会话
                 if (p.friendStatus && p.friendStatus !== 'active') return bump();
-
-                // 判定过一次「用户已经聊过」就永久记住，别再反复猜
-                const st = d.openingState[key];
-                if (st && st.played) return bump();
 
                 const hasKey = Object.prototype.hasOwnProperty.call(d.chats, p.id);
                 const list = hasKey && Array.isArray(d.chats[p.id]) ? d.chats[p.id] : [];
@@ -7565,6 +7563,7 @@
                 // 用户清空过聊天记录：尊重这个动作，不要塞回开场白
                 if (hasKey && list.length === 0) {
                     d.openingState[key] = { played: true };
+                    touched = true;
                     return bump();
                 }
 
@@ -7582,6 +7581,7 @@
 
                 if (played) {
                     d.openingState[key] = { played: true };
+                    touched = true;
                     return bump();
                 }
 
@@ -7595,7 +7595,8 @@
                 }));
                 d.openingState[key] = {
                     count: d.chats[p.id].length,
-                    hash: presetHashText(preset.openingMessages.map(m => m.content).join('\u0001'))
+                    hash: presetHashText(preset.openingMessages.map(m => m.content).join('\u0001')),
+                    presetHash: openHash
                 };
 
                 const last = d.chats[p.id][d.chats[p.id].length - 1];
@@ -7606,6 +7607,7 @@
                     d.lastInteractionAt[p.id] = last.timestamp;
                 }
 
+                touched = true;
                 bump();
             });
 
@@ -7685,7 +7687,8 @@
                         role: presetHashText(preset.role),
                         nickname: presetHashText(preset.nickname)
                     },
-                    presetDirty: { role: false, nickname: false }
+                    presetDirty: { role: false, nickname: false },
+                    presetSig: presetSignature(preset)
                 }, fixedPersonaFields(key));
             });
         }
@@ -7742,7 +7745,8 @@
                 // 账本：记下这次写进去的开场白长什么样，下次才知道用户动没动过
                 d.openingState[p.presetKey] = {
                     count: d.chats[p.id].length,
-                    hash: presetHashText(preset.openingMessages.map(m => m.content).join('\u0001'))
+                    hash: presetHashText(preset.openingMessages.map(m => m.content).join('\u0001')),
+                    presetHash: presetHashText(preset.openingMessages.map(m => m.content).join('\u0001'))
                 };
             });
 
@@ -7779,9 +7783,10 @@
 
             d.presetVersion = PRESET_VERSION;
             d.wqPresetVersion = 1;
-            // 预设同步的版本快照 / 待办
+            // 预设同步的版本快照 / 待办 / 已提醒记录
             d.presetSchema = {};
             d.presetPending = {};
+            d.presetNotified = {};
             Object.keys(PRESET_PERSONAS).forEach(k => { d.presetSchema[k] = PRESET_PERSONAS[k].version; });
             return d;
         }
@@ -9444,17 +9449,17 @@ ${forumAnonRules}
         }
 
         // ============================================================
-        //  设置页 · 预设角色卡同步
+        //  设置页 · 预设角色卡（只有「手动覆盖」一个动作）
         // ------------------------------------------------------------
-        //  自动迁移在 loadData 里已经跑过一遍，这里只是给用户一个
-        //  「我知道有新版本了，现在应用」和「算了，就用我的版本」的口子。
+        //  自动同步在 loadData 里已经跑完：没改过的角色卡会静默换成新版。
+        //  这里只接住「用户改过、需要他自己决定」的那部分。
         // ============================================================
         function presetPendingList() {
             const pending = (data && data.presetPending) || {};
             return Object.keys(pending).filter(k => PRESET_PERSONAS[k]);
         }
 
-        // 保留了用户改动的角色（不一定有新版，只要有脏字段就算）
+        // 保留了用户版本的的角色（不一定有新版，只要有脏字段就算）
         function presetKeptList() {
             return Object.keys(PRESET_PERSONAS).filter(k => {
                 const p = presetFindPersona(data, k);
@@ -9470,68 +9475,70 @@ ${forumAnonRules}
 
         function renderPresetSyncCard() {
             const txt = document.getElementById('presetSyncText');
-            const forceBtn = document.getElementById('presetForceBtn');
             const btn = document.getElementById('presetSyncBtn');
             if (!txt) return;
 
             const keys = presetPendingList();
             const kept = presetKeptList();
 
-            // 「恢复预设文案」任何时候只要存在用户改动就提供，方便改坏了救回来
-            if (forceBtn) forceBtn.style.display = kept.length ? '' : 'none';
-
-            if (!keys.length) {
-                if (kept.length) {
-                    txt.textContent = '没有待应用的新版。「' + kept.map(presetDisplayName).join('」「') +
-                        '」保留了你改过的人设，预设不会再覆盖它。';
-                } else {
-                    txt.textContent = '所有预设角色卡均为最新。';
-                }
-                if (btn) btn.textContent = '检查更新';
+            if (keys.length) {
+                const parts = keys.map(k => {
+                    const v = data.presetPending[k] || {};
+                    return presetDisplayName(k) + '（v' + (v.from || 0) + ' → v' + v.to + '）';
+                });
+                txt.textContent = '预设有更新，但你改过角色设定，已保留你的版本：' +
+                    parts.join('；') + '。点下面按钮可用新版覆盖。';
+                if (btn) btn.textContent = '用预设覆盖我的改动';
                 return;
             }
 
-            const parts = keys.map(k => {
-                const v = data.presetPending[k] || {};
-                const f = v.fields || {};
-                const hit = [];
-                if (f.role) hit.push('角色设定');
-                if (f.nickname) hit.push('备注');
-                const who = v.inferred ? '可能改过' : '你改过';
-                return `${presetDisplayName(k)}（v${v.from || 0} → v${v.to}${hit.length ? '，' + who + hit.join('、') : ''}）`;
-            });
-            txt.textContent = '有新版未应用：' + parts.join('；') + '。手动改过的字段会保留。';
-            if (btn) btn.textContent = '同步预设';
+            if (kept.length) {
+                const detail = kept.map(k => {
+                    const p = presetFindPersona(data, k);
+                    const preset = PRESET_PERSONAS[k];
+                    const roleDirty = p ? presetFieldDirty(p, 'role', preset) : false;
+                    return presetDisplayName(k) + (roleDirty ? '（你的版本）' : '（自定义备注）');
+                });
+                txt.textContent = '这些角色卡用了你自己的内容：' + detail.join('、') +
+                    '。预设不会自动覆盖，点下面按钮可换回预设。';
+            } else {
+                txt.textContent = '所有预设角色卡均为最新（没改过的角色卡会自动更新）。';
+            }
+            if (btn) btn.textContent = '用预设覆盖';
         }
 
-        // force = true：连用户改过的字段一起覆盖（必须二次确认后才调用）
-        function syncPresetNow(opts) {
-            const force = !!(opts && opts.force);
+        // 用注册表里的文案覆盖（含用户改过的字段）。聊天记录永远不动。
+        function overwritePresetCards() {
             let applied = 0;
 
             Object.keys(PRESET_PERSONAS).forEach(key => {
                 const preset = PRESET_PERSONAS[key];
                 const p = presetFindPersona(data, key);
                 if (!p) return;
+
                 if (!p.presetHashes || typeof p.presetHashes !== 'object') p.presetHashes = {};
                 if (!p.presetDirty || typeof p.presetDirty !== 'object') p.presetDirty = {};
 
                 PRESET_SYNC_FIELDS.forEach(f => {
-                    const dirty = presetFieldDirty(p, f, preset);
-                    if (dirty && !force) return;          // 脏字段：默认不动
-                    if (p[f] !== preset[f]) { p[f] = preset[f]; applied++; }
+                    if (p[f] !== preset[f]) {
+                        if (f === 'role' && p.role) p.presetPrevRole = p.role;
+                        p[f] = preset[f];
+                        applied++;
+                    }
                     p.presetHashes[f] = presetHashText(p[f]);
                     p.presetDirty[f] = false;
                 });
                 if (!p.name || !String(p.name).trim()) p.name = preset.name;
-                if (force) p.roleEdited = false;
+                p.roleEdited = false;
                 p.presetVersion = preset.version;
+                p.presetSig = presetSignature(preset);
             });
 
             // 开场白：仍然遵守「没聊过才换」
             migrateOpeningMessages(data);
 
             data.presetPending = {};
+            data.presetNotified = {};
             if (!data.presetSchema || typeof data.presetSchema !== 'object') data.presetSchema = {};
             Object.keys(PRESET_PERSONAS).forEach(k => { data.presetSchema[k] = PRESET_PERSONAS[k].version; });
 
@@ -9542,30 +9549,68 @@ ${forumAnonRules}
             if (cw && cw.classList.contains('open') && cw.dataset.persona) {
                 renderMessages(cw.dataset.persona);
             }
-            toast(force ? '已覆盖为预设文案' : (applied ? `已更新 ${applied} 个字段` : '没有需要更新的字段'));
+            toast(applied ? '已用预设覆盖 ' + applied + ' 处' : '已经是最新版');
             return applied;
         }
 
         document.getElementById('presetSyncBtn').addEventListener('click', () => {
-            if (!presetPendingList().length) {
-                syncPresetNow({});
-                return;
-            }
+            const keys = presetPendingList();
+            const kept = presetKeptList();
+            if (!keys.length && !kept.length) { toast('已经是最新版'); return; }
+
+            const names = (keys.length ? keys : kept).map(presetDisplayName).join('、');
             const yes = confirm(
-                '将更新你没有手动改过的字段。\n' +
-                '你手动改过的字段（角色设定 / 备注）会保留。\n\n继续？'
+                '用代码里的预设文案覆盖「' + names + '」？\n' +
+                '你手动改过的角色设定会被替换掉，聊天记录不受影响。\n\n确定覆盖吗？'
             );
-            if (yes) syncPresetNow({});
+            if (yes) overwritePresetCards();
         });
 
-        document.getElementById('presetForceBtn').addEventListener('click', () => {
-            const names = presetKeptList().map(presetDisplayName).join('、') || '预设角色';
-            const yes = confirm(
-                '⚠️ 将用代码里的预设文案覆盖「' + names + '」中你手动改过的字段。\n' +
-                '聊天记录不受影响，但这个操作不可撤销。\n\n确定要覆盖吗？'
-            );
-            if (yes) syncPresetNow({ force: true });
-        });
+        // 打开时提醒一次：角色卡被改过、同时预设有新版
+        let _presetPromptTries = 0;
+        function maybePromptPresetUpdate() {
+            const keys = presetPendingList();
+            if (!keys.length) return;
+            if (!data.presetNotified || typeof data.presetNotified !== 'object') data.presetNotified = {};
+
+            // 更新公告还开着 → 等它关掉再来，别两个弹窗叠一起
+            const mask = document.getElementById('noticeMask');
+            if (mask && mask.classList.contains('show') && _presetPromptTries < 6) {
+                _presetPromptTries++;
+                setTimeout(maybePromptPresetUpdate, 1500);
+                return;
+            }
+
+            const fresh = keys.filter(k => {
+                const v = data.presetPending[k] || {};
+                return data.presetNotified[k] !== (v.sig || ('v' + v.to));
+            });
+            if (!fresh.length) return;   // 这个版本提醒过了
+            fresh.forEach(k => {
+                const v = data.presetPending[k] || {};
+                data.presetNotified[k] = v.sig || ('v' + v.to);
+            });
+            saveData();
+
+            const names = fresh.map(presetDisplayName).join('、');
+            showModal(`
+                <div class="modal-title">预设有更新</div>
+                <div style="font-size:13px;line-height:1.9;color:rgba(255,255,255,.72);">
+                    ${names} 的人设文案更新了。<br>
+                    因为你改过角色设定，所以没有自动替换。<br>
+                    要去设置里手动覆盖吗？
+                </div>
+                <div class="btn-row">
+                    <button class="btn" id="presetLaterBtn">以后再说</button>
+                    <button class="btn btn-primary" id="presetGoBtn">去设置</button>
+                </div>
+            `);
+            document.getElementById('presetLaterBtn').addEventListener('click', () => closeModal());
+            document.getElementById('presetGoBtn').addEventListener('click', () => {
+                closeModal();
+                showPage('settings');
+            });
+        }
 
         function renderSettings() {
             renderPresetSyncCard();
@@ -21491,10 +21536,10 @@ ${forumAnonRules}
         //  改 NOTICE_VERSION 就会对所有人重新弹一次
         // ============================================================
         const NOTICE_KEY = 'aiPhoneNoticeVersion';
-        const NOTICE_VERSION = 'v18-2026-10-29';
+        const NOTICE_VERSION = 'v18-2026-10-30';
         const NOTICE_TITLE = '📢 更新公告';
         const NOTICE_CONTENT = `· 简单优化了部分人设（尤其是小杰的）
-❗️请到［设置］中下滑找到［预设角色卡］进行同步更新
+❗️请到设置页面的［人设卡同步］里选择［覆盖］来手动更新
 · 优化了图片储存空间
 · 设置新增了［吃醋］事件设置
 · 新增了王全的角色卡，因为还在测试所以可以会出现ooc的问题哦
@@ -21533,6 +21578,9 @@ by 花生可可`;
 
         // 打开时延迟一点弹，别和页面初始化动画抢
         setTimeout(() => showNotice(), 700);
+
+        // 角色卡被改过、同时预设有新版 → 问一句要不要去设置手动覆盖
+        setTimeout(() => { try { maybePromptPresetUpdate(); } catch (e) { console.warn(e); } }, 2200);
     </script>
 </body>
 </html>
