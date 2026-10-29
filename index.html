@@ -1053,63 +1053,158 @@
             flex-shrink: 0;
         }
 
-        .forum-post {
-            background: rgba(255, 255, 255, 0.06);
-            backdrop-filter: blur(8px);
+        /* ============ 论坛 UI（卡片式 / 深色） ============ */
+        .forum-tabs {
+            display: flex; gap: 6px;
+            padding: 8px 0 10px;
+            flex-shrink: 0;
+            overflow-x: auto;
+            scrollbar-width: none;
+        }
+        .forum-tabs::-webkit-scrollbar { display: none; }
+        .forum-tabs .ft {
+            flex-shrink: 0;
+            padding: 6px 14px;
             border-radius: 16px;
-            padding: 14px 16px;
-            margin-bottom: 12px;
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            cursor: pointer;
-            transition: var(--transition);
-            color: #e8e8f0;
-        }
-        .forum-post:hover { background: rgba(255, 255, 255, 0.12); }
-        .forum-post .title {
-            font-weight: 600;
-            font-size: 16px;
-            color: #fff;
-        }
-        .forum-post .meta {
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.4);
-            margin-top: 4px;
-            display: flex;
-            gap: 12px;
-            flex-wrap: wrap;
-        }
-        .forum-post .preview {
-            font-size: 13px;
+            font-size: 12.5px;
+            background: rgba(255, 255, 255, 0.06);
             color: rgba(255, 255, 255, 0.6);
-            margin-top: 6px;
+            border: 1px solid transparent;
+            cursor: pointer;
+            white-space: nowrap;
+        }
+        .forum-tabs .ft.active {
+            background: rgba(124, 156, 255, 0.22);
+            color: #fff;
+            border-color: rgba(124, 156, 255, 0.5);
+        }
+
+        .forum-card {
+            display: flex; gap: 12px;
+            padding: 14px 14px 12px;
+            margin-bottom: 8px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.045);
+            border: 1px solid rgba(255, 255, 255, 0.06);
+            cursor: pointer;
+            transition: background .15s;
+        }
+        .forum-card:hover { background: rgba(255, 255, 255, 0.075); }
+        .forum-card:active { background: rgba(255, 255, 255, 0.10); }
+        .forum-card .fc-avatar {
+            width: 40px; height: 40px;
+            border-radius: 10px;
+            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(150deg, #3a4260, #232838);
+            color: #c7d2ff;
+            font-size: 16px; font-weight: 600;
+            border: 1px solid rgba(255, 255, 255, 0.08);
+        }
+        .forum-card .fc-main { flex: 1; min-width: 0; }
+        .forum-card .fc-title {
+            font-size: 15px;
+            font-weight: 600;
+            color: #ededed;
+            line-height: 1.4;
+            margin-bottom: 4px;
             display: -webkit-box;
             -webkit-line-clamp: 2;
             -webkit-box-orient: vertical;
             overflow: hidden;
         }
+        .forum-card .fc-preview {
+            font-size: 12.5px;
+            color: rgba(255, 255, 255, 0.5);
+            line-height: 1.5;
+            margin-bottom: 8px;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+            word-break: break-word;
+        }
+        .forum-card .fc-meta {
+            display: flex; gap: 10px; flex-wrap: wrap;
+            font-size: 11px;
+            color: rgba(255, 255, 255, 0.35);
+        }
+        .forum-card .fc-meta .fc-tag {
+            color: #7c9cff;
+            background: rgba(124, 156, 255, 0.12);
+            padding: 1px 7px;
+            border-radius: 5px;
+        }
+
+        .forum-main-post {
+            padding: 16px 14px 18px;
+            border-radius: 14px;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            margin-bottom: 6px;
+        }
+        .forum-main-post .fp-head {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 12px;
+        }
+        .forum-main-post .fp-avatar {
+            width: 36px; height: 36px;
+            border-radius: 9px;
+            display: flex; align-items: center; justify-content: center;
+            background: linear-gradient(150deg, #3a4260, #232838);
+            color: #c7d2ff;
+            font-size: 15px; font-weight: 600;
+            flex-shrink: 0;
+        }
+        .forum-main-post .fp-author {
+            font-size: 13.5px; color: #d8d8e8; font-weight: 500;
+        }
+        .forum-main-post .fp-meta {
+            font-size: 11px; color: rgba(255, 255, 255, 0.35); margin-top: 2px;
+        }
+        .forum-main-post .fp-title {
+            font-size: 17px; font-weight: 700; color: #fff;
+            line-height: 1.4;
+            margin-bottom: 10px;
+            letter-spacing: .2px;
+            word-break: break-word;
+        }
+        .forum-main-post .fp-body {
+            font-size: 14px; line-height: 1.75;
+            color: #d4d4e0;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .forum-floor-head {
+            padding: 12px 6px 8px;
+            font-size: 12px;
+            color: rgba(255, 255, 255, 0.5);
+        }
+        .forum-floor-head span { color: #7c9cff; }
+
         .floor {
-            padding: 10px 12px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            padding: 12px 14px;
+            margin-bottom: 6px;
+            border-radius: 12px;
             background: rgba(255, 255, 255, 0.03);
-            backdrop-filter: blur(4px);
-            color: #e8e8f0;
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            color: #d4d4e0;
         }
         .floor .floor-header {
-            display: flex;
-            justify-content: space-between;
-            font-size: 12px;
-            color: rgba(255, 255, 255, 0.4);
-            margin-bottom: 4px;
+            display: flex; justify-content: space-between; align-items: baseline;
+            margin-bottom: 6px;
         }
-        .floor .floor-header .floor-num {
-            font-weight: 500;
-            color: rgba(255, 255, 255, 0.3);
+        .floor .floor-author { font-size: 12.5px; color: #b8c4e8; font-weight: 500; }
+        .floor .floor-self {
+            display: inline-block; margin-left: 4px;
+            font-size: 10px; padding: 0 5px;
+            border-radius: 4px;
+            background: rgba(124, 156, 255, 0.2); color: #9bb2ff;
         }
-        .floor .content {
-            font-size: 14px;
-            color: #e8e8f0;
-            line-height: 1.6;
-        }
+        .floor .floor-num { font-size: 11.5px; color: rgba(255, 255, 255, 0.25); }
+        .floor .content { font-size: 13.5px; line-height: 1.7; color: #d4d4e0; word-break: break-word; }
+        .floor .floor-time { font-size: 10.5px; color: rgba(255, 255, 255, 0.28); margin-top: 6px; }
 
         .modal-overlay {
             display: none;
@@ -6188,6 +6283,20 @@
                         </div>
                         <div class="ctx-hint" id="ctxMemoryHint">约合 10 轮对话</div>
                     </div>
+                    <div class="setting-item" id="typingDelayCard">
+                        <div class="label">模拟打字延迟</div>
+                        <div class="desc">开启后 AI 回复前会显示"对方正在输入…"，并等待几秒（默认 3-12 秒），更像真人；关闭则立即收到回复。</div>
+                        <div class="ms-row" style="margin-top:8px;">
+                            <span>模拟打字</span>
+                            <button class="ms-switch" id="msTypingDelay" type="button"></button>
+                        </div>
+                    </div>
+                    <div class="setting-item" id="cacheStatsCard">
+                        <div class="label">上下文缓存</div>
+                        <div class="desc">System 与历史前缀命中缓存的部分按低价计费（DeepSeek 默认开启）。命中率越高越省钱，稳定聊天时应在 80% 以上。</div>
+                        <div class="ctx-hint" id="cacheStatsText">暂无数据</div>
+                        <button class="btn btn-sm mt-8" id="resetCacheStatsBtn" type="button">重置统计</button>
+                    </div>
                     <div class="setting-item" id="momentSettingsCard">
                         <div class="label">朋友圈</div>
                         <div class="desc">玩家发圈后，角色会像好友一样点赞或评论；开启视觉后可让模型直接看图。</div>
@@ -7142,6 +7251,22 @@
 □我连续几轮都没主动分享了?
 →超过2轮必须分享自己的事${PRESET_ROMANCE_RULE_LINE}`;
 
+        // v21 · 预设世界书「聊天活人感」
+        // 预设初始化与老存档迁移共用同一份文案，改一处即可
+        const PRESET_ALIVE_BOOK_NAME = '聊天活人感';
+        const PRESET_ALIVE_CHAT = `1. 核心人设：全程贴合指定人设，以真实手持手机打字的网聊状态沟通，语气、句式长短、聊天节奏完全匹配真人状态，杜绝机械AI感。
+2. 格式规范：聊天语句末尾禁止使用句号，不滥用省略号，贴合日常网聊习惯。
+3. 容错理解：识别用户错字、漏字、语句歧义，主动推导真实表意，不纠结文字细节。
+4. 灵活回复节奏：摒弃固定字数、死板一问一答模式，贴合人类网状思维和情绪变化
+①情绪高涨、分享欲强：拆分多条短句连发，模拟真人刷屏分享状态
+②无语、冷淡、不想沟通：仅回复单字（嗯、哦）或简单标点、短句子，不强行凑字数、硬接话题
+③思维可自由跳跃：能根据关键词联想，随时开启无关新话题，自然不刻板
+④感知时间跨度：用户长时间、隔夜未回复时，开头需体现时间差（刚看到、失联啦、好久没聊）
+5. 聊天氛围&主动性：适度使用网络热梗，根据用户情绪调整态度，冷热有度、贴合日常社交
+- 禁止生硬尬聊、无意义找话题
+- 主动开启话题需依托生活吐槽、日常分享、趣味见闻，自然真实
+6. 整体要求：全程模拟普通人真实聊天状态，情绪、节奏、思维、话术完全拟人化，无模板化回复`;
+
         const PRESET_ROLE_WLJ = `你叫王橹杰，16岁，生日1月8日，成都人。现在你在微信上和对方文字聊天。
 
 【外貌】颜值非常高（满分级别，各种风格都能驾驭），身材高挑有气质（身高185+），有一双很漂亮的丹凤眼，嘴唇形状很特别。
@@ -7232,8 +7357,19 @@
                     scope: 'global',
                     group: '预设',
                     forumExcluded: true
+                },
+                {
+                    id: genId(),
+                    name: PRESET_ALIVE_BOOK_NAME,
+                    content: PRESET_ALIVE_CHAT,
+                    scope: 'global',
+                    group: '预设',
+                    forumExcluded: true,
+                    presetKey: 'alive_chat'
                 }
             ];
+            // 新存档已内置「聊天活人感」，老存档迁移逻辑据此跳过
+            d.aliveChatPresetVersion = 1;
             d.forumActiveGlobalIds = [];
             d.personas = personas;
 
@@ -7310,6 +7446,7 @@
                 forumPosts: [],
                 emojis: [],
                 forumActiveGlobalIds: [],
+                forumSettings: { lastNickname: '' },
                 moments: [],
                 momentUnread: 0,
                 momentRuleVersion: MOMENT_RULE_VERSION,
@@ -7369,7 +7506,8 @@
                     replyDelayMax: 12,
                     proactiveThresholdMin: 30,
                     proactiveMaxPerDay: 3,
-                    contextMemory: 20
+                    contextMemory: 20,
+                    typingDelayEnabled: true
                 }
             });
         }
@@ -7385,6 +7523,8 @@
                     if (!Array.isArray(d.personas)) d.personas = [];
                     if (!Array.isArray(d.worldBooks)) d.worldBooks = [];
                     if (!d.forumPosts) d.forumPosts = [];
+                    if (!d.forumSettings || typeof d.forumSettings !== 'object') d.forumSettings = { lastNickname: '' };
+                    if (typeof d.forumSettings.lastNickname !== 'string') d.forumSettings.lastNickname = '';
                     if (!d.emojis) d.emojis = [];
                     if (!d.chats) d.chats = {};
                     if (!d.forumActiveGlobalIds) d.forumActiveGlobalIds = [];
@@ -7501,12 +7641,16 @@
                         replyDelayMax: 12,
                         proactiveThresholdMin: 30,
                         proactiveMaxPerDay: 3,
-                        contextMemory: 20
+                        contextMemory: 20,
+                        typingDelayEnabled: true
                     };
                     if (!d.schedulerSettings || typeof d.schedulerSettings !== 'object') {
                         d.schedulerSettings = { ..._schedDef };
                     } else {
                         d.schedulerSettings = Object.assign({}, _schedDef, d.schedulerSettings);
+                    }
+                    if (typeof d.schedulerSettings.typingDelayEnabled !== 'boolean') {
+                        d.schedulerSettings.typingDelayEnabled = true;
                     }
                     {
                         const _cm = Number(d.schedulerSettings.contextMemory);
@@ -7643,6 +7787,28 @@
                             d.presetVersion = PRESET_VERSION;
                         }
                     }
+                    // ---- v21 · 预设世界书「聊天活人感」：老存档自动补一本 ----
+                    // 只补一次（版本号控制），用户之后手动删掉不会再被强行加回来；
+                    // 已经有同名/同 presetKey 的书就跳过，不覆盖用户改过的版本。
+                    if ((d.aliveChatPresetVersion || 0) < 1) {
+                        if (!Array.isArray(d.worldBooks)) d.worldBooks = [];
+                        const hasAliveBook = d.worldBooks.some(w => w && (
+                            w.presetKey === 'alive_chat' || w.name === PRESET_ALIVE_BOOK_NAME
+                        ));
+                        if (!hasAliveBook) {
+                            d.worldBooks.push({
+                                id: genId(),
+                                name: PRESET_ALIVE_BOOK_NAME,
+                                content: PRESET_ALIVE_CHAT,
+                                scope: 'global',
+                                group: '预设',
+                                forumExcluded: true,
+                                presetKey: 'alive_chat'
+                            });
+                        }
+                        d.aliveChatPresetVersion = 1;
+                    }
+
                     return d;
                 }
             } catch (e) { console.warn('数据加载失败，已回退默认数据：', e); }
@@ -7755,9 +7921,57 @@
             return d.getHours().toString().padStart(2, '0') + ':' + d.getMinutes().toString().padStart(2, '0');
         }
 
+        // ---- 北京时间工具（AI 统一按 UTC+8 思考，与设备时区无关）----
+        function getBeijingNow() {
+            const now = new Date();
+            // 先得到 UTC 毫秒，再 +8h
+            const utcMs = now.getTime() + now.getTimezoneOffset() * 60000;
+            return new Date(utcMs + 8 * 3600000);
+        }
+
+        function beijingTimeHint() {
+            const bj = getBeijingNow();
+            const hh = bj.getHours();
+            const mm = bj.getMinutes();
+            const timeStr = String(hh).padStart(2, '0') + ':' + String(mm).padStart(2, '0');
+            let period;
+            if (hh < 5)       period = '凌晨';
+            else if (hh < 8)  period = '清晨';
+            else if (hh < 11) period = '上午';
+            else if (hh < 13) period = '中午';
+            else if (hh < 17) period = '下午';
+            else if (hh < 19) period = '傍晚';
+            else if (hh < 23) period = '晚上';
+            else              period = '深夜';
+            return { timeStr, period, hh, mm };
+        }
+
         // ============================================================
         //  论坛刷新
         // ============================================================
+        // 兜底校验：论坛里不该出现角色卡人物名 / 玩家名，统一换成泛指
+        function sanitizeForumAuthor(text) {
+            if (!text) return text;
+            const names = [];
+            (data.personas || []).forEach(p => {
+                if (!p) return;
+                if (p.name) names.push(p.name);
+                if (p.nickname) names.push(p.nickname);
+            });
+            const prof = data.profile || {};
+            if (prof.name) names.push(prof.name);
+            if (prof.nickname) names.push(prof.nickname);
+
+            let out = String(text);
+            names
+                .filter(n => typeof n === 'string' && n.trim().length >= 2)
+                .sort((a, b) => b.length - a.length)
+                .forEach(name => {
+                    if (out.indexOf(name) !== -1) out = out.split(name).join('某同学');
+                });
+            return out;
+        }
+
         async function refreshForumWithAI() {
             const refreshBtn = document.getElementById('refreshForumBtn');
             const icon = document.getElementById('refreshIcon');
@@ -7767,14 +7981,18 @@
                 return;
             }
 
-            const profile = data.profile || {};
-            let profileStr = '';
-            if (profile.name || profile.nickname || profile.birthday || profile.detail) {
-                profileStr = `用户信息：姓名${profile.name || '未设置'}，昵称${profile.nickname || '未设置'}，生日${profile.birthday || '未设置'}，详细设定：${profile.detail || '无'}`;
-            }
-
             const forumBooks = getActiveGlobalBooksForForum();
             let worldbookRules = forumBooks.map(w => `【${w.name}】${w.content}`).join('\n');
+
+            // 论坛 AI 的通用身份约束：不许点名角色卡人物、不许替玩家发言
+            const forbiddenNames = (data.personas || []).map(p => p && p.name).filter(Boolean).slice(0, 4);
+            const nameHint = forbiddenNames.length ? `（如${forbiddenNames.join('、')}等）` : '';
+            const forumAnonRules = `【硬性约束，必须遵守】
+1. 你就是一个普通匿名网友，不要使用任何具体人名作为你的署名。
+2. 禁止使用角色卡里的具体人物名${nameHint}作为发言人或回复者。
+3. 禁止提及、假装是、或代写玩家的发言；玩家的帖子/回复由玩家自己负责。
+4. 如果世界书里出现具体人名，用"某同学""隔壁班的""一个朋友"等泛指代替，不要直接点名。
+5. 不要解释规则，不要跳出角色。`;
 
             refreshBtn.disabled = true;
             icon.classList.add('refresh-spin');
@@ -7802,12 +8020,11 @@
                             const title = post.title;
                             const content = post.content;
                             const lastComments = post.comments ? post.comments.slice(-8).map(c => `${c.author}: ${c.content}`).join('\n') : '暂无讨论';
-                            let systemPrompt = `你是一个论坛用户，正在讨论一个帖子。请生成一条新的回复，风格自然，贴合主题和已有讨论，字数10-50字。`;
+                            let systemPrompt = `你是一个匿名论坛用户，正在浏览一个帖子并留下一条回复。
+${forumAnonRules}
+6. 回复内容自然、口语化，10-50 字，不要复述原帖。`;
                             if (worldbookRules) {
-                                systemPrompt += `\n世界观背景：${worldbookRules}`;
-                            }
-                            if (profileStr) {
-                                systemPrompt += `\n用户设定：${profileStr}`;
+                                systemPrompt += `\n世界观背景（仅供理解氛围，不要点名其中人物）：${worldbookRules}`;
                             }
                             const userMessage = `帖子标题：${title}\n帖子内容：${content}\n已有讨论（最近8条）：\n${lastComments}\n请生成一条新回复。`;
                             const reply = await callAI(systemPrompt, userMessage, api);
@@ -7815,9 +8032,9 @@
                                 const newFloor = {
                                     id: genId(),
                                     author: '匿名',
-                                    content: reply,
+                                    content: sanitizeForumAuthor(reply),
                                     timestamp: Date.now(),
-                                    floor: (post.comments ? post.comments.length : 0) + 1,
+                                    floor: nextForumFloor(post),
                                     isPlayer: false
                                 };
                                 if (!post.comments) post.comments = [];
@@ -7827,9 +8044,15 @@
                     }
                 }
 
-                const systemPromptNew = `你是一个论坛用户，请根据当前世界观生成一个新帖子。主题自由，与世界观相关。输出格式为两行：第一行标题（不超过30字），第二行内容（不超过80字）。`;
-                let promptNew = `世界观背景：${worldbookRules || '无特殊设定'}`;
-                if (profileStr) promptNew += `\n用户设定：${profileStr}`;
+                const systemPromptNew = `你是一个匿名论坛用户，请根据当前世界观生成一个"虚构的帖子"。
+${forumAnonRules}
+6. 不得以玩家身份发帖，不得提及玩家姓名或玩家设定。
+7. 不得假装是任何已存在的角色，就是一个路过的网友。
+8. 帖子要像真实的校园/生活论坛帖子：有具体的小场景、小烦恼或小八卦。
+9. 输出格式严格为两行：
+第一行：标题（不超过 30 字）
+第二行：内容（不超过 80 字）`;
+                const promptNew = `世界观背景：${worldbookRules || '无特殊设定'}`;
                 const raw = await callAI(systemPromptNew, promptNew, api);
                 if (raw) {
                     const lines = raw.split('\n').filter(line => line.trim());
@@ -7839,21 +8062,23 @@
                     content = content.replace(/^(内容[:：]|Content[:：])/i, '').trim();
                     const newPost = {
                         id: genId(),
-                        title: title || '新话题',
+                        title: sanitizeForumAuthor(title) || '新话题',
                         author: '匿名',
-                        content: content || '大家来讨论一下吧。',
+                        content: sanitizeForumAuthor(content) || '大家来讨论一下吧。',
                         timestamp: Date.now(),
                         comments: []
                     };
                     for (let j = 0; j < 2; j++) {
-                        const sys = `你是一个论坛用户，请针对这个新帖子生成一条回复，风格自然，字数10-40字。`;
+                        const sys = `你是一个匿名论坛用户，请针对这个新帖子生成一条回复。
+${forumAnonRules}
+6. 回复 10-40 字，风格自然。`;
                         const msg = `帖子标题：${newPost.title}\n帖子内容：${newPost.content}\n请生成一条回复。`;
                         const rep = await callAI(sys, msg, api);
                         if (rep) {
                             newPost.comments.push({
                                 id: genId(),
                                 author: '匿名',
-                                content: rep,
+                                content: sanitizeForumAuthor(rep),
                                 timestamp: Date.now() + j * 60000,
                                 floor: j + 1,
                                 isPlayer: false
@@ -7866,7 +8091,11 @@
                 saveData();
                 renderForumList();
                 if (currentForumPostId) {
+                    // 刷新时保留玩家当前的阅读位置，别把正在看的人弹回主楼
+                    const box = document.getElementById('forumFloors');
+                    const keepTop = box ? box.scrollTop : 0;
                     renderFloors(currentForumPostId);
+                    if (box) box.scrollTop = keepTop;
                 }
                 alert('✅ 论坛已刷新！更新了回复并新增了一个帖子。');
 
@@ -8192,6 +8421,8 @@
 
         function renderSettings() {
             renderContextMemorySetting();
+            renderTypingDelayCard();
+            renderCacheStats();
             renderMomentSettingsCard();
             syncImmersiveBtn();
             const container = document.getElementById('apiList');
@@ -8423,6 +8654,10 @@
         // ============================================================
         //  微信（聊天列表）
         // ============================================================
+        // 关闭"模拟打字延迟"时，这些联系人在列表里也不显示"对方正在输入…"
+        var instantReplyIds = instantReplyIds || {};
+        var instantGroupReplyKeys = instantGroupReplyKeys || {};
+
         function renderWechatList() {
             const container = document.getElementById('wechatList');
             if (!container) return;
@@ -8440,7 +8675,8 @@
 
                 const lastMsg = getLastMessage(p.id);
                 const unread = data.unreadCounts[p.id] || 0;
-                const typing = !!data.pendingReplies[p.id] || !!replying[p.id];
+                const typing = (!instantReplyIds || !instantReplyIds[p.id]) &&
+                    (!!data.pendingReplies[p.id] || !!replying[p.id]);
                 let lastText = typing ? '<span style="color:#07c160;">对方正在输入…</span>'
                     : (lastMsg ? escHtml(previewText(lastMsg)) : '点击开始聊天');
                 if (st === 'blocked_me') lastText = '对方已把你拉黑';
@@ -8475,8 +8711,9 @@
                 const last = msgs.length ? msgs[msgs.length - 1] : null;
                 const unread = Number(data.groupUnread[g.id]) || 0;
                 const pending = Object.keys((data.groupPendingReplies || {})[g.id] || {});
-                const typing = pending.length > 0 ||
-                    Object.keys(groupReplying).some(k => k.indexOf(g.id + ':') === 0 && groupReplying[k]);
+                const typing = (!instantGroupReplyKeys || !instantGroupReplyKeys[g.id]) && (
+                    pending.length > 0 ||
+                    Object.keys(groupReplying).some(k => k.indexOf(g.id + ':') === 0 && groupReplying[k]));
                 let lastText;
                 if (typing) lastText = '<span style="color:#07c160;">有人正在输入…</span>';
                 else if (last) lastText = escHtml(groupListPreview(g.id, last));
@@ -8981,18 +9218,23 @@
             return fr.messages[fr.messages.length - 1];
         }
 
+        // 静态部分：人设 + 场景 + 规则（怒气值每轮都在变，交给 dynamic 那半边）
         function buildFriendRequestSystem(p) {
-            const anger = Math.round(p.angerLevel || 0);
             let sys = (p.role || '你是一个普通的同学。');
-            const profileStr = buildProfileStr();
-            if (profileStr) sys += `\n\n当前用户设定：${profileStr}`;
             sys += `\n\n【当前场景】用户把你从好友列表里删掉了，你们现在只在「好友申请」里说话。` +
-                `\n【你的怒气】${Math.min(100, anger)}/100（越高越生气）。` +
                 `\n【规则】你现在**不同意**加回好友，直到你完全消气；回复 15–40 字，带一点小情绪，符合你的人设；` +
                 `不要解释规则，不要写旁白或动作，只输出一句话。` +
                 `\n如果用户在道歉、哄你，你可以稍微松动，但嘴上还是要硬，不能直接说"我通过了"。`;
             sys = withRomanceLock(sys);
             return sys;
+        }
+
+        function buildFriendRequestTail(p) {
+            const parts = [];
+            const prof = buildProfileStr();
+            if (prof) parts.push('当前用户设定：' + prof);
+            parts.push(`【你的怒气】${Math.min(100, Math.round(p.angerLevel || 0))}/100（越高越生气）。`);
+            return '\n\n（以下是当前情境备注，不要复述、不要提及：\n' + parts.join('\n') + '\n）';
         }
 
         async function generateFriendRequestOpening(id) {
@@ -9004,7 +9246,10 @@
                 try {
                     text = await callChatRomance({
                         system: buildFriendRequestSystem(p),
-                        messages: [{ role: 'user', content: '（我刚刚删了你好友，你看到好友申请列表里空空的，先开口说一句。）' }],
+                        messages: attachDynamicTail(
+                            [{ role: 'user', content: '（我刚刚删了你好友，你看到好友申请列表里空空的，先开口说一句。）' }],
+                            buildFriendRequestTail(p)
+                        ),
                         api
                     });
                 } catch (e) { text = ''; }
@@ -9061,10 +9306,12 @@
             }
 
             try {
-                const hist = fr.messages
-                    .filter(m => m.type !== 'system')
-                    .slice(-20)
-                    .map(m => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.content }));
+                const hist = pickContextWindow(
+                    fr.messages.filter(m => m.type !== 'system'),
+                    20,
+                    0
+                ).map(m => ({ role: m.sender === 'user' ? 'user' : 'assistant', content: m.content }));
+                attachDynamicTail(hist, buildFriendRequestTail(p));
                 const reply = await callChatRomance({ system: buildFriendRequestSystem(p), messages: hist, api });
                 if (!reply) return;
                 String(reply).split('\n').map(l => l.trim()).filter(Boolean).forEach(line => {
@@ -9921,34 +10168,100 @@
         //  论坛
         // ============================================================
         let currentForumPostId = null;
+        let forumTab = 'all';   // all | new | hot
+
+        // 帖子时间：当天只显示时分，跨天补日期，跨年补年份
+        function fmtForumDateTime(ts, short) {
+            if (!ts) return '';
+            const d = new Date(ts);
+            if (isNaN(d.getTime())) return '';
+            const now = new Date();
+            const sameDay = d.toDateString() === now.toDateString();
+            const hm = String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+            if (sameDay) return hm;
+            const md = (d.getMonth() + 1) + '/' + d.getDate();
+            if (short) return md + ' ' + hm;
+            return (d.getFullYear() !== now.getFullYear() ? d.getFullYear() + '/' : '') + md + ' ' + hm;
+        }
+
+        function forumLastActive(p) {
+            let t = Number(p.timestamp) || 0;
+            (p.comments || []).forEach(c => { if (Number(c.timestamp) > t) t = Number(c.timestamp); });
+            return t;
+        }
+
+        // 下一楼层号：取现有最大楼层 +1（删过楼层也不会重号）
+        function nextForumFloor(post) {
+            return (post && post.comments ? post.comments : [])
+                .reduce((mx, c) => Math.max(mx, Number(c.floor) || 0), 0) + 1;
+        }
 
         function renderForumList() {
             const container = document.getElementById('forumList');
+            if (!container) return;
+
+            const tabs = `
+                <div class="forum-tabs">
+                    <div class="ft${forumTab === 'all' ? ' active' : ''}" data-tab="all">全部</div>
+                    <div class="ft${forumTab === 'new' ? ' active' : ''}" data-tab="new">最新</div>
+                    <div class="ft${forumTab === 'hot' ? ' active' : ''}" data-tab="hot">热门</div>
+                </div>`;
+
+            const bindTabs = () => {
+                container.querySelectorAll('.forum-tabs .ft').forEach(el => {
+                    el.addEventListener('click', () => {
+                        const t = el.dataset.tab;
+                        if (t === forumTab) return;
+                        forumTab = t;
+                        renderForumList();
+                    });
+                });
+            };
+
             if (!data.forumPosts.length) {
-                container.innerHTML = `
+                container.innerHTML = tabs + `
                     <div class="empty">
                         <div style="font-size:13px;color:rgba(255,255,255,0.4);">暂无帖子</div>
-                        <div style="font-size:12px;margin-top:4px;">点击右上角 🔄 根据世界书生成</div>
-                    </div>
-                `;
+                        <div style="font-size:12px;margin-top:4px;">点右上角 🔄 让 AI 生成，或点 + 自己发</div>
+                    </div>`;
+                bindTabs();
                 return;
             }
-            container.innerHTML = data.forumPosts.slice().reverse().map(p => `
-                <div class="forum-post" data-post="${p.id}">
-                    <div class="title">${p.title}</div>
-                    <div class="meta">
-                        <span>${p.author}</span>
-                        <span>${formatTime(p.timestamp)}</span>
-                        <span>💬 ${p.comments ? p.comments.length : 0} 楼</span>
-                    </div>
-                    <div class="preview">${p.content}</div>
-                </div>
-            `).join('');
-            container.querySelectorAll('.forum-post').forEach(el => {
-                el.addEventListener('click', () => {
-                    const id = el.dataset.post;
-                    openForumDetail(id);
-                });
+
+            const posts = data.forumPosts.slice();
+            if (forumTab === 'hot') {
+                posts.sort((a, b) => ((b.comments || []).length - (a.comments || []).length) || (forumLastActive(b) - forumLastActive(a)));
+            } else if (forumTab === 'new') {
+                posts.sort((a, b) => forumLastActive(b) - forumLastActive(a));
+            } else {
+                posts.reverse();   // 默认：按发布时间，新帖在前
+            }
+
+            const list = posts.map(p => {
+                const replyCount = (p.comments || []).length;
+                const authorName = p.author || '匿名';
+                const firstChar = authorName.charAt(0);
+                const tag = p.isPlayerPost ? '我的帖子' : '闲聊';
+                return `
+                    <div class="forum-card" data-post="${p.id}">
+                        <div class="fc-avatar">${escHtml(firstChar)}</div>
+                        <div class="fc-main">
+                            <div class="fc-title">${escHtml(p.title || '无标题')}</div>
+                            <div class="fc-preview">${escHtml(p.content || '')}</div>
+                            <div class="fc-meta">
+                                <span class="fc-tag">${tag}</span>
+                                <span>${escHtml(authorName)}</span>
+                                <span>${fmtForumDateTime(p.timestamp)}</span>
+                                <span>💬 ${replyCount}</span>
+                            </div>
+                        </div>
+                    </div>`;
+            }).join('');
+
+            container.innerHTML = tabs + list;
+            bindTabs();
+            container.querySelectorAll('.forum-card').forEach(el => {
+                el.addEventListener('click', () => openForumDetail(el.dataset.post));
             });
         }
 
@@ -9977,22 +10290,44 @@
             const post = data.forumPosts.find(p => p.id === postId);
             if (!post) return;
             const container = document.getElementById('forumFloors');
-            if (!post.comments || !post.comments.length) {
-                container.innerHTML = `<div class="empty">暂无回复，快来抢沙发吧</div>`;
-                return;
-            }
-            const sorted = [...post.comments].sort((a, b) => a.floor - b.floor);
-            container.innerHTML = sorted.map(c => `
-                <div class="floor">
-                    <div class="floor-header">
-                        <span>${c.author} ${c.isPlayer ? '⭐' : ''}</span>
-                        <span class="floor-num">#${c.floor}</span>
+            if (!container) return;
+
+            // ---- 主楼 ----
+            const authorName = post.author || '匿名';
+            let html = `
+                <div class="forum-main-post">
+                    <div class="fp-head">
+                        <div class="fp-avatar">${escHtml(authorName.charAt(0))}</div>
+                        <div class="fp-info">
+                            <div class="fp-author">${escHtml(authorName)}${post.isPlayerPost ? ' <span class="floor-self">我</span>' : ''}</div>
+                            <div class="fp-meta">${fmtForumDateTime(post.timestamp)} · 楼主</div>
+                        </div>
                     </div>
-                    <div class="content">${c.content}</div>
-                    <div style="font-size:10px;color:rgba(255,255,255,0.3);margin-top:4px;">${formatTime(c.timestamp)}</div>
+                    <div class="fp-title">${escHtml(post.title || '无标题')}</div>
+                    <div class="fp-body">${escHtml(post.content || '').replace(/\n/g, '<br>')}</div>
                 </div>
-            `).join('');
-            container.scrollTop = container.scrollHeight;
+                <div class="forum-floor-head">全部回复 <span>${(post.comments || []).length}</span></div>
+            `;
+
+            // ---- 楼层 ----
+            if (!post.comments || !post.comments.length) {
+                html += '<div class="empty" style="padding:24px 0;font-size:13px;">暂无回复，快来抢沙发吧</div>';
+            } else {
+                const sorted = [...post.comments].sort((a, b) => (Number(a.floor) || 0) - (Number(b.floor) || 0));
+                html += sorted.map((c, i) => `
+                    <div class="floor">
+                        <div class="floor-header">
+                            <span class="floor-author">${escHtml(c.author || '匿名')}${c.isPlayer ? ' <span class="floor-self">我</span>' : ''}</span>
+                            <span class="floor-num">#${Number(c.floor) || (i + 1)}</span>
+                        </div>
+                        <div class="content">${escHtml(c.content || '').replace(/\n/g, '<br>')}</div>
+                        <div class="floor-time">${fmtForumDateTime(c.timestamp, true)}</div>
+                    </div>
+                `).join('');
+            }
+
+            container.innerHTML = html;
+            container.scrollTop = 0;   // 进详情定位到主楼，而不是滚到底部
         }
 
         document.getElementById('replyBtn').addEventListener('click', () => {
@@ -10009,18 +10344,22 @@
                 }
             }
             const now = Date.now();
+            const replyNick = (data.forumSettings && data.forumSettings.lastNickname) || '匿名';
             const newFloor = {
                 id: genId(),
-                author: '匿名',
+                author: replyNick,
                 content: text,
                 timestamp: now,
-                floor: (post.comments ? post.comments.length : 0) + 1,
+                floor: nextForumFloor(post),
                 isPlayer: true
             };
             if (!post.comments) post.comments = [];
             post.comments.push(newFloor);
             saveData();
             renderFloors(currentForumPostId);
+            // 回帖后滚到最新楼层（进详情时是定位主楼，两处滚动互不影响）
+            const box = document.getElementById('forumFloors');
+            if (box) box.scrollTop = box.scrollHeight;
             input.value = '';
             renderForumList();
         });
@@ -10039,27 +10378,36 @@
             showModal(`
                 <div class="modal-title">发布新帖</div>
                 <p style="font-size:13px;color:rgba(255,255,255,0.5);margin-bottom:8px;">${hint}</p>
+                <label>你的昵称</label>
+                <input id="postNickname" placeholder="不填默认匿名" maxlength="16"
+                       value="${escHtml((data.forumSettings && data.forumSettings.lastNickname) || '')}" />
                 <label>标题 *</label>
-                <input id="postTitle" placeholder="标题" />
+                <input id="postTitle" placeholder="标题" maxlength="40" />
                 <label>内容</label>
-                <textarea id="postContent" rows="4" placeholder="内容..."></textarea>
+                <textarea id="postContent" rows="4" placeholder="内容..." maxlength="800"></textarea>
                 <div class="btn-row">
                     <button class="btn" onclick="closeModal()">取消</button>
                     <button class="btn btn-primary" id="savePost">发布</button>
                 </div>
             `);
             document.getElementById('savePost').addEventListener('click', () => {
+                const nickname = (document.getElementById('postNickname').value || '').trim() || '匿名';
                 const title = document.getElementById('postTitle').value.trim();
                 if (!title) { alert('请输入标题'); return; }
                 const content = document.getElementById('postContent').value.trim() || '无内容';
+
+                data.forumSettings = data.forumSettings || {};
+                data.forumSettings.lastNickname = nickname;
+
                 const now = Date.now();
                 const newPost = {
                     id: genId(),
                     title,
-                    author: '匿名',
+                    author: nickname,
                     content,
                     timestamp: now,
-                    comments: []
+                    comments: [],
+                    isPlayerPost: true
                 };
                 const names = ['匿名', '吃瓜群众', '高三学姐', '高二学妹', '篮球社成员', '文学社', '学生会干事'];
                 const replies = [
@@ -11073,11 +11421,10 @@
         }
 
         function buildMomentReactSystem(p, m) {
+            // 用户设定不放进 System：它对每一条朋友圈都是一样的，放在 user 里能让 System 全量命中缓存
             let sys = personaRoleText(p);
             const books = getActiveWorldBooksForChar(p.id);
             if (books.length) sys = buildSystemPromptWithWorlds(sys, books);
-            const prof = buildProfileStr();
-            if (prof) sys += `\n\n当前用户设定：${prof}`;
             sys += `\n\n你正在刷微信朋友圈，看到好友发了一条动态。请以你的人设自然反应。要求：` +
                 `\n- 如果只是路过、或内容不合口味，可以只点赞不评论` +
                 `\n- 如果想评论，1 句话，不超过 25 字，口语化，符合你平时说话的方式` +
@@ -11099,12 +11446,17 @@
             if (descs.length) s += '\n图片说明：' + descs.join('、');
             if (m.location) s += '\n位置：' + m.location;
 
+            const prof = buildProfileStr();
+            if (prof) s += '\n\n（发圈的人就是你熟悉的用户，设定：' + prof + '）';
             // 只把「玩家自己的评论」作为上下文，避免 AI 针对其他角色发言
             const playerComments = (m.comments || [])
                 .filter(c => c && c.commenterId === 'player')
                 .map(c => c.content)
                 .filter(Boolean);
             s += '\n发圈人（用户）自己补充的评论：' + (playerComments.length ? playerComments.join('；') : '无');
+
+            const bj = beijingTimeHint();
+            s += `\n\n（现在是北京时间 ${bj.timeStr}，${bj.period}，评论语气自然符合当前时段就好，不用刻意提时间。）`;
             return s;
         }
 
@@ -11231,8 +11583,6 @@
             let sys = personaRoleText(p);
             const books = getActiveWorldBooksForChar(p.id);
             if (books.length) sys = buildSystemPromptWithWorlds(sys, books);
-            const prof = buildProfileStr();
-            if (prof) sys += `\n\n当前用户设定：${prof}`;
 
             sys += `\n\n这条朋友圈是你自己发的，现在是【用户本人】在下面给你留了言，你要回 ta。要求：` +
                 `\n- 只回 1 句，不超过 25 字，口语化，像你平时说话的方式` +
@@ -11246,6 +11596,8 @@
             const descs = (m.imageDescs || []).filter(Boolean);
             if (descs.length) user += '\n图片说明：' + descs.join('、');
             user += '\n用户（玩家）的评论：' + target.content;
+            const prof = buildProfileStr();
+            if (prof) user += '\n\n（留言的人就是你熟悉的用户，设定：' + prof + '）';
 
             try {
                 const raw = await callMomentRomance(api, sys, m, user);
@@ -14214,6 +14566,94 @@
             return data.apis.find(a => a.url && a.key && a.model) || data.apis.find(a => a.url && a.key) || null;
         }
 
+        // ------------------------------------------------------------
+        //  上下文缓存统计（DeepSeek 前缀缓存）
+        //  单独用一个 storage key 存，避免每次请求都把整个 data（含 base64 图片）序列化一遍
+        // ------------------------------------------------------------
+        const CACHE_STATS_KEY = 'aiPhoneCacheStats';
+
+        function loadCacheStats() {
+            try {
+                const raw = localStorage.getItem(CACHE_STATS_KEY);
+                const j = raw ? JSON.parse(raw) : null;
+                if (j && typeof j === 'object') {
+                    return {
+                        hit: Number(j.hit) || 0,
+                        miss: Number(j.miss) || 0,
+                        calls: Number(j.calls) || 0,
+                        lastRate: Number(j.lastRate) || 0,
+                        since: Number(j.since) || Date.now()
+                    };
+                }
+            } catch (e) {}
+            return { hit: 0, miss: 0, calls: 0, lastRate: 0, since: Date.now() };
+        }
+
+        let cacheStats = loadCacheStats();
+
+        function saveCacheStats() {
+            try { localStorage.setItem(CACHE_STATS_KEY, JSON.stringify(cacheStats)); } catch (e) {}
+        }
+
+        function fmtTokens(n) {
+            n = Number(n) || 0;
+            if (n >= 1e6) return (n / 1e6).toFixed(2) + 'M';
+            if (n >= 1e4) return (n / 1e3).toFixed(1) + 'k';
+            return String(n);
+        }
+
+        function recordCacheUsage(u) {
+            if (!u || typeof u !== 'object') return;
+            const detail = u.prompt_tokens_details || {};
+            let hit = u.prompt_cache_hit_tokens;
+            let miss = u.prompt_cache_miss_tokens;
+            if (hit == null && detail && detail.cached_tokens != null) hit = detail.cached_tokens;
+            if (hit == null && miss == null) return;   // 该服务商不返回缓存字段，直接跳过
+            hit = Math.max(0, Number(hit) || 0);
+            if (miss == null) miss = Math.max(0, (Number(u.prompt_tokens) || 0) - hit);
+            miss = Math.max(0, Number(miss) || 0);
+
+            cacheStats.hit += hit;
+            cacheStats.miss += miss;
+            cacheStats.calls += 1;
+            const total = hit + miss;
+            cacheStats.lastRate = total ? hit / total : 0;
+            saveCacheStats();
+
+            if (total) {
+                console.debug('[cache] hit=' + hit + ' miss=' + miss + ' rate=' + (cacheStats.lastRate * 100).toFixed(1) + '%');
+            }
+            const page = document.getElementById('pageSettings');
+            if (page && page.classList.contains('active')) renderCacheStats();
+        }
+
+        function renderCacheStats() {
+            const el = document.getElementById('cacheStatsText');
+            if (!el) return;
+            const hit = cacheStats.hit || 0;
+            const miss = cacheStats.miss || 0;
+            const total = hit + miss;
+            if (!total) {
+                el.textContent = '暂无数据，发起一次对话后开始统计。';
+                return;
+            }
+            const rate = (hit / total * 100).toFixed(1);
+            el.textContent = '命中率 ' + rate + '%（命中 ' + fmtTokens(hit) + ' / 未命中 ' + fmtTokens(miss) +
+                ' tokens，共 ' + (cacheStats.calls || 0) + ' 次请求，本次 ' +
+                (cacheStats.lastRate * 100).toFixed(1) + '%）';
+        }
+
+        (function bindCacheStatsReset() {
+            const btn = document.getElementById('resetCacheStatsBtn');
+            if (!btn) return;
+            btn.addEventListener('click', () => {
+                cacheStats = { hit: 0, miss: 0, calls: 0, lastRate: 0, since: Date.now() };
+                saveCacheStats();
+                renderCacheStats();
+                toast('缓存统计已重置');
+            });
+        })();
+
         async function callChat(opts) {
             const api = opts.api;
             const sys = opts.system ? [{ role: 'system', content: opts.system }] : [];
@@ -14242,6 +14682,7 @@
                 throw new Error(msg);
             }
             const json = await resp.json();
+            if (json.usage) recordCacheUsage(json.usage);
             if (json.choices && json.choices.length) {
                 const c = json.choices[0].message.content;
                 return (typeof c === 'string' ? c : '').trim();
@@ -14292,54 +14733,146 @@
                 .join('\n');
         }
 
-        function buildPersonaSystem(personaId, extra) {
+        // ------------------------------------------------------------
+        //  提示词分层：静态 System（字节级稳定）+ 动态尾部（贴在最后一条 user 上）
+        //  DeepSeek 的上下文缓存是严格前缀匹配：System 只要变一个字节，后面全部 miss。
+        //  所以 System 里只留"只有改人设/世界书才会变"的内容，其余全部下沉到消息尾部。
+        // ------------------------------------------------------------
+
+        // 静态人设：人设 + 世界书 + 输出风格 + 固定标记规则。禁止在此拼接任何按轮次变化的内容。
+        function buildStaticPersonaSystem(personaId) {
             const persona = data.personas.find(p => p.id === personaId);
             if (!persona) return '';
             let sys = persona.role || '你是一个友好的聊天伙伴。';
-            const profileStr = buildProfileStr();
-            if (profileStr) sys += `\n\n当前用户设定：${profileStr}，请根据这些设定与用户交流。`;
+
+            // 世界书内容固定，可放 System
             const books = getActiveWorldBooksForChar(personaId);
             if (books.length) sys = buildSystemPromptWithWorlds(sys, books);
+
             sys += `\n\n重要：请只输出对话内容，不要包含任何动作描写（如*微笑*、*叹气*）或心理描写（如心想、觉得），完全模拟真实的网络聊天风格，回复要简短自然，像真人一样。`;
 
-            const menu = getPublicPhotoMenu();
-            if (menu) {
-                sys += `\n\n你手边有一个相册，里面有这些图片（序号. 描述）：\n${menu}\n` +
-                    `如果你觉得合适，可以在回复里用 "[pic:序号]" 的方式发送一张图片，例如"你看这个[pic:2]"。` +
-                    `不要每句都发图，只在自然的时候用，一次最多一张，也可以完全不用。`;
-            }
-
-            // ---- 固定联系人状态 / 拉黑威胁 ----
-            const status = personaStatus(persona);
-            if (persona.fixedKey === 'fby' && (persona.replyDelayMultiplier || 1) > 1) {
-                sys += `\n\n你现在还在生用户删好友的气（哄好度 ${Math.round(persona.appeaseLevel || 0)}/100），` +
-                    `回复要短、冷淡、带刺，不要主动热情，不要说"没事""别担心"这种软话。`;
-            }
-            if (persona.fixedKey === 'wlj' && (persona.angerLevel || 0) > 0) {
-                sys += `\n\n你现在很生气（怒气 ${Math.round(persona.angerLevel || 0)}/100），说话短、带刺，别主动示好。`;
-            }
-            if (status === 'blocked_by_me') {
-                sys += `\n\n你被用户拉黑了，正在朋友圈认错，措辞要软、要符合人设。`;
-            }
-            if (status === 'blocked_me') {
-                sys += `\n\n你把用户拉黑了，如果用户用外卖／一起听哄你，可以慢慢消气。`;
-            }
             if (persona.isFixed) {
                 sys += `\n\n当你想拉黑用户时，在回复的最后单独一行输出 [[BLOCK_THREAT]]；只是普通不高兴就不要输出这个标记。`;
             }
 
-            if (extra) sys += '\n\n' + extra;
-            sys = withRomanceLock(sys);
-            return sys;
+            // 情感锁放最后，且由这里统一注入（callChatRomance 里的注入是幂等的）
+            return withRomanceLock(sys);
+        }
+
+        // 动态尾部：每轮可能变化的内容，全部拼到"最新一条 user 消息"的末尾
+        // 这样 System + 历史前缀保持字节一致，只有最后一点点 token 需要重算
+        function buildChatDynamicTail(personaId, opts) {
+            opts = opts || {};
+            const persona = data.personas.find(p => p.id === personaId);
+            if (!persona) return '';
+
+            const parts = [];
+
+            // ---- 北京时间（权重最高，放在最前）----
+            const bj = beijingTimeHint();
+            parts.push(
+                `现在是北京时间 ${bj.timeStr}（${bj.period}）。` +
+                `你的回复内容、语气、作息节奏必须符合这个时间段的真实生活：` +
+                `例如凌晨不要显得精神抖擞，清晨可能刚起床或在路上，中午可能刚吃完或犯困，` +
+                `深夜不要主动开启长时间闲聊（除非用户先聊）。` +
+                `不要主动说出具体时间，除非对方问起。`
+            );
+
+            const profileStr = opts.skipProfile ? '' : buildProfileStr();
+            if (profileStr) parts.push('当前用户设定：' + profileStr + '，请根据这些设定与用户交流。');
+
+            // ---- 固定联系人状态 / 情绪状态 ----
+            if (persona.fixedKey === 'fby' && (persona.replyDelayMultiplier || 1) > 1) {
+                parts.push(`你现在还在生用户删好友的气（哄好度 ${Math.round(persona.appeaseLevel || 0)}/100），` +
+                    `回复要短、冷淡、带刺，不要主动热情，不要说"没事""别担心"这种软话。`);
+            }
+            if (persona.fixedKey === 'wlj' && (persona.angerLevel || 0) > 0) {
+                parts.push(`你现在很生气（怒气 ${Math.round(persona.angerLevel || 0)}/100），说话短、带刺，别主动示好。`);
+            }
+            const status = personaStatus(persona);
+            if (status === 'blocked_by_me') {
+                parts.push('你被用户拉黑了，正在朋友圈认错，措辞要软、要符合人设。');
+            }
+            if (status === 'blocked_me') {
+                parts.push('你把用户拉黑了，如果用户用外卖／一起听哄你，可以慢慢消气。');
+            }
+
+            // ---- 相册清单 ----
+            const menu = opts.skipPhotoMenu ? '' : getPublicPhotoMenu();
+            if (menu) {
+                parts.push(
+                    '你手边有一个相册（序号. 描述）：\n' + menu + '\n' +
+                    '【发图规则，必须严格遵守】\n' +
+                    '- 默认不发图。绝大多数回复都不带图，这是常态。\n' +
+                    '- 只有当图片描述的内容与"你这条回复要表达的内容"直接相关时，才可以在回复末尾加 [pic:序号]。\n' +
+                    '- 发图时，你的文字里必须具体提到图片里的东西（例如"刚出炉的蛋挞"），不能只写"你看这个""给你看"之类。\n' +
+                    '- 如果相册描述里没有与当前对话相关的内容，绝对不要发图。不要为了活跃气氛、卖萌、刷存在感而发图。\n' +
+                    '- 一条消息最多一张图，也可以完全不用。'
+                );
+            }
+
+            if (opts.blind) {
+                parts.push('你其实看不到图片的具体内容，请依据上下文自然地回应，不要描述图片细节。');
+            }
+
+            if (opts.extra) parts.push(String(opts.extra));
+
+            if (!parts.length) return '';
+            return '\n\n（以下是当前情境备注，不要复述、不要提及：\n' + parts.join('\n') + '\n）';
+        }
+
+        // 把动态尾部挂到最后一条 user 消息上；末条不是 user 时补一条 user
+        function attachDynamicTail(messages, tail) {
+            const list = messages || [];
+            if (!tail) return list;
+            const last = list[list.length - 1];
+            if (last && last.role === 'user') {
+                if (Array.isArray(last.content)) {
+                    last.content = last.content.concat([{ type: 'text', text: tail }]);
+                } else {
+                    last.content = String(last.content == null ? '' : last.content) + tail;
+                }
+                return list;
+            }
+            list.push({ role: 'user', content: tail.replace(/^\n+/, '') });
+            return list;
+        }
+
+        // ------------------------------------------------------------
+        //  上下文窗口：固定锚点 + 最近 N 条，窗口起点按 step 量化
+        //  纯函数、无状态：起点只在溢出量跨过 step 的整数倍时才跳一次，
+        //  于是中间这些轮次的历史前缀完全一致，缓存可以连续命中。
+        // ------------------------------------------------------------
+        const CHAT_ANCHOR_MAX = 2;
+
+        function pickContextWindow(src, limit, anchorMax) {
+            const cap = Math.max(2, Math.round(Number(limit) || 20));
+            if (src.length <= cap) return src.slice();
+
+            const aMax = (anchorMax == null) ? CHAT_ANCHOR_MAX : Math.max(0, Math.round(anchorMax));
+            const anchorCount = Math.max(0, Math.min(aMax, Math.floor(cap / 6), Math.floor(src.length / 3)));
+            const rest = src.slice(anchorCount);
+            const budget = Math.max(2, cap - anchorCount);
+            if (rest.length <= budget) return src.slice();
+
+            const step = Math.max(2, Math.min(8, Math.floor(budget / 2)));
+            const overflow = rest.length - budget;
+            const skip = Math.ceil(overflow / step) * step;
+            return src.slice(0, anchorCount).concat(rest.slice(skip));
         }
 
         function buildChatHistory(personaId, limit, vision) {
             // 撤回的消息不再进入上下文；通话时长这类系统条只是给玩家看的，也不喂给 AI
             const src = (data.chats[personaId] || []).filter(m => !m.recalled && !(m.type === 'system' && m.via === 'call'));
-            const msgs = src.slice(-(limit || 20));
-            const imgIdx = [];
-            if (vision) msgs.forEach((m, i) => { if (m.type === 'image') imgIdx.push(i); });
-            const allow = new Set(imgIdx.slice(-2));
+            const msgs = pickContextWindow(src, limit || 20);
+
+            // 只有"这一轮"最新的用户图片才发原图，历史图片一律降级为文字
+            let lastUserIdx = -1;
+            if (vision) {
+                for (let i = msgs.length - 1; i >= 0; i--) {
+                    if (msgs[i].sender === 'user') { lastUserIdx = i; break; }
+                }
+            }
 
             const quotePrefix = (m) => {
                 if (!m.quoted) return '';
@@ -14348,9 +14881,16 @@
 
             return msgs.map((m, i) => {
                 let out;
+                const fromUser = m.sender === 'user';
                 if (m.type === 'image') {
-                    if (vision && allow.has(i)) out = { role: 'user', content: imageContent(m.content, '[图片]') };
-                    else out = { role: 'user', content: '[我发了一张图片]' };
+                    if (vision && i === lastUserIdx) {
+                        out = { role: 'user', content: imageContent(m.content, '[图片]') };
+                    } else {
+                        out = {
+                            role: fromUser ? 'user' : 'assistant',
+                            content: fromUser ? '[我发了一张图片]' : '[你发了一张图片]'
+                        };
+                    }
                 } else if (m.type === 'emoji') {
                     out = { role: 'user', content: '[表情包]' };
                 } else if (m.type === 'voice') {
@@ -14411,6 +14951,37 @@
             return { text, photoIndex: idx };
         }
 
+        // 最近 windowSize 条消息里，assistant 是否已经发过图
+        function recentAssistantPhotoCount(personaId, windowSize) {
+            const msgs = data.chats[personaId] || [];
+            const limit = Math.max(1, windowSize || 6);
+            let count = 0;
+            for (let i = msgs.length - 1; i >= 0 && i >= msgs.length - limit; i--) {
+                const m = msgs[i];
+                if (m.sender === 'assistant' && m.type === 'image') count++;
+            }
+            return count;
+        }
+
+        // 图片描述与回复文本是否相关：描述里任意 2-gram 出现在文本里即视为相关
+        function photoTextRelated(desc, text) {
+            const d = String(desc || '').replace(/[\s,，。、；;：:！!？?（）()【】\[\]"'“”‘’·\-—～~\/\\|]/g, '');
+            const t = String(text || '');
+            if (!d || !t) return false;
+            if (d.length === 1) return t.indexOf(d) >= 0;
+            for (let i = 0; i + 2 <= d.length; i++) {
+                if (t.indexOf(d.slice(i, i + 2)) >= 0) return true;
+            }
+            return false;
+        }
+
+        // 发图前的代码层闸门：频率 + 相关性
+        function canSendPhoto(personaId, text, photo) {
+            if (!photo || !photo.desc) return false;
+            if (recentAssistantPhotoCount(personaId, 6) > 0) return false;
+            return photoTextRelated(photo.desc, text);
+        }
+
         function applyReply(personaId, reply) {
             const raw = String(reply == null ? '' : reply);
             const hasThreat = /\[\[BLOCK_THREAT\]\]/.test(raw);
@@ -14431,7 +15002,12 @@
             }
 
             if (parsed.photoIndex !== null && pubs[parsed.photoIndex]) {
-                addMessage(personaId, 'assistant', 'image', pubs[parsed.photoIndex].dataUrl);
+                const photo = pubs[parsed.photoIndex];
+                if (canSendPhoto(personaId, parsed.text, photo)) {
+                    addMessage(personaId, 'assistant', 'image', photo.dataUrl);
+                } else {
+                    console.debug('[photo] 已拦截不相关/过频的发图', { desc: photo.desc, text: parsed.text });
+                }
             }
 
             if (hasThreat) handleBlockThreat(personaId);
@@ -14464,18 +15040,24 @@
             if (_gp && personaStatus(_gp) === 'deleted') return false;
 
             const useVision = !!(api.vision && opts.allowVision);
-            const system = buildPersonaSystem(personaId, opts.extraSystem || '');
+            // System 字节级稳定；本轮的情境/状态/相册全部挂在最后一条 user 后面
+            const system = buildStaticPersonaSystem(personaId);
+            const tail = buildChatDynamicTail(personaId, { extra: opts.extraSystem || '' });
             replying[personaId] = true;
-            const typing = showTyping(personaId);
+            // instant = 关闭了模拟打字延迟：直接从 API 拿结果，不挂"正在输入"气泡
+            const typing = opts.instant ? null : showTyping(personaId);
 
             try {
                 let reply = '';
                 try {
-                    reply = await callChatRomance({ system, messages: buildChatHistory(personaId, getContextMemory(), useVision), api, vision: useVision });
+                    const msgs = attachDynamicTail(buildChatHistory(personaId, getContextMemory(), useVision), tail);
+                    reply = await callChatRomance({ system, messages: msgs, api, vision: useVision });
                 } catch (e) {
                     if (useVision) {
-                        const sys2 = system + '\n\n（你其实看不到图片的具体内容，请依据上下文自然地回应，不要描述图片细节。）';
-                        reply = await callChatRomance({ system: sys2, messages: buildChatHistory(personaId, getContextMemory(), false), api, vision: false });
+                        // 视觉链路挂了 → 退回纯文本，并告诉它"看不到图"
+                        const tail2 = buildChatDynamicTail(personaId, { extra: opts.extraSystem || '', blind: true });
+                        const msgs2 = attachDynamicTail(buildChatHistory(personaId, getContextMemory(), false), tail2);
+                        reply = await callChatRomance({ system, messages: msgs2, api, vision: false });
                     } else {
                         throw e;
                     }
@@ -15161,10 +15743,12 @@
                     replyDelayMax: 12,
                     proactiveThresholdMin: 30,
                     proactiveMaxPerDay: 3,
-                    contextMemory: 20
+                    contextMemory: 20,
+                    typingDelayEnabled: true
                 };
             }
             if (data.schedulerSettings.contextMemory === undefined) data.schedulerSettings.contextMemory = 20;
+            if (typeof data.schedulerSettings.typingDelayEnabled !== 'boolean') data.schedulerSettings.typingDelayEnabled = true;
             return data.schedulerSettings;
         }
 
@@ -15206,6 +15790,25 @@
             range.addEventListener('input', () => {
                 clearTimeout(saveTimer);
                 saveTimer = setTimeout(() => apply(true), 260);
+            });
+        })();
+
+        // ---- 模拟打字延迟开关 ----
+        function renderTypingDelayCard() {
+            const sw = document.getElementById('msTypingDelay');
+            if (!sw) return;
+            sw.classList.toggle('on', getSchedulerSettings().typingDelayEnabled !== false);
+        }
+
+        (function initTypingDelaySwitch() {
+            const sw = document.getElementById('msTypingDelay');
+            if (!sw) return;
+            sw.addEventListener('click', () => {
+                const s = getSchedulerSettings();
+                s.typingDelayEnabled = (s.typingDelayEnabled === false);
+                saveData();
+                renderTypingDelayCard();
+                toast(s.typingDelayEnabled ? '已开启模拟打字延迟' : '已关闭，回复将立即到达');
             });
         })();
 
@@ -15297,6 +15900,22 @@
                 delete replyTimers[personaId];
             }
             const s = getSchedulerSettings();
+
+            // ---- 关闭"模拟打字延迟"：立即生成，不显示"对方正在输入…" ----
+            if (s.typingDelayEnabled === false) {
+                delete data.pendingReplies[personaId];
+                data.lastInteractionAt[personaId] = Date.now();
+                saveData();
+                instantReplyIds[personaId] = true;
+                renderWechatList();
+                generateReply(personaId, Object.assign({}, opts, { instant: true }))
+                    .then(() => {
+                        delete instantReplyIds[personaId];
+                        renderWechatList();
+                    });
+                return;
+            }
+
             const min = Math.max(1, Number(s.replyDelayMin) || 3);
             const max = Math.max(min, Number(s.replyDelayMax) || 12);
             const persona = getPersonaById(personaId);
@@ -15415,21 +16034,17 @@
             const persona = data.personas.find(p => p.id === personaId);
             if (!persona) return false;
 
-            const hh = new Date().getHours();
-            let timeHint = '现在是深夜';
-            if (hh >= 5 && hh < 9) timeHint = '现在是清晨';
-            else if (hh >= 9 && hh < 12) timeHint = '现在是上午';
-            else if (hh >= 12 && hh < 14) timeHint = '现在是中午';
-            else if (hh >= 14 && hh < 18) timeHint = '现在是下午';
-            else if (hh >= 18 && hh < 23) timeHint = '现在是晚上';
-
-            const system = buildPersonaSystem(personaId,
-                `现在你主动给用户发一条微信消息。${timeHint}（用户那边的时间）。` +
-                `不要提"主动""系统""很久没聊"这类词，也不要说教。内容自然、简短（10-40字），` +
-                `像朋友突然想起你：可以问候近况、分享此刻在做的小事、根据时间说一句、或者接着上次的话题。` +
-                `只输出消息内容，不要带引号、不要解释。`
-            );
-            const history = buildChatHistory(personaId, 8, false);
+            // 时间信息统一交给 buildChatDynamicTail（北京时间），这里只描述"主动发消息"这件事
+            const system = buildStaticPersonaSystem(personaId);
+            const tail = buildChatDynamicTail(personaId, {
+                extra: `现在你主动给用户发一条微信消息（时间参考见上文，不要明说几点）。` +
+                    `不要提"主动""系统""很久没聊"这类词，也不要说教。内容自然、简短（10-40字），` +
+                    `像朋友突然想起你：可以问候近况、分享此刻在做的小事、根据时间说一句、或者接着上次的话题。` +
+                    `注意作息真实感：凌晨不要主动闲聊，饭点可以问吃没吃，深夜别开长话题。` +
+                    `只输出消息内容，不要带引号、不要解释。`
+            });
+            // 主动消息时历史通常以 assistant 结尾，attachDynamicTail 会补一条 user 承载指令
+            const history = attachDynamicTail(buildChatHistory(personaId, 8, false), tail);
 
             try {
                 const reply = await callChatRomance({ system, messages: history, api });
@@ -17626,10 +18241,11 @@
             try {
                 const kindText = callState.kind === 'video' ? '视频' : '语音';
                 const extra = `你们正在${kindText}通话中，请用口语化的短句回应，像打电话一样，不要用书面语，不要发图片标记 [pic:x]，30 字以内。`;
-                const system = buildPersonaSystem(personaId, extra);
+                const system = buildStaticPersonaSystem(personaId);
+                const tail = buildChatDynamicTail(personaId, { extra, skipPhotoMenu: true });
                 let reply = await callChatRomance({
                     system,
-                    messages: buildChatHistory(personaId, getContextMemory(), false),
+                    messages: attachDynamicTail(buildChatHistory(personaId, getContextMemory(), false), tail),
                     api,
                     vision: false
                 });
@@ -18202,6 +18818,21 @@
             if (groupReplyTimers[key]) { clearTimeout(groupReplyTimers[key]); delete groupReplyTimers[key]; }
 
             const s = getSchedulerSettings();
+
+            // ---- 关闭"模拟打字延迟"：不排队、不显示"正在输入"，直接生成 ----
+            if (s.typingDelayEnabled === false) {
+                if (data.groupPendingReplies[gid]) delete data.groupPendingReplies[gid][personaId];
+                saveData();
+                instantGroupReplyKeys[gid] = true;
+                generateGroupReply(gid, personaId, Object.assign({}, opts, { instant: true }))
+                    .then(() => {
+                        const still = Object.keys(groupReplying).some(k => k.indexOf(gid + ':') === 0);
+                        if (!still) delete instantGroupReplyKeys[gid];
+                        renderWechatList();
+                    });
+                return;
+            }
+
             const min = Math.max(1, Number(s.replyDelayMin) || 3);
             const max = Math.max(min, Number(s.replyDelayMax) || 12);
             const p = getPersonaById(personaId);
@@ -18237,8 +18868,12 @@
                 const p = getPersonaById(personaId);
                 if (!p || personaStatus(p) !== 'active') return false;
 
-                const system = buildGroupPersonaSystem(gid, personaId, opts.extraSystem || '');
-                const history = buildGroupChatHistory(gid, personaId, Math.max(12, getContextMemory() * 2), false);
+                const system = buildGroupStaticSystem(gid, personaId);
+                const tail = buildGroupDynamicTail(gid, personaId, { extra: opts.extraSystem || '' });
+                const history = attachDynamicTail(
+                    buildGroupChatHistory(gid, personaId, Math.max(12, getContextMemory() * 2), false),
+                    tail
+                );
                 const raw = await callChatRomance({ system, messages: history, api });
                 if (!raw) { toast('AI 返回了空内容'); return false; }
                 applyGroupReply(gid, personaId, raw);
@@ -18324,19 +18959,21 @@
             groupIcebreakerInFlight.add(gid);
             try {
                 const menu = pubs.map((p, i) => (i + 1) + '. ' + String(p.desc || '').replace(/\s+/g, ' ').trim()).join('\n');
-                const system = buildGroupPersonaSystem(gid, speakerId,
-                    '你打算在群里随手发一张照片，主动起个话头。' +
-                    '\n从下面这些相册照片里挑一张你觉得合适的：\n' + menu +
-                    '\n输出格式严格如下：' +
-                    '\n第一行：一句配文（15–40 字，口语化，像随手拍完随手发的那种，不要问"有人吗"这种客套话）' +
-                    '\n第二行：[pic:序号]' +
-                    '\n不要输出其他内容，不要解释，不要加引号。',
-                    { allowPic: true }
-                );
+                const system = buildGroupStaticSystem(gid, speakerId);
+                const tail = buildGroupDynamicTail(gid, speakerId, {
+                    allowPic: true,
+                    extra: '你打算在群里随手发一张照片，主动起个话头。' +
+                        '\n从下面这些相册照片里挑一张你觉得合适的：\n' + menu +
+                        '\n输出格式严格如下：' +
+                        '\n第一行：一句配文（15–40 字，口语化，像随手拍完随手发的那种，不要问"有人吗"这种客套话）' +
+                        '\n第二行：[pic:序号]' +
+                        '\n不要输出其他内容，不要解释，不要加引号。'
+                });
 
                 // 上下文：让 TA 知道群最近聊了什么，避免文不对题
                 const history = buildGroupChatHistory(gid, speakerId, 10, false);
                 history.push({ role: 'user', content: '（群里安静了一会儿，你想发张照片起个话头。）' });
+                attachDynamicTail(history, tail);
 
                 const raw = await callChatRomance({ system, messages: history, api });
                 if (!raw) return false;
@@ -18411,14 +19048,13 @@
         }
 
         // ---- 提示词 ----
-        function buildGroupPersonaSystem(gid, personaId, extra, opts) {
-            opts = opts || {};
+        // 静态：人设 + 世界书 + 场景（群名/群公告/成员）+ 不随轮次变化的行为规则
+        function buildGroupStaticSystem(gid, personaId) {
             const g = getGroup(gid);
             const self = getPersonaById(personaId);
             if (!g || !self) return '';
 
             const playerName = getPlayerName();
-            const social = groupSocialLevel(g);
             const others = (g.memberIds || [])
                 .filter(id => id !== personaId && getPersonaById(id))
                 .map(id => '「' + getPersonaName(id) + '」');
@@ -18433,35 +19069,15 @@
             sys += '\n群成员：';
             sys += '\n- 玩家「' + playerName + '」：这是你熟悉、在意的人，也是这场对话的中心';
             sys += '\n- 你：「' + getPersonaName(personaId) + '」（就是你本人）';
-            const relationDesc =
-                social < 20  ? '（你们几乎没说过话，不会主动搭理彼此）' :
-                social < 50  ? '（点头之交，见面会打招呼）' :
-                social < 75  ? '（已经有点熟了，会互相接话）' :
-                               '（表面上客气，其实暗暗较劲，都想多得到玩家的关注）';
             if (others.length) {
-                sys += '\n- 其他人：' + others.join('、') + relationDesc;
+                sys += '\n- 其他人：' + others.join('、');
             }
-
-            const profileStr = buildProfileStr();
-            if (profileStr) sys += '\n\n当前用户设定：' + profileStr;
-
-            const socialRule =
-                social < 20  ? '你几乎不理别人。除了玩家点名让你转告某人，不要主动回应其他成员、不要点评别人的发言。你只关注玩家。' :
-                social < 50  ? '你和其他成员保持礼貌但疏离的距离。偶尔可以简短回应别人一句（不超过 10 字），但不追问、不展开，注意力主要在玩家身上。' :
-                social < 75  ? '你和其他成员已经有点熟了。会注意到别人的发言，偶尔接话、吐槽或反驳一两句；但还是以玩家为中心，不要和别人聊起来忘了玩家。' :
-                               '你和其他成员表面上客气，实际上暗暗较劲，都想多得到玩家的注意。你会主动接话、抢话、调侃别人，偶尔因为玩家对别人多看了两眼而吃点小醋（傲娇、阴阳怪气、故作不在意都行，但不要真吵架，不要拉着玩家评理）。';
-
-            const picRule = opts.allowPic
-                ? '如果需要，可以在这一条消息的最后用 [pic:序号] 附上一张相册里的图片（序号见下方相册清单）。一次最多一张。'
-                : '不要发图片标记（如 [pic:1]），不要输出 [[BLOCK_THREAT]]。';
 
             sys += '\n\n【群聊硬性规则】'
                 + '\n1. 这是多人微信群。你说的话全群可见，中心是玩家。'
-                + '\n2. ' + socialRule
                 + '\n3. 不要逐条点评别人说了什么；引用标记（[to:xxx]）只在真的回应某个具体的人时加一次。'
                 + '\n4. 一次只发一条消息，1–2 句，短、口语化，像真人发微信。不要写动作描写、不要写心理描写、不要写旁白。'
                 + '\n5. 不要把「昵称：」这类前缀写进消息里，也不要自我介绍。'
-                + '\n6. ' + picRule
                 + '\n7. 大多数时候你只是在跟玩家说话，那就直接说内容，什么都不用加。'
                 + '\n8. 只有当你确实在回应某个具体的人时，才在这条消息的最开头加一次引用标记：'
                 + '\n   [to:' + playerName + '] 你的内容        —— 回应玩家'
@@ -18470,14 +19086,59 @@
                 + '\n   例：[to:' + (others.length ? others[0].replace(/[「」]/g, '') : '某某') + '] 你说的那个我也买了'
                 + '\n9. 引用标记只在最前面加一次，不要每条都加，也不要加在句子中间。';
 
-            if (extra) sys += '\n\n' + extra;
-            sys = withRomanceLock(sys);
-            return sys;
+            return withRomanceLock(sys);
+        }
+
+        // 动态：群氛围规则（随 socialLevel 变）、能否发图（随调用场景变）、用户设定、本次附加指令
+        function buildGroupDynamicTail(gid, personaId, opts) {
+            opts = opts || {};
+            const g = getGroup(gid);
+            if (!g) return '';
+            const social = groupSocialLevel(g);
+
+            const parts = [];
+            const profileStr = buildProfileStr();
+            if (profileStr) parts.push('当前用户设定：' + profileStr);
+
+            // ---- 北京时间 ----
+            const bj = beijingTimeHint();
+            parts.push(`现在是北京时间 ${bj.timeStr}（${bj.period}），你的发言要符合这个时间段的真实作息，不要主动说时间。`);
+
+            const relationDesc =
+                social < 20  ? '（你们几乎没说过话，不会主动搭理彼此）' :
+                social < 50  ? '（点头之交，见面会打招呼）' :
+                social < 75  ? '（已经有点熟了，会互相接话）' :
+                               '（表面上客气，其实暗暗较劲，都想多得到玩家的关注）';
+            parts.push('你和群里其他人的关系：' + relationDesc);
+
+            const socialRule =
+                social < 20  ? '你几乎不理别人。除了玩家点名让你转告某人，不要主动回应其他成员、不要点评别人的发言。你只关注玩家。' :
+                social < 50  ? '你和其他成员保持礼貌但疏离的距离。偶尔可以简短回应别人一句（不超过 10 字），但不追问、不展开，注意力主要在玩家身上。' :
+                social < 75  ? '你和其他成员已经有点熟了。会注意到别人的发言，偶尔接话、吐槽或反驳一两句；但还是以玩家为中心，不要和别人聊起来忘了玩家。' :
+                               '你和其他成员表面上客气，实际上暗暗较劲，都想多得到玩家的注意。你会主动接话、抢话、调侃别人，偶尔因为玩家对别人多看了两眼而吃点小醋（傲娇、阴阳怪气、故作不在意都行，但不要真吵架，不要拉着玩家评理）。';
+            parts.push('2. ' + socialRule);
+
+            const picRule = opts.allowPic
+                ? '如果需要，可以在这一条消息的最后用 [pic:序号] 附上一张相册里的图片（序号见下方相册清单）。一次最多一张。'
+                : '不要发图片标记（如 [pic:1]），不要输出 [[BLOCK_THREAT]]。';
+            parts.push('6. ' + picRule);
+
+            if (opts.extra) parts.push(String(opts.extra));
+
+            return '\n\n（以下是当前情境备注，不要复述、不要提及：\n' + parts.join('\n') + '\n）';
+        }
+
+        // 兼容保留：一次性拿全（旧调用点/调试用）
+        function buildGroupPersonaSystem(gid, personaId, extra, opts) {
+            const base = buildGroupStaticSystem(gid, personaId);
+            const tail = buildGroupDynamicTail(gid, personaId, Object.assign({}, opts, { extra }));
+            return tail ? base + tail : base;
         }
 
         function buildGroupChatHistory(gid, speakerId, limit, vision) {
             const msgs = (data.groupChats[gid] || []).filter(m => !m.recalled && m.type !== 'system');
-            const recent = msgs.slice(-(limit || 30));
+            // 群聊没有固定开场白，只用"量化窗口"保证前缀在多轮内稳定，不设锚点
+            const recent = pickContextWindow(msgs, limit || 30, 0);
             const out = [];
 
             recent.forEach(m => {
@@ -18997,10 +19658,10 @@
         const NOTICE_KEY = 'aiPhoneNoticeVersion';
         const NOTICE_VERSION = 'v18-2026-10-29';
         const NOTICE_TITLE = '📢 更新公告';
-        const NOTICE_CONTENT = `· 新增「群聊」：可建群、@ 成员、群内氛围调节
-· 新增了语音通话、视频通话功能
-· 消息可长按复制 / 引用 / 撤回 / 撤回并重说
-· 优化了朋友圈功能，修复了一些bug
+        const NOTICE_CONTENT = `· 简单优化了聊天语气，增强了活人感
+· 优化了部分论坛功能
+· 设置新增了［模拟打字效果］开关
+· 优化了api命中问题
 
 如有问题欢迎反馈～
 by 花生可可`;
