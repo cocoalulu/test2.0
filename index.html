@@ -7459,7 +7459,7 @@
                 memos: [],
                 recordings: [],
                 gameHistory: [],
-                wallpaper: { dataUrl: '', preset: 'default', blur: 0, dim: 0.45 },
+                wallpaper: { dataUrl: '', imgId: '', preset: 'default', blur: 0, dim: 0.45 },
                 wallpapers: [],
 
                 photos: [],
@@ -7684,10 +7684,11 @@
                     if (!Array.isArray(d.gameHistory)) d.gameHistory = [];
                     if (!Array.isArray(d.wallpapers)) d.wallpapers = [];
                     if (!d.wallpaper || typeof d.wallpaper !== 'object') {
-                        d.wallpaper = { dataUrl: '', preset: 'default', blur: 0, dim: 0.45 };
+                        d.wallpaper = { dataUrl: '', imgId: '', preset: 'default', blur: 0, dim: 0.45 };
                     } else {
-                        d.wallpaper = Object.assign({ dataUrl: '', preset: 'default', blur: 0, dim: 0.45 }, d.wallpaper);
+                        d.wallpaper = Object.assign({ dataUrl: '', imgId: '', preset: 'default', blur: 0, dim: 0.45 }, d.wallpaper);
                     }
+                    if (d.wallpaper.imgId === undefined) d.wallpaper.imgId = '';
 
                     d.worldBooks.forEach(w => {
                         if (!w.scope) w.scope = 'global';
@@ -7815,14 +7816,21 @@
             return getDefaultData();
         }
 
+        let _base64Warned = false;
         function saveData() {
             try {
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                const json = JSON.stringify(data);
+                // 自检：正常情况下图片全在 IndexedDB，localStorage 里不该再出现 base64
+                if (!_base64Warned && json.indexOf('data:image') !== -1) {
+                    _base64Warned = true;
+                    console.warn('⚠️ 检测到仍有 base64 图片残留在待保存数据里，请检查是否有新代码直接写了 dataUrl');
+                }
+                localStorage.setItem(STORAGE_KEY, json);
                 return true;
             } catch (e) {
                 console.warn('保存失败：', e);
                 if (e && (e.name === 'QuotaExceededError' || e.code === 22 || e.code === 1014)) {
-                    alert('⚠️ 本地存储空间不足。\n请到「壁纸」删掉几张图，或到「相册」删掉旧照片，再试一次。');
+                    alert('⚠️ 本地存储空间不足。\n图片已改为存到 IndexedDB，这里一般只剩文字。\n可以到「相册」删几张旧照片，或清理一下浏览器缓存再试。');
                 } else {
                     alert('⚠️ 保存失败：' + (e && e.message ? e.message : e));
                 }
@@ -7832,6 +7840,600 @@
 
         function genId() {
             return Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+        }
+
+        // ============================================================
+        //  v22 · 图片存储层（IndexedDB / Blob）
+        //  ------------------------------------------------------------
+        //  以前图片是 base64 塞在 data.photos[].dataUrl / data.wallpaper.dataUrl /
+        //  avatar 等字段里，一张 720px 的图就 100KB+，localStorage 5MB 很快爆。
+        //  现在：图片本体（Blob）进 IndexedDB，localStorage 里只留一个 id。
+        //  渲染时用 URL.createObjectURL(blob) 生成临时 URL，并做 LRU 回收。
+        // ============================================================
+        const IMAGE_STORE = 'images';
+        // 1x1 透明占位，避免 <img> 在 URL 解析出来之前出现"裂图"图标
+        const IMAGE_PLACEHOLDER = 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7';
+        const IMAGE_URL_CACHE_MAX = 200;     // 同时存活的 objectURL 上限（超了才回收）
+        const IMAGE_DATAURL_CACHE_MAX = 6;   // 给 AI / canvas 用的 base64 缓存上限
+
+        const ImageDB = (function () {
+            const DB_NAME = 'aiPhoneImages';
+            const STORE = IMAGE_STORE;
+            let dbp = null;
+
+            function open() {
+                if (dbp) return dbp;
+                dbp = new Promise((resolve, reject) => {
+                    let req;
+                    try { req = indexedDB.open(DB_NAME, 1); } catch (e) { reject(e); return; }
+                    req.onupgradeneeded = () => {
+                        const db = req.result;
+                        if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
+                    };
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject(req.error);
+                });
+                return dbp;
+            }
+
+            async function tx(mode, fn) {
+                const db = await open();
+                return new Promise((resolve, reject) => {
+                    const t = db.transaction(STORE, mode);
+                    const store = t.objectStore(STORE);
+                    let req = null;
+                    try { req = fn(store); } catch (e) { reject(e); return; }
+                    t.oncomplete = () => resolve(req ? req.result : undefined);
+                    t.onerror = () => reject(t.error);
+                    t.onabort = () => reject(t.error);
+                });
+            }
+
+            return {
+                put: (id, blob) => {
+                    releaseImageUrl(id);          // 覆盖写：旧 URL 作废
+                    return tx('readwrite', s => s.put(blob, id));
+                },
+                get: (id) => tx('readonly', s => s.get(id)),
+                del: (id) => { releaseImageUrl(id); return tx('readwrite', s => s.delete(id)); },
+                clear: () => { imageUrlCache.forEach(u => { try { URL.revokeObjectURL(u); } catch (e) {} }); imageUrlCache.clear(); imageDataUrlCache.clear(); return tx('readwrite', s => s.clear()); },
+                keys: () => tx('readonly', s => s.getAllKeys()),
+                count: () => tx('readonly', s => s.count())
+            };
+        })();
+
+        // ---- 内存缓存：id → objectURL / dataURL ----
+        const imageUrlCache = new Map();
+        const imageDataUrlCache = new Map();
+        const imageUrlPending = new Map();      // 同一张图并发读取时只查一次库
+        const imageDataUrlPending = new Map();
+
+        // 这个 id 是否还被页面上的元素引用着（被引用着就不能 revoke，否则图会变成裂图）
+        function imageTokenInUse(id) {
+            try {
+                return !!document.querySelector(
+                    '[data-img="' + id + '"],[data-img-bg="' + id + '"],' +
+                    '[data-img="img:' + id + '"],[data-img-bg="img:' + id + '"]'
+                );
+            } catch (e) {
+                return true;   // 判断不了就当它还在用，宁可占点内存也不要把图弄裂
+            }
+        }
+
+        function trimImageUrlCache() {
+            if (imageUrlCache.size <= IMAGE_URL_CACHE_MAX) return;
+            for (const [k, u] of Array.from(imageUrlCache)) {
+                if (imageUrlCache.size <= IMAGE_URL_CACHE_MAX) break;
+                if (imageTokenInUse(k)) continue;         // 还在页面上，跳过
+                imageUrlCache.delete(k);
+                try { URL.revokeObjectURL(u); } catch (e) {}
+            }
+        }
+
+        function trimImageDataUrlCache() {
+            while (imageDataUrlCache.size > IMAGE_DATAURL_CACHE_MAX) {
+                const first = imageDataUrlCache.keys().next();
+                if (first.done) break;
+                imageDataUrlCache.delete(first.value);
+            }
+        }
+
+        function newImageId(prefix) {
+            return (prefix || 'img_') + genId();
+        }
+
+        // ---- Base64 ↔ Blob ----
+        async function dataUrlToBlob(dataUrl) {
+            const s = String(dataUrl || '');
+            if (!s) return null;
+            try {
+                const res = await fetch(s);
+                return await res.blob();
+            } catch (e) { /* file:// 或老浏览器可能不让 fetch data:，走下面的兜底 */ }
+            try {
+                const m = s.match(/^data:([^;,]*)(;base64)?,([\s\S]*)$/);
+                if (!m) return null;
+                const mime = m[1] || 'image/jpeg';
+                const bin = m[2] ? atob(m[3]) : decodeURIComponent(m[3]);
+                const len = bin.length;
+                const buf = new Uint8Array(len);
+                for (let i = 0; i < len; i++) buf[i] = bin.charCodeAt(i);
+                return new Blob([buf], { type: mime });
+            } catch (e2) {
+                console.error('Base64 转 Blob 失败', e2);
+                return null;
+            }
+        }
+
+        function blobToDataUrl(blob) {
+            return new Promise((resolve, reject) => {
+                const r = new FileReader();
+                r.onload = () => resolve(String(r.result || ''));
+                r.onerror = () => reject(r.error);
+                r.readAsDataURL(blob);
+            });
+        }
+
+        // ---- token 约定 ----
+        //   img:<id>       → IndexedDB 图片
+        //   <裸 id>        → 同上（avatar / imgId 字段直接存 id）
+        //   photo:<id>     → 相册引用（朋友圈老数据）
+        //   data:/blob:/http(s): → 直接可用（老数据 / 外链，原样返回）
+        const IMG_DIRECT_RE = /^(data:|blob:|https?:|file:)/i;
+
+        function imageIdOf(token) {
+            const s = String(token == null ? '' : token);
+            if (!s) return '';
+            if (IMG_DIRECT_RE.test(s)) return '';
+            if (/^(url\(|linear-gradient|radial-gradient|none$)/i.test(s)) return '';
+            if (s.indexOf('img:') === 0) return s.slice(4);
+            if (s.indexOf('photo:') === 0) {
+                const pid = s.slice(6);
+                const p = (data.photos || []).find(x => x && x.id === pid);
+                return p ? (p.imgId || p.id) : '';
+            }
+            return s;
+        }
+
+        // 把一个"可能是 id / 老 base64 / 外链"的值统一成 token
+        function imageTokenOf(v) {
+            const s = String(v == null ? '' : v);
+            if (!s) return '';
+            if (IMG_DIRECT_RE.test(s)) return s;
+            if (s.indexOf('img:') === 0 || s.indexOf('photo:') === 0) return s;
+            return 'img:' + s;
+        }
+
+        // 相册/壁纸这类对象的取图 id
+        function imageIdOfObj(obj) {
+            if (!obj) return '';
+            return obj.imgId || obj.id || '';
+        }
+
+        // ---- 读取 ----
+        async function getDisplayUrl(token) {
+            const s = String(token == null ? '' : token);
+            if (!s) return '';
+            if (IMG_DIRECT_RE.test(s)) return s;          // 老数据直接能渲染
+            const id = imageIdOf(s);
+            if (!id) return '';
+            if (imageUrlCache.has(id)) {
+                const u = imageUrlCache.get(id);
+                imageUrlCache.delete(id); imageUrlCache.set(id, u);   // LRU touch
+                return u;
+            }
+            if (imageUrlPending.has(id)) return imageUrlPending.get(id);
+            const job = (async () => {
+                try {
+                    const blob = await ImageDB.get(id);
+                    if (!blob) return '';
+                    const url = URL.createObjectURL(blob);
+                    imageUrlCache.set(id, url);
+                    trimImageUrlCache();
+                    return url;
+                } catch (e) {
+                    return '';
+                }
+            })();
+            imageUrlPending.set(id, job);
+            try {
+                return await job;
+            } finally {
+                imageUrlPending.delete(id);
+            }
+        }
+
+        // 需要 base64 的地方（视觉 API / canvas 压缩）
+        async function getImageDataUrl(token) {
+            const s = String(token == null ? '' : token);
+            if (!s) return '';
+            if (/^data:/i.test(s)) return s;
+            if (/^(blob:|https?:|file:)/i.test(s)) {
+                try {
+                    const b = await (await fetch(s)).blob();
+                    return await blobToDataUrl(b);
+                } catch (e) { return ''; }
+            }
+            const id = imageIdOf(s);
+            if (!id) return '';
+            if (imageDataUrlCache.has(id)) {
+                const d = imageDataUrlCache.get(id);
+                imageDataUrlCache.delete(id); imageDataUrlCache.set(id, d);
+                return d;
+            }
+            if (imageDataUrlPending.has(id)) return imageDataUrlPending.get(id);
+            const job = (async () => {
+                try {
+                    const blob = await ImageDB.get(id);
+                    if (!blob) return '';
+                    const d = await blobToDataUrl(blob);
+                    imageDataUrlCache.set(id, d);
+                    trimImageDataUrlCache();
+                    return d;
+                } catch (e) {
+                    return '';
+                }
+            })();
+            imageDataUrlPending.set(id, job);
+            try {
+                return await job;
+            } finally {
+                imageDataUrlPending.delete(id);
+            }
+        }
+
+        // ---- 写入 ----
+        async function saveImageBlob(blob, prefix) {
+            if (!blob) return '';
+            const id = newImageId(prefix);
+            await ImageDB.put(id, blob);
+            return id;
+        }
+
+        async function saveImageFromDataUrl(dataUrl, prefix) {
+            const blob = await dataUrlToBlob(dataUrl);
+            if (!blob) return '';
+            return await saveImageBlob(blob, prefix);
+        }
+
+        async function compressTokenToDataUrl(token, maxSide, quality) {
+            const s = String(token == null ? '' : token);
+            if (!s) return '';
+            if (/^data:/i.test(s)) {
+                try { return await compressDataUrl(s, maxSide, quality); } catch (e) { return s; }
+            }
+            const url = await getDisplayUrl(s);
+            if (!url) return '';
+            try { return await compressDataUrl(url, maxSide, quality); } catch (e) { return ''; }
+        }
+
+        // 从已有图片派生一张压缩副本，存成新 id（头像 / 封面 / 聊天背景用）
+        async function saveImageVariant(token, maxSide, quality, prefix) {
+            const small = await compressTokenToDataUrl(token, maxSide, quality);
+            if (!small) return '';
+            return await saveImageFromDataUrl(small, prefix || 'av_');
+        }
+
+        // 把一张图复制成新 id：聊天记录里存自己的副本，相册里删掉原图也不影响历史消息
+        async function cloneImage(token, prefix) {
+            const srcId = imageIdOf(token);
+            if (!srcId) return '';
+            try {
+                const blob = await ImageDB.get(srcId);
+                if (!blob) return '';
+                const id = newImageId(prefix || 'msg_');
+                await ImageDB.put(id, blob);
+                return id;
+            } catch (e) {
+                return '';
+            }
+        }
+
+        function releaseImageUrl(id) {
+            const key = String(id == null ? '' : id);
+            if (!key) return;
+            if (imageUrlCache.has(key)) {
+                const u = imageUrlCache.get(key);
+                imageUrlCache.delete(key);
+                try { URL.revokeObjectURL(u); } catch (e) {}
+            }
+            imageDataUrlCache.delete(key);
+        }
+
+        async function deleteImage(id) {
+            const key = String(id == null ? '' : id);
+            if (!key) return;
+            releaseImageUrl(key);
+            try { await ImageDB.del(key); } catch (e) {}
+        }
+
+        // ============================================================
+        //  图片渲染：data-img / data-img-bg 自动水合
+        //  这样所有同步拼 HTML 的地方都不用改成 async —— 先出占位，再补图
+        // ============================================================
+        function hydrateImageEl(el) {
+            if (!el || el.nodeType !== 1) return;
+
+            const token = el.getAttribute('data-img');
+            if (token) {
+                if (el.dataset.imgApplied !== token) {
+                    el.dataset.imgApplied = token;
+                    getDisplayUrl(token).then(url => {
+                        if (!url) return;
+                        if (el.dataset.imgApplied !== token) return;   // 期间又换了图
+                        if (el.tagName === 'IMG') {
+                            el.src = url;
+                        } else if (el.tagName === 'VIDEO') {
+                            el.poster = url;
+                        } else {
+                            el.style.backgroundImage = 'url("' + String(url).replace(/"/g, '%22') + '")';
+                        }
+                    }).catch(() => {});
+                }
+            }
+
+            const bg = el.getAttribute('data-img-bg');
+            if (bg) {
+                if (el.dataset.imgBgApplied !== bg) {
+                    el.dataset.imgBgApplied = bg;
+                    getDisplayUrl(bg).then(url => {
+                        if (!url) return;
+                        if (el.dataset.imgBgApplied !== bg) return;
+                        el.style.backgroundImage = 'url("' + String(url).replace(/"/g, '%22') + '")';
+                    }).catch(() => {});
+                }
+            }
+        }
+
+        function hydrateImages(root) {
+            const scope = root || document;
+            if (!scope || scope.nodeType !== 1 && scope.nodeType !== 9 && scope.nodeType !== 11) return;
+            try {
+                if (scope.matches && scope.matches('[data-img],[data-img-bg]')) hydrateImageEl(scope);
+            } catch (e) {}
+            let list = null;
+            try { list = scope.querySelectorAll('[data-img],[data-img-bg]'); } catch (e) { return; }
+            if (!list || !list.length) return;
+            for (let i = 0; i < list.length; i++) hydrateImageEl(list[i]);
+        }
+
+        // 全局观察：任何地方 innerHTML 进来的图片都会自动补上
+        (function startImageHydration() {
+            if (typeof MutationObserver === 'undefined' || !document.body) return;
+            const pending = new Set();
+            let queued = false;
+            const flush = () => {
+                queued = false;
+                const list = Array.from(pending);
+                pending.clear();
+                list.forEach(n => {
+                    if (n && n.isConnected) hydrateImages(n);
+                });
+            };
+            const obs = new MutationObserver(muts => {
+                for (let i = 0; i < muts.length; i++) {
+                    const mu = muts[i];
+                    if (mu.type === 'attributes') { pending.add(mu.target); continue; }
+                    const nodes = mu.addedNodes;
+                    for (let j = 0; j < nodes.length; j++) {
+                        const n = nodes[j];
+                        if (n && n.nodeType === 1) pending.add(n);
+                    }
+                }
+                if (!pending.size || queued) return;
+                queued = true;
+                Promise.resolve().then(flush);
+            });
+            obs.observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                attributeFilter: ['data-img', 'data-img-bg']
+            });
+        })();
+
+        // ============================================================
+        //  旧数据静默迁移：dataUrl → Blob → IndexedDB
+        //  必须在首屏渲染之前 await 完
+        // ============================================================
+        async function migrateImagesToDB() {
+            let migrated = 0;
+            const CONCURRENCY = 5;
+
+            // 浏览器禁用 / 不支持 IndexedDB（某些隐私模式）→ 不要迁移，
+            // 否则 base64 被删掉、图片却存不进去，等于把用户的图弄丢
+            try {
+                if (!window.indexedDB) throw new Error('no indexedDB');
+                await ImageDB.count();     // 真正打开一次，确认能用
+            } catch (e) {
+                console.warn('IndexedDB 不可用，跳过图片迁移（继续用 base64 存储）', e);
+                return 0;
+            }
+            const isBase64Img = v => typeof v === 'string' && /^data:image\//i.test(v);
+
+            // 通用：对象上的某个字符串字段直接存成 id
+            async function migrateField(obj, key, prefix) {
+                if (!obj || !isBase64Img(obj[key])) return false;
+                const blob = await dataUrlToBlob(obj[key]);
+                if (!blob) return false;
+                const id = newImageId(prefix || 'img_');
+                await ImageDB.put(id, blob);
+                obj[key] = id;
+                migrated++;
+                return true;
+            }
+
+            async function migrateList(list) {
+                for (let i = 0; i < list.length; i += CONCURRENCY) {
+                    await Promise.all(list.slice(i, i + CONCURRENCY).map(fn => fn()));
+                }
+            }
+
+            try {
+                // ① 相册：imgId 直接复用照片 id
+                const photos = data.photos || [];
+                await migrateList(photos.map(p => async () => {
+                    if (!p || !isBase64Img(p.dataUrl)) return;
+                    const blob = await dataUrlToBlob(p.dataUrl);
+                    if (!blob) return;
+                    const id = p.imgId || p.id || newImageId('ph_');
+                    await ImageDB.put(id, blob);
+                    p.imgId = id;
+                    delete p.dataUrl;     // 关键：不删 localStorage 照样爆
+                    migrated++;
+                }));
+
+                // ② 壁纸库
+                const wpMap = new Map();
+                const wallpapers = data.wallpapers || [];
+                await migrateList(wallpapers.map(w => async () => {
+                    if (!w || !isBase64Img(w.dataUrl)) return;
+                    const blob = await dataUrlToBlob(w.dataUrl);
+                    if (!blob) return;
+                    const id = w.imgId || w.id || newImageId('wp_');
+                    await ImageDB.put(id, blob);
+                    wpMap.set(w.dataUrl, id);
+                    w.imgId = id;
+                    delete w.dataUrl;
+                    migrated++;
+                }));
+
+                // ③ 当前壁纸（能对上壁纸库就复用同一张）
+                const cur = data.wallpaper;
+                if (cur && isBase64Img(cur.dataUrl)) {
+                    let id = wpMap.get(cur.dataUrl) || '';
+                    if (!id) {
+                        const blob = await dataUrlToBlob(cur.dataUrl);
+                        if (blob) { id = newImageId('wp_'); await ImageDB.put(id, blob); }
+                    }
+                    if (id) cur.imgId = id;
+                    delete cur.dataUrl;
+                    migrated++;
+                }
+
+                // ④ 头像 / 通话画面 / 朋友圈封面（玩家、角色、群）
+                const avatarTargets = [data.profile].concat(data.personas || [], data.groups || []);
+                for (const obj of avatarTargets) {
+                    if (!obj) continue;
+                    await migrateField(obj, 'avatar', 'av_');
+                    await migrateField(obj, 'callCover', 'cc_');
+                    await migrateField(obj, 'momentCover', 'mc_');
+                }
+
+                // ⑤ 朋友圈配图 / 评论配图（photo: 引用本来就只有 id，不用动）
+                const fixImgArr = async (arr, prefix) => {
+                    if (!Array.isArray(arr)) return;
+                    await migrateList(arr.map((v, i) => async () => {
+                        if (!isBase64Img(v)) return;
+                        const blob = await dataUrlToBlob(v);
+                        if (!blob) return;
+                        const id = newImageId(prefix || 'mo_');
+                        await ImageDB.put(id, blob);
+                        arr[i] = 'img:' + id;
+                        migrated++;
+                    }));
+                };
+                for (const m of (data.moments || [])) {
+                    if (!m) continue;
+                    await fixImgArr(m.images, 'mo_');
+                    for (const c of (m.comments || [])) {
+                        if (c) await fixImgArr(c.images, 'mo_');
+                    }
+                }
+
+                // ⑥ 聊天里的图片 / 表情包消息
+                const fixMsgList = async (list) => {
+                    if (!Array.isArray(list)) return;
+                    await migrateList(list.map(m => async () => {
+                        if (!m || (m.type !== 'image' && m.type !== 'emoji')) return;
+                        if (!isBase64Img(m.content)) return;
+                        const blob = await dataUrlToBlob(m.content);
+                        if (!blob) return;
+                        const id = newImageId(m.type === 'emoji' ? 'em_' : 'msg_');
+                        await ImageDB.put(id, blob);
+                        m.content = 'img:' + id;
+                        migrated++;
+                    }));
+                };
+                for (const k of Object.keys(data.chats || {})) await fixMsgList(data.chats[k]);
+                for (const k of Object.keys(data.groupChats || {})) await fixMsgList(data.groupChats[k]);
+
+                // ⑦ 表情包库（历史遗留，仅占空间）
+                for (const em of (data.emojis || [])) {
+                    if (!em || !isBase64Img(em.dataUrl)) continue;
+                    const blob = await dataUrlToBlob(em.dataUrl);
+                    if (!blob) continue;
+                    const id = newImageId('em_');
+                    await ImageDB.put(id, blob);
+                    em.imgId = id;
+                    delete em.dataUrl;
+                    migrated++;
+                }
+
+                // ⑧ 聊天背景（存的是 CSS url("data:...")）
+                for (const k of Object.keys(data.chatBackgrounds || {})) {
+                    const v = data.chatBackgrounds[k];
+                    if (typeof v !== 'string') continue;
+                    const mm = v.match(/url\(["']?(data:image\/[^"')]+)["']?\)/i);
+                    if (!mm) continue;
+                    const blob = await dataUrlToBlob(mm[1]);
+                    if (!blob) continue;
+                    const id = newImageId('bg_');
+                    await ImageDB.put(id, blob);
+                    data.chatBackgrounds[k] = 'img:' + id;
+                    migrated++;
+                }
+
+                // ⑨ 淘宝 / 外卖等带图的小卡片
+                const migrateImageKey = async (obj, prefix) => {
+                    if (!obj || !isBase64Img(obj.image)) return;
+                    const blob = await dataUrlToBlob(obj.image);
+                    if (!blob) return;
+                    const id = newImageId(prefix || 'tb_');
+                    await ImageDB.put(id, blob);
+                    obj.image = 'img:' + id;
+                    migrated++;
+                };
+                const tb = data.taobao || {};
+                for (const g of (tb.goods || [])) await migrateImageKey(g, 'tb_');
+                for (const o of (tb.orders || [])) await migrateImageKey(o, 'tb_');
+
+                // 淘宝订单消息里 image 是 JSON 里的字符串
+                const fixTaobaoMsg = async (list) => {
+                    if (!Array.isArray(list)) return;
+                    await migrateList(list.map(m => async () => {
+                        if (!m || m.type !== 'taobao' || typeof m.content !== 'string') return;
+                        let j; try { j = JSON.parse(m.content); } catch (e) { return; }
+                        if (!j || !isBase64Img(j.image)) return;
+                        const blob = await dataUrlToBlob(j.image);
+                        if (!blob) return;
+                        const id = newImageId('tb_');
+                        await ImageDB.put(id, blob);
+                        j.image = 'img:' + id;
+                        m.content = JSON.stringify(j);
+                        migrated++;
+                    }));
+                };
+                for (const k of Object.keys(data.chats || {})) await fixTaobaoMsg(data.chats[k]);
+                for (const k of Object.keys(data.groupChats || {})) await fixTaobaoMsg(data.groupChats[k]);
+            } catch (e) {
+                console.warn('图片迁移中断：', e);
+            }
+
+            if (migrated) {
+                console.log('✅ 图片数据已迁移至 IndexedDB，共 ' + migrated + ' 张');
+                saveData();   // 存的是清洗后的 localStorage（已无 base64）
+            }
+            return migrated;
+        }
+
+        // 估算 localStorage 占用，方便排查（仅控制台输出）
+        function logStorageUsage() {
+            try {
+                const s = localStorage.getItem(STORAGE_KEY) || '';
+                const mb = (s.length * 2 / 1024 / 1024).toFixed(2);
+                console.log('📦 localStorage 占用约 ' + mb + 'MB（上限通常 5MB）');
+            } catch (e) {}
         }
 
         // ============================================================
@@ -8227,11 +8829,14 @@ ${forumAnonRules}
                 return;
             }
             if (confirm(`确定要清除所有聊天记录（共 ${total} 条消息）吗？此操作不可撤销！`)) {
-                // 清理语音文件 + 所有调度定时器
+                // 清理语音 / 图片文件 + 所有调度定时器
                 for (const key in data.chats) {
                     (data.chats[key] || []).forEach(m => {
                         if (m.type === 'voice' && m.audioId && typeof VoiceDB !== 'undefined') {
                             VoiceDB.del(m.audioId).catch(() => {});
+                        }
+                        if ((m.type === 'image' || m.type === 'emoji') && typeof m.content === 'string' && m.content.indexOf('img:') === 0) {
+                            deleteImage(imageIdOf(m.content));
                         }
                     });
                 }
@@ -8255,6 +8860,25 @@ ${forumAnonRules}
                 const savedProfile = { ...data.profile };
                 const savedWallpaper = data.wallpaper ? { ...data.wallpaper } : null;
                 const savedWallpapers = Array.isArray(data.wallpapers) ? data.wallpapers.slice() : [];
+
+                // 重置会丢掉相册/角色/群/朋友圈，这些图片也一起从 IndexedDB 里清掉，别留垃圾
+                const orphanImages = [];
+                (data.photos || []).forEach(p => orphanImages.push(imageIdOfObj(p)));
+                (data.personas || []).forEach(p => {
+                    if (p.avatar) orphanImages.push(imageIdOf(p.avatar));
+                    if (p.callCover) orphanImages.push(imageIdOf(p.callCover));
+                });
+                (data.groups || []).forEach(g => { if (g.avatar) orphanImages.push(imageIdOf(g.avatar)); });
+                (data.moments || []).forEach(m => {
+                    (m && Array.isArray(m.images) ? m.images : []).forEach(v => {
+                        if (typeof v === 'string' && v.indexOf('img:') === 0) orphanImages.push(imageIdOf(v));
+                    });
+                });
+                Object.keys(data.chatBackgrounds || {}).forEach(k => {
+                    const id = imageIdOf(data.chatBackgrounds[k]);
+                    if (id && id.indexOf('bg_') === 0) orphanImages.push(id);
+                });
+
                 const def = getDefaultData();
                 data = {
                     ...def,
@@ -8272,6 +8896,7 @@ ${forumAnonRules}
                     AudioDB.clear().catch(() => {});
                 }
                 saveData();
+                orphanImages.forEach(id => { if (id) deleteImage(id); });
                 renderWechatList();
                 renderMoments();
                 renderAlbum();
@@ -8284,7 +8909,7 @@ ${forumAnonRules}
                 renderProfile();
                 renderMemos();
                 renderWallpaperPage();
-                applyWallpaper(data.wallpaper.dataUrl, data.wallpaper.preset);
+                applyWallpaper(currentWallpaperToken(), data.wallpaper.preset);
                 stopListenTogether();
                 alert('✅ 数据已重置（API配置、个人设定与壁纸已保留）。');
             }
@@ -8783,7 +9408,7 @@ ${forumAnonRules}
 
             const photos = (data.photos || []).slice(0, 12);
             const photosHtml = photos.length
-                ? photos.map(p => `<div class="avatar-opt" data-photo="${p.id}" title="${escHtml(p.desc || p.name)}" style="background-image:url('${p.dataUrl}')"></div>`).join('')
+                ? photos.map(p => `<div class="avatar-opt" data-photo="${p.id}" title="${escHtml(p.desc || p.name)}" data-img-bg="${imageIdOfObj(p)}"></div>`).join('')
                 : `<div class="avatar-opt empty-tip">相册为空</div>`;
 
             showModal(`
@@ -8800,7 +9425,7 @@ ${forumAnonRules}
                 <div class="cc-edit">
                     <div class="cc-thumb" id="editCallCoverThumb"></div>
                     <div class="cc-list" id="editCallCoverList">
-                        ${photos.length ? photos.slice(0, 6).map(p => `<div class="cc-pick" data-cover-photo="${p.id}" title="${escHtml(p.desc || p.name)}" style="background-image:url('${p.dataUrl}')"></div>`).join('') : '<span class="cc-empty">相册为空</span>'}
+                        ${photos.length ? photos.slice(0, 6).map(p => `<div class="cc-pick" data-cover-photo="${p.id}" title="${escHtml(p.desc || p.name)}" data-img-bg="${imageIdOfObj(p)}"></div>`).join('') : '<span class="cc-empty">相册为空</span>'}
                         <div class="cc-pick cc-clear" data-cover-clear="1" title="清除">✕</div>
                     </div>
                 </div>
@@ -8822,10 +9447,11 @@ ${forumAnonRules}
                     } else if (opt.dataset.photo) {
                         const photo = (data.photos || []).find(p => p.id === opt.dataset.photo);
                         if (!photo) return;
-                        let small;
-                        try { small = await compressDataUrl(photo.dataUrl, 300, 0.8); }
-                        catch (e) { small = photo.dataUrl; }
-                        persona.avatar = small;
+                        const old = persona.avatar;
+                        const aid = await saveImageVariant(imageIdOfObj(photo), 300, 0.8, 'av_');
+                        if (!aid) { toast('头像设置失败，换张图试试'); return; }
+                        persona.avatar = aid;
+                        if (old && old !== aid && String(old).indexOf('av_') === 0) deleteImage(old);
                     } else {
                         return;
                     }
@@ -8846,8 +9472,8 @@ ${forumAnonRules}
             const paintCallCoverThumb = () => {
                 const el = document.getElementById('editCallCoverThumb');
                 if (!el) return;
-                const url = persona.callCover || persona.avatar || '';
-                el.style.backgroundImage = url ? `url('${String(url).replace(/'/g, '%27')}')` : '';
+                const token = persona.callCover || persona.avatar || '';
+                paintBgToken(el, token, '');
             };
             paintCallCoverThumb();
             document.querySelectorAll('#modalContent [data-cover-photo], #modalContent [data-cover-clear]').forEach(el => {
@@ -8857,10 +9483,11 @@ ${forumAnonRules}
                     } else {
                         const photo = (data.photos || []).find(p => p.id === el.dataset.coverPhoto);
                         if (!photo) return;
-                        let small;
-                        try { small = await compressDataUrl(photo.dataUrl, 640, 0.75); }
-                        catch (e) { small = photo.dataUrl; }
-                        persona.callCover = small;
+                        const old = persona.callCover;
+                        const cid = await saveImageVariant(imageIdOfObj(photo), 640, 0.75, 'cc_');
+                        if (!cid) { toast('设置失败，换张图试试'); return; }
+                        persona.callCover = cid;
+                        if (old && old !== cid && String(old).indexOf('cc_') === 0) deleteImage(old);
                     }
                     saveData();
                     paintCallCoverThumb();
@@ -8921,7 +9548,17 @@ ${forumAnonRules}
                 if (m.type === 'voice' && m.audioId && typeof VoiceDB !== 'undefined') {
                     VoiceDB.del(m.audioId).catch(() => {});
                 }
+                if ((m.type === 'image' || m.type === 'emoji') && typeof m.content === 'string' && m.content.indexOf('img:') === 0) {
+                    deleteImage(imageIdOf(m.content));
+                }
             });
+            // 头像 / 通话画面 / 聊天背景也一起清掉
+            if (persona.avatar) deleteImage(imageIdOf(persona.avatar));
+            if (persona.callCover) deleteImage(imageIdOf(persona.callCover));
+            if ((data.chatBackgrounds || {})[id]) {
+                const bgId = imageIdOf(data.chatBackgrounds[id]);
+                if (bgId && bgId.indexOf('bg_') === 0) deleteImage(bgId);
+            }
             if (replyTimers[id]) { clearTimeout(replyTimers[id]); delete replyTimers[id]; }
             data.personas = data.personas.filter(p => p.id !== id);
             delete data.chats[id];
@@ -9497,7 +10134,7 @@ ${forumAnonRules}
                             '<span>' + escHtml(radAgo(moment.timestamp)) + '</span></div>' +
                         '<div class="rad-moment-body">' +
                             '<div class="rad-moment-text">' + escHtml(String(moment.content || '').trim() || '（图片）') + '</div>' +
-                            (momentImages(moment)[0] ? '<img class="rad-moment-img" src="' + momentImages(moment)[0] + '" alt="">' : '') +
+                            (momentImages(moment)[0] ? '<img class="rad-moment-img" data-img="' + escHtml(momentImages(moment)[0]) + '" src="' + IMAGE_PLACEHOLDER + '" alt="">' : '') +
                         '</div>' +
                     '</div>'
                 : '';
@@ -9725,7 +10362,7 @@ ${forumAnonRules}
         async function postApologyMoment(personaId) {
             const p = getPersonaById(personaId);
             if (!p) return;
-            const selfies = (data.photos || []).filter(x => x.isPublic && x.desc && x.dataUrl);
+            const selfies = (data.photos || []).filter(x => x.isPublic && x.desc && imageIdOfObj(x));
             const selfie = selfies.length ? selfies[Math.floor(Math.random() * selfies.length)] : null;
 
             let content = '';
@@ -10450,13 +11087,13 @@ ${forumAnonRules}
             return String(u || '').replace(/'/g, '%27').replace(/"/g, '%22').replace(/\)/g, '%29');
         }
 
-        // 相册引用 → 真实 dataUrl（老数据里可能直接是 dataUrl）
+        // 相册引用 → 渲染 token（photo:<id> → 相册的图片 id；老 base64 原样返回）
         function resolveMomentImage(src) {
             const s = String(src || '');
             if (!s) return '';
             if (s.indexOf('photo:') === 0) {
                 const p = (data.photos || []).find(x => x.id === s.slice(6));
-                return p ? (p.dataUrl || '') : '';
+                return p ? imageIdOfObj(p) : '';
             }
             return s;
         }
@@ -10728,7 +11365,7 @@ ${forumAnonRules}
 
             const imgsHtml = n
                 ? `<div class="wx-moment-imgs n${n}">` +
-                  imgs.map(src => `<div class="cell" data-view="${escHtml(src)}" style="background-image:url('${cssUrl(src)}')"></div>`).join('') +
+                  imgs.map(src => `<div class="cell" data-view="${escHtml(src)}" data-img-bg="${escHtml(src)}"></div>`).join('') +
                   '</div>'
                 : '';
 
@@ -10753,9 +11390,8 @@ ${forumAnonRules}
             const p = data.profile || {};
             const name = p.nickname || p.name || '我';
             const cover = p.momentCover || '';
-            const bg = cover ? `background-image:url('${cssUrl(cover)}')` : '';
             return `<div class="wx-moment-cover">
-                <div class="cv-img" data-cover="1" style="${bg}"></div>
+                <div class="cv-img" data-cover="1" data-img-bg="${escHtml(cover)}"></div>
                 <div class="cv-row">
                     <span class="cv-name">${escHtml(name)}</span>
                     <div class="cv-avatar" data-my-moments="1">${avatarHtml('player', 58)}</div>
@@ -10839,7 +11475,7 @@ ${forumAnonRules}
 
             const imgsHtml = n
                 ? `<div class="wx-moment-imgs n${n}">` +
-                  imgs.map(src => `<div class="cell" data-view="${escHtml(src)}" style="background-image:url('${cssUrl(src)}')"></div>`).join('') +
+                  imgs.map(src => `<div class="cell" data-view="${escHtml(src)}" data-img-bg="${escHtml(src)}"></div>`).join('') +
                   '</div>'
                 : '';
             const likesHtml = likeNames.length
@@ -10929,10 +11565,12 @@ ${forumAnonRules}
                 taken: [],
                 onDone: async (sel) => {
                     if (!sel.length) return;
-                    let url = sel[0].dataUrl;
-                    try { url = await compressDataUrl(url, 900, 0.78); } catch (e) {}
-                    data.profile.momentCover = url;
+                    const old = data.profile.momentCover;
+                    const mid = await saveImageVariant(imageIdOfObj(sel[0]), 900, 0.78, 'mc_');
+                    if (!mid) { toast('封面设置失败，换张图试试'); return; }
+                    data.profile.momentCover = mid;
                     saveData();
+                    if (old && old !== mid && String(old).indexOf('mc_') === 0) deleteImage(old);
                     renderMoments();
                     renderMyMoments();
                     toast('封面已更新');
@@ -11229,7 +11867,7 @@ ${forumAnonRules}
             const g = document.getElementById('mcImgGrid');
             if (!g) return;
             const cells = mcPickedImages.map((p, i) => `
-                <div class="ph" style="background-image:url('${cssUrl(p.dataUrl)}')">
+                <div class="ph" data-img-bg="${escHtml(p.token || p.dataUrl || '')}">
                     <button class="x" data-mc-del="${i}">✕</button>
                     <button class="desc-btn ${p.desc ? 'done' : ''}" data-mc-desc="${i}">${p.desc ? escHtml(p.desc.slice(0, 7)) : '+描述'}</button>
                 </div>`).join('');
@@ -11305,7 +11943,7 @@ ${forumAnonRules}
                     ${photos.map(p => {
                         const dis = taken.has(p.id);
                         return `<div class="pk-cell ${dis ? 'off' : ''}" data-pid="${escHtml(p.id)}"
-                                     style="background-image:url('${cssUrl(p.dataUrl)}')">
+                                     data-img-bg="${imageIdOfObj(p)}">
                             <span class="pk-mark">${dis ? '✓' : ''}</span>
                             ${p.desc ? `<span class="pk-desc">${escHtml(p.desc)}</span>` : ''}
                         </div>`;
@@ -11634,7 +12272,7 @@ ${forumAnonRules}
         //  朋友圈 · 角色发圈（可配图）
         // ============================================================
         function publicPhotoList() {
-            return (data.photos || []).filter(p => p.isPublic && p.desc && p.dataUrl);
+            return (data.photos || []).filter(p => p.isPublic && p.desc && imageIdOfObj(p));
         }
 
         function buildMomentGenSystem(sender) {
@@ -11709,7 +12347,7 @@ ${forumAnonRules}
                     onDone: (sel) => {
                         sel.forEach(p => {
                             if (mcPickedImages.length >= 9) return;
-                            mcPickedImages.push({ id: p.id, dataUrl: p.dataUrl, desc: p.desc || '' });
+                            mcPickedImages.push({ id: p.id, token: imageIdOfObj(p), desc: p.desc || '' });
                         });
                         renderMcGrid();
                     }
@@ -11901,7 +12539,6 @@ ${forumAnonRules}
             const wxid = radWxid({ name: nickname });
             const cover = p.callCover || '';
             const thumbSrc = cover || p.avatar || '';
-            const coverStyle = thumbSrc ? `background-image:url('${String(thumbSrc).replace(/'/g, '%27')}')` : 'background:linear-gradient(160deg,#3a3f4a,#23252c)';
 
             box.innerHTML = `
                 <div class="wx-me-card">
@@ -11928,7 +12565,7 @@ ${forumAnonRules}
                 <div class="wx-me-card">
                     <div class="wx-me-row" id="wxMeCoverRow">
                         <span class="k">我的通话画面</span>
-                        <div class="wx-me-cover" id="wxMeCoverThumb" style="${coverStyle}">${thumbSrc ? '' : `<span class="wx-me-cover-ph">${escHtml(nickname.charAt(0) || '我')}</span>`}</div>
+                        <div class="wx-me-cover" id="wxMeCoverThumb" data-img-bg="${escHtml(thumbSrc)}" style="${thumbSrc ? '' : 'background:linear-gradient(160deg,#3a3f4a,#23252c)'}">${thumbSrc ? '' : `<span class="wx-me-cover-ph">${escHtml(nickname.charAt(0) || '我')}</span>`}</div>
                         <span class="wx-me-change">更换</span>
                         ${cover ? '<button class="wx-me-reset" id="wxMeCoverReset">恢复默认</button>' : ''}
                         <span class="arrow">›</span>
@@ -11956,10 +12593,12 @@ ${forumAnonRules}
             if (coverRow) coverRow.addEventListener('click', () => {
                 if (!(data.photos || []).length) { toast('相册还是空的，先去相册上传几张'); return; }
                 pickPhotoModal(async (photo) => {
-                    let small;
-                    try { small = await compressDataUrl(photo.dataUrl, 640, 0.75); } catch (e) { small = photo.dataUrl; }
-                    data.profile.callCover = small;
+                    const old = data.profile.callCover;
+                    const cid = await saveImageVariant(imageIdOfObj(photo), 640, 0.75, 'cc_');
+                    if (!cid) { toast('设置失败，换张图试试'); return; }
+                    data.profile.callCover = cid;
                     saveData();
+                    if (old && old !== cid && String(old).indexOf('cc_') === 0) deleteImage(old);
                     renderWechatMe();
                     if (typeof callState !== 'undefined' && callState.active) renderCallSelf();
                     toast('通话画面已更新');
@@ -11983,10 +12622,12 @@ ${forumAnonRules}
         function pickMyAvatar() {
             if (!(data.photos || []).length) { toast('相册还是空的，先去相册上传几张'); return; }
             pickPhotoModal(async (photo) => {
-                let small;
-                try { small = await compressDataUrl(photo.dataUrl, 300, 0.8); } catch (e) { small = photo.dataUrl; }
-                data.profile.avatar = small;
+                const old = data.profile.avatar;
+                const aid = await saveImageVariant(imageIdOfObj(photo), 300, 0.8, 'av_');
+                if (!aid) { toast('头像设置失败，换张图试试'); return; }
+                data.profile.avatar = aid;
                 saveData();
+                if (old && old !== aid && String(old).indexOf('av_') === 0) deleteImage(old);
                 renderWechatMe();
                 renderProfileAvatar();
                 renderWechatList();
@@ -12144,18 +12785,14 @@ ${forumAnonRules}
             const personaId = cw.dataset.persona;
             if (!personaId) return;
 
-            Array.from(files).forEach(file => {
+            Array.from(files).forEach(async file => {
                 if (!file.type.startsWith('image/')) return;
-                const reader = new FileReader();
-                reader.onload = function(ev) {
-                    const dataUrl = ev.target.result;
-                    const name = file.name.replace(/\.[^.]+$/, '');
-                    data.emojis.push({ id: genId(), name, dataUrl });
-                    saveData();
-                    addMessage(personaId, 'user', 'emoji', dataUrl);
-                    renderMessages(personaId);
-                };
-                reader.readAsDataURL(file);
+                const name = file.name.replace(/\.[^.]+$/, '');
+                const eid = await saveImageBlob(file, 'em_');   // 表情包原图直接进 IndexedDB
+                if (!eid) { toast('「' + name + '」保存失败'); return; }
+                data.emojis.push({ id: eid, imgId: eid, name });
+                addMessage(personaId, 'user', 'emoji', 'img:' + eid);   // saveData 在 addMessage 里
+                renderMessages(personaId);
             });
             this.value = '';
         });
@@ -12217,23 +12854,52 @@ ${forumAnonRules}
             s.setProperty('--wp-dim', String(dim == null ? 0.45 : dim));
         }
 
-        function applyWallpaper(dataUrl, preset) {
+        // 给元素挂一张 IndexedDB 图片作为背景（token 为空则回退）
+        function paintBgToken(el, token, fallbackCss) {
+            if (!el) return;
+            const t = String(token == null ? '' : token);
+            if (!t) {
+                el.removeAttribute('data-img-bg');
+                el.dataset.imgBgApplied = '';
+                el.style.backgroundImage = fallbackCss || '';
+                return;
+            }
+            el.dataset.imgBgApplied = '';
+            el.setAttribute('data-img-bg', t);
+            hydrateImageEl(el);
+        }
+
+        async function applyWallpaper(token, preset) {
             const w = data.wallpaper || {};
             const img = document.getElementById('wallpaperImg');
             if (!img) return;
-            const useDefault = !dataUrl || preset === 'default';
-            img.style.backgroundImage = useDefault ? WP_DEFAULT_BG : 'url("' + dataUrl + '")';
+            const useDefault = !token || preset === 'default';
+            if (useDefault) {
+                img.style.backgroundImage = WP_DEFAULT_BG;
+            } else {
+                const url = await getDisplayUrl(token);
+                img.style.backgroundImage = url
+                    ? 'url("' + String(url).replace(/"/g, '%22') + '")'
+                    : WP_DEFAULT_BG;
+            }
             setWpVars(w.blur, w.dim);
+        }
+
+        // 当前壁纸的图片 token
+        function currentWallpaperToken() {
+            const w = data.wallpaper || {};
+            return w.imgId || w.dataUrl || '';
         }
 
         function renderWallpaperPage() {
             const w = data.wallpaper || {};
             const lib = data.wallpapers || [];
-            const isDefault = !w.dataUrl || w.preset === 'default';
+            const curToken = currentWallpaperToken();
+            const isDefault = !curToken || w.preset === 'default';
 
             const preview = document.getElementById('wpPreviewImg');
             const badge = document.getElementById('wpBadge');
-            if (preview) preview.style.backgroundImage = isDefault ? WP_DEFAULT_BG : 'url("' + w.dataUrl + '")';
+            paintBgToken(preview, isDefault ? '' : curToken, WP_DEFAULT_BG);
             if (badge) badge.textContent = isDefault ? '默认壁纸' : '我的壁纸';
 
             const blurEl = document.getElementById('wpBlur');
@@ -12259,8 +12925,9 @@ ${forumAnonRules}
                 return;
             }
             gal.innerHTML = lib.map(item => {
-                const active = (!isDefault && item.dataUrl === w.dataUrl) ? ' active' : '';
-                return '<div class="wp-thumb' + active + '" data-id="' + item.id + '" style="background-image:url(\'' + item.dataUrl + '\')">' +
+                const token = imageIdOfObj(item);
+                const active = (!isDefault && token && token === curToken) ? ' active' : '';
+                return '<div class="wp-thumb' + active + '" data-id="' + item.id + '" data-img-bg="' + String(token).replace(/"/g, '&quot;') + '">' +
                     '<button class="del" data-del="' + item.id + '" title="删除">✕</button>' +
                     (active ? '<span class="use">使用中</span>' : '') +
                     '</div>';
@@ -12282,19 +12949,25 @@ ${forumAnonRules}
             }
             try {
                 const dataUrl = await compressImage(file, 900, 0.8);
-                const item = { id: genId(), dataUrl, createdAt: Date.now() };
+                const blob = await dataUrlToBlob(dataUrl);
+                if (!blob) throw new Error('图片转换失败');
+                const wid = newImageId('wp_');
+                await ImageDB.put(wid, blob);          // 图片本体进 IndexedDB
+                const item = { id: wid, imgId: wid, createdAt: Date.now() };
                 const prevWallpaper = Object.assign({}, data.wallpaper);
                 data.wallpapers.push(item);
-                data.wallpaper = Object.assign({}, data.wallpaper, { dataUrl, preset: 'custom' });
+                data.wallpaper = Object.assign({}, data.wallpaper, { imgId: wid, preset: 'custom' });
+                delete data.wallpaper.dataUrl;         // 只在 localStorage 留 id
 
                 if (!saveData()) {
                     data.wallpapers = data.wallpapers.filter(x => x.id !== item.id);
                     data.wallpaper = prevWallpaper;
                     saveData();
+                    deleteImage(wid);
                     renderWallpaperPage();
                     return;
                 }
-                applyWallpaper(dataUrl, 'custom');
+                applyWallpaper(wid, 'custom');
                 renderWallpaperPage();
             } catch (err) {
                 console.warn(err);
@@ -12309,13 +12982,16 @@ ${forumAnonRules}
                 const item = (data.wallpapers || []).find(x => x.id === del.dataset.del);
                 if (!item) return;
                 if (!confirm('删除这张壁纸？')) return;
+                const itemToken = imageIdOfObj(item);
                 data.wallpapers = data.wallpapers.filter(x => x.id !== item.id);
-                if (data.wallpaper.dataUrl === item.dataUrl) {
-                    data.wallpaper.dataUrl = '';
+                if (currentWallpaperToken() === itemToken) {
+                    data.wallpaper.imgId = '';
+                    delete data.wallpaper.dataUrl;
                     data.wallpaper.preset = 'default';
                 }
                 saveData();
-                applyWallpaper(data.wallpaper.dataUrl, data.wallpaper.preset);
+                deleteImage(itemToken);      // 同时清掉 IndexedDB 与内存里的 objectURL
+                applyWallpaper(currentWallpaperToken(), data.wallpaper.preset);
                 renderWallpaperPage();
                 return;
             }
@@ -12323,10 +12999,11 @@ ${forumAnonRules}
             if (thumb) {
                 const item = (data.wallpapers || []).find(x => x.id === thumb.dataset.id);
                 if (!item) return;
-                data.wallpaper.dataUrl = item.dataUrl;
+                data.wallpaper.imgId = imageIdOfObj(item);
+                delete data.wallpaper.dataUrl;
                 data.wallpaper.preset = 'custom';
                 saveData();
-                applyWallpaper(item.dataUrl, 'custom');
+                applyWallpaper(data.wallpaper.imgId, 'custom');
                 renderWallpaperPage();
             }
         });
@@ -12355,7 +13032,8 @@ ${forumAnonRules}
         });
 
         document.getElementById('wpResetBtn').addEventListener('click', () => {
-            data.wallpaper.dataUrl = '';
+            data.wallpaper.imgId = '';
+            delete data.wallpaper.dataUrl;
             data.wallpaper.preset = 'default';
             saveData();
             applyWallpaper('', 'default');
@@ -12607,10 +13285,12 @@ ${forumAnonRules}
             });
         }
 
-        function openPhotoViewer(url, caption) {
+        async function openPhotoViewer(token, caption) {
+            const url = await getDisplayUrl(token);
+            if (!url) { toast('这张图已经找不到了'); return; }
             const box = document.createElement('div');
             box.className = 'photo-viewer';
-            box.innerHTML = '<img src="' + url + '">' + (caption ? '<div class="cap">' + escHtml(caption) + '</div>' : '');
+            box.innerHTML = '<img src="' + String(url).replace(/"/g, '%22') + '">' + (caption ? '<div class="cap">' + escHtml(caption) + '</div>' : '');
             box.addEventListener('click', () => box.remove());
             document.querySelector('.phone').appendChild(box);
         }
@@ -12629,6 +13309,7 @@ ${forumAnonRules}
         }
 
         // ---------- 头像 ----------
+        // 返回的是 token（IndexedDB 里的图片 id / 老 base64），渲染交给 data-img 水合
         function getAvatarUrl(id) {
             if (id === 'player') return (data.profile && data.profile.avatar) || '';
             const p = data.personas.find(x => x.id === id);
@@ -12637,16 +13318,15 @@ ${forumAnonRules}
 
         function avatarHtml(id, size, extraCls) {
             const px = size || 40;
-            const url = getAvatarUrl(id);
+            const token = getAvatarUrl(id);
             const base = 'width:' + px + 'px;height:' + px + 'px;border-radius:50%;flex-shrink:0;' +
                 'display:flex;align-items:center;justify-content:center;overflow:hidden;' +
                 'background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.10);' +
                 'font-weight:600;font-size:' + Math.round(px * 0.4) + 'px;color:#fff;';
             const cls = 'avatar' + (extraCls ? ' ' + extraCls : '');
-            if (url) {
-                const safe = String(url).replace(/"/g, '%22').replace(/'/g, '%27');
+            if (token) {
                 return '<div class="' + cls + '" style="' + base + '">' +
-                    '<img src="' + safe + '" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">' +
+                    '<img data-img="' + String(token).replace(/"/g, '&quot;') + '" src="' + IMAGE_PLACEHOLDER + '" alt="" style="width:100%;height:100%;object-fit:cover;display:block;">' +
                     '</div>';
             }
             let ch = '?';
@@ -12667,10 +13347,12 @@ ${forumAnonRules}
             box.onclick = () => {
                 if (!(data.photos || []).length) { toast('相册还是空的，先去相册上传几张'); return; }
                 pickPhotoModal(async (photo) => {
-                    let small;
-                    try { small = await compressDataUrl(photo.dataUrl, 300, 0.8); } catch (e) { small = photo.dataUrl; }
-                    data.profile.avatar = small;
+                    const old = data.profile.avatar;
+                    const aid = await saveImageVariant(imageIdOfObj(photo), 300, 0.8, 'av_');
+                    if (!aid) { toast('头像设置失败，换张图试试'); return; }
+                    data.profile.avatar = aid;
                     saveData();
+                    if (old && old !== aid && String(old).indexOf('av_') === 0) deleteImage(old);
                     renderProfileAvatar();
                     renderWechatList();
                     renderMoments();
@@ -12705,7 +13387,7 @@ ${forumAnonRules}
             }
             grid.innerHTML = list.map(p => `
                 <div class="album-cell" data-photo="${p.id}">
-                    <img src="${p.dataUrl}" alt="">
+                    <img data-img="${imageIdOfObj(p)}" src="${IMAGE_PLACEHOLDER}" alt="">
                     ${albumTab === 'public' ? '' : '<span class="badge">仅我</span>'}
                     ${p.desc ? '<div class="cap">' + escHtml(p.desc) + '</div>' : ''}
                 </div>
@@ -12755,14 +13437,26 @@ ${forumAnonRules}
                 }
                 let dataUrl;
                 try {
-                    dataUrl = await compressImage(file, 720, 0.75);
+                    dataUrl = await compressImage(file, 720, 0.75);   // 仍用 canvas 压缩
                 } catch (e) {
                     toast('「' + file.name + '」处理失败，已跳过');
                     continue;
                 }
+                const blob = await dataUrlToBlob(dataUrl);
+                if (!blob) {
+                    toast('「' + file.name + '」处理失败，已跳过');
+                    continue;
+                }
+                const imgId = newImageId('ph_');
+                try {
+                    await ImageDB.put(imgId, blob);                  // 图片本体 → IndexedDB
+                } catch (e) {
+                    toast('这张没存下：本地图片库写入失败');
+                    continue;
+                }
                 const photo = {
-                    id: genId(),
-                    dataUrl,
+                    id: imgId,
+                    imgId: imgId,          // localStorage 里只存 ID
                     name: file.name.replace(/\.[^.]+$/, ''),
                     desc: '',
                     isPublic: !!isPublic,
@@ -12773,7 +13467,8 @@ ${forumAnonRules}
                 if (!saveData()) {
                     data.photos = data.photos.filter(p => p.id !== photo.id);
                     try { saveData(); } catch (e) {}
-                    toast('这张没存下：本地空间不足，请清理壁纸或相册');
+                    deleteImage(imgId);
+                    toast('这张没存下：本地空间不足，请清理一下浏览器存储');
                     break;
                 }
                 added++;
@@ -12803,6 +13498,8 @@ ${forumAnonRules}
                 toast('删除失败：本地存储异常');
                 return;
             }
+            // 图片本体也一起删，顺便释放 objectURL
+            deleteImage(imageIdOfObj(photo));
             renderAlbum();
             toast('已删除');
         }
@@ -12890,7 +13587,7 @@ ${forumAnonRules}
             showModal(`
                 <div class="modal-title">图片操作</div>
                 <div style="text-align:center;margin-bottom:10px;">
-                    <img src="${photo.dataUrl}" style="max-width:100%;max-height:190px;border-radius:14px;">
+                    <img data-img="${imageIdOfObj(photo)}" src="${IMAGE_PLACEHOLDER}" style="max-width:100%;max-height:190px;border-radius:14px;">
                 </div>
                 <div style="font-size:12px;color:rgba(255,255,255,.55);margin-bottom:12px;line-height:1.7;">
                     ${photo.desc ? '描述：' + escHtml(photo.desc) : '还没有描述 —— 公用相册的图片必须写描述，AI 才能引用它'}
@@ -12906,7 +13603,7 @@ ${forumAnonRules}
                     <button class="btn" onclick="closeModal()">关闭</button>
                 </div>
             `);
-            document.getElementById('paView').addEventListener('click', () => openPhotoViewer(photo.dataUrl, photo.desc || photo.name));
+            document.getElementById('paView').addEventListener('click', () => openPhotoViewer(imageIdOfObj(photo), photo.desc || photo.name));
             document.getElementById('paDesc').addEventListener('click', () => editPhotoDesc(photo.id));
             document.getElementById('paAvatar').addEventListener('click', () => setAvatar(photo.id));
             document.getElementById('paMove').addEventListener('click', () => {
@@ -12921,6 +13618,7 @@ ${forumAnonRules}
                 data.photos = data.photos.filter(p => p.id !== photo.id);
                 saveData();
                 closeModal();
+                deleteImage(imageIdOfObj(photo));
                 renderAlbum();
                 toast('已删除');
             });
@@ -12967,18 +13665,18 @@ ${forumAnonRules}
             document.querySelectorAll('.avatar-pick').forEach(btn => {
                 btn.addEventListener('click', async () => {
                     const who = btn.dataset.who;
-                    let small;
-                    try {
-                        small = await compressDataUrl(photo.dataUrl, 300, 0.8);
-                    } catch (e) {
-                        small = photo.dataUrl;
-                    }
+                    const aid = await saveImageVariant(imageIdOfObj(photo), 300, 0.8, 'av_');
+                    if (!aid) { toast('头像设置失败，换张图试试'); return; }
                     if (who === 'player') {
-                        data.profile.avatar = small;
+                        const old = data.profile.avatar;
+                        data.profile.avatar = aid;
+                        if (old && old !== aid && String(old).indexOf('av_') === 0) deleteImage(old);
                     } else {
                         const p = data.personas.find(x => x.id === who);
                         if (!p) return;
-                        p.avatar = small;
+                        const old = p.avatar;
+                        p.avatar = aid;
+                        if (old && old !== aid && String(old).indexOf('av_') === 0) deleteImage(old);
                     }
                     if (!saveData()) { toast('空间不足，头像可能未保存'); }
                     closeModal();
@@ -13002,7 +13700,7 @@ ${forumAnonRules}
                 <div class="album-grid" id="pickGrid">
                     ${photos.length ? photos.map(p => `
                         <div class="album-cell" data-id="${p.id}">
-                            <img src="${p.dataUrl}">
+                            <img data-img="${imageIdOfObj(p)}" src="${IMAGE_PLACEHOLDER}">
                             ${p.isPublic ? '' : '<span class="badge">仅我</span>'}
                         </div>
                     `).join('') : '<div class="album-empty" style="grid-column:1/-1;">相册为空，先去上传几张吧</div>'}
@@ -14197,7 +14895,7 @@ ${forumAnonRules}
 
             grid.innerHTML = list.map(g => {
                 const pic = g.image
-                    ? '<img src="' + String(g.image).replace(/"/g, '%22') + '" alt="">'
+                    ? '<img data-img="' + escHtml(g.image) + '" src="' + IMAGE_PLACEHOLDER + '" alt="">'
                     : escHtml(g.emoji || '🛍️');
                 return '<div class="tb-card" data-goods="' + g.id + '">' +
                     '<div class="pic">' + pic + '</div>' +
@@ -14228,7 +14926,7 @@ ${forumAnonRules}
                 <div class="modal-title">发布商品</div>
                 <label>商品图片（可选）</label>
                 <div class="tb-pic-row">
-                    <div class="tb-pub-pic${st.image ? ' has-img' : ''}" id="tbPubPic"${st.image ? ` style="background-image:url('${st.image}')"` : ''}>${st.image ? '' : '点击选图'}</div>
+                    <div class="tb-pub-pic${st.image ? ' has-img' : ''}" id="tbPubPic" data-img-bg="${escHtml(st.image)}">${st.image ? '' : '点击选图'}</div>
                     <div class="tb-pic-strip" id="tbPicStrip"></div>
                 </div>
                 <label>商品名称 *</label>
@@ -14246,17 +14944,21 @@ ${forumAnonRules}
             const picEl = document.getElementById('tbPubPic');
             const strip = document.getElementById('tbPicStrip');
 
-            function setPic(dataUrl) {
-                st.image = dataUrl || '';
-                if (st.image) {
-                    picEl.style.backgroundImage = 'url("' + st.image + '")';
-                    picEl.classList.add('has-img');
-                    picEl.textContent = '';
-                } else {
-                    picEl.style.backgroundImage = '';
-                    picEl.classList.remove('has-img');
-                    picEl.textContent = '点击选图';
+            function paintPic() {
+                picEl.classList.toggle('has-img', !!st.image);
+                picEl.textContent = st.image ? '' : '点击选图';
+                paintBgToken(picEl, st.image, '');
+            }
+
+            // 从任意图片来源派生一张 640px 的副本存进 IndexedDB，商品只记 id
+            async function setPic(token, fallbackDataUrl) {
+                let id = await saveImageVariant(token, 640, 0.72, 'tb_');
+                if (!id && fallbackDataUrl) {
+                    const blob = await dataUrlToBlob(fallbackDataUrl);
+                    if (blob) id = await saveImageBlob(blob, 'tb_');
                 }
+                st.image = id || '';
+                paintPic();
             }
 
             // 读取当前表单，供重开面板时回填
@@ -14278,7 +14980,8 @@ ${forumAnonRules}
                     const f = fi.files && fi.files[0];
                     if (!f) return;
                     try {
-                        setPic(await compressImage(f, 640, 0.72));
+                        const dataUrl = await compressImage(f, 640, 0.72);
+                        await setPic('', dataUrl);
                         strip.querySelectorAll('.ph').forEach(el => el.classList.remove('sel'));
                     } catch (err) { toast('图片处理失败'); }
                 };
@@ -14287,7 +14990,7 @@ ${forumAnonRules}
 
             const upTile = '<div class="ph up" id="tbUpTile">＋<span>上传</span></div>';
             strip.innerHTML = photos.map(p =>
-                `<div class="ph" data-photo="${p.id}"><img src="${p.dataUrl}" alt=""></div>`
+                `<div class="ph" data-photo="${p.id}"><img data-img="${imageIdOfObj(p)}" src="${IMAGE_PLACEHOLDER}" alt=""></div>`
             ).join('') + upTile;
 
             strip.addEventListener('click', async (e) => {
@@ -14299,11 +15002,7 @@ ${forumAnonRules}
                 if (!cell) return;
                 const photo = photos.find(p => p.id === cell.dataset.photo);
                 if (!photo) return;
-                try {
-                    setPic(await compressDataUrl(photo.dataUrl, 640, 0.72));
-                } catch (err) {
-                    setPic(photo.dataUrl);
-                }
+                await setPic(imageIdOfObj(photo));
                 strip.querySelectorAll('.ph').forEach(el => el.classList.toggle('sel', el === cell));
             });
 
@@ -14317,7 +15016,7 @@ ${forumAnonRules}
                 showModal(`
                     <div class="modal-title">选择图片</div>
                     <div class="album-grid" id="tbPickGrid">
-                        ${photos.map(p => `<div class="album-cell" data-id="${p.id}"><img src="${p.dataUrl}"></div>`).join('')}
+                        ${photos.map(p => `<div class="album-cell" data-id="${p.id}"><img data-img="${imageIdOfObj(p)}" src="${IMAGE_PLACEHOLDER}"></div>`).join('')}
                     </div>
                     <div class="btn-row">
                         <button class="btn" id="tbPickCancel">取消</button>
@@ -14327,11 +15026,8 @@ ${forumAnonRules}
                     cell.addEventListener('click', async () => {
                         const photo = photos.find(p => p.id === cell.dataset.id);
                         if (!photo) return;
-                        try {
-                            snap.image = await compressDataUrl(photo.dataUrl, 640, 0.72);
-                        } catch (err) {
-                            snap.image = photo.dataUrl;
-                        }
+                        const tid = await saveImageVariant(imageIdOfObj(photo), 640, 0.72, 'tb_');
+                        if (tid) snap.image = tid;
                         openPublishGoods(snap);
                     });
                 });
@@ -14386,7 +15082,7 @@ ${forumAnonRules}
             const g = tbGoodsById(id);
             if (!g) return;
             const thumb = g.image
-                ? `<div style="width:56px;height:56px;border-radius:12px;background:url('${g.image}') center/cover no-repeat;flex-shrink:0;"></div>`
+                ? `<div data-img-bg="${escHtml(g.image)}" style="width:56px;height:56px;border-radius:12px;background-size:cover;background-position:center;flex-shrink:0;"></div>`
                 : `<div style="width:56px;height:56px;border-radius:12px;background:rgba(255,255,255,.08);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0;">${escHtml(g.emoji || '🛍️')}</div>`;
             showModal(`
                 <div class="modal-title">确认购买</div>
@@ -14657,9 +15353,11 @@ ${forumAnonRules}
         async function callChat(opts) {
             const api = opts.api;
             const sys = opts.system ? [{ role: 'system', content: opts.system }] : [];
+            // 图片消息在上下文里是 img:<id>，发请求前统一换成 base64
+            const history = await hydrateApiImages(opts.messages || []);
             const body = {
                 model: api.model || 'gpt-3.5-turbo',
-                messages: [...sys, ...(opts.messages || [])],
+                messages: [...sys, ...history],
                 max_tokens: 800,
                 temperature: 0.85
             };
@@ -14713,11 +15411,34 @@ ${forumAnonRules}
             return fallback;
         }
 
-        function imageContent(dataUrl, text) {
+        // 图片作为多模态内容：这里先放 token，真正发请求前再换成 base64（见 hydrateApiImages）
+        function imageContent(src, text) {
             return [
                 { type: 'text', text: text || '（这张图）' },
-                { type: 'image_url', image_url: { url: dataUrl } }
+                { type: 'image_url', image_url: { url: imageTokenOf(src) } }
             ];
+        }
+
+        // 把 messages 里的 img:<id> 换成真正的 dataURL；换不到就把图片降级成文字
+        async function hydrateApiImages(messages) {
+            if (!Array.isArray(messages)) return messages;
+            for (const msg of messages) {
+                if (!msg || !Array.isArray(msg.content)) continue;
+                const parts = msg.content;
+                for (let i = 0; i < parts.length; i++) {
+                    const p = parts[i];
+                    if (!p || p.type !== 'image_url' || !p.image_url) continue;
+                    const url = String(p.image_url.url || '');
+                    if (!url || /^data:/i.test(url)) continue;
+                    const dataUrl = await getImageDataUrl(url);
+                    if (dataUrl) {
+                        p.image_url.url = dataUrl;
+                    } else {
+                        parts[i] = { type: 'text', text: '（图片已丢失）' };
+                    }
+                }
+            }
+            return messages;
         }
 
         function buildProfileStr() {
@@ -14982,7 +15703,7 @@ ${forumAnonRules}
             return photoTextRelated(photo.desc, text);
         }
 
-        function applyReply(personaId, reply) {
+        async function applyReply(personaId, reply) {
             const raw = String(reply == null ? '' : reply);
             const hasThreat = /\[\[BLOCK_THREAT\]\]/.test(raw);
             reply = raw.replace(/\[\[BLOCK_THREAT\]\]/g, '').trim();
@@ -15004,7 +15725,8 @@ ${forumAnonRules}
             if (parsed.photoIndex !== null && pubs[parsed.photoIndex]) {
                 const photo = pubs[parsed.photoIndex];
                 if (canSendPhoto(personaId, parsed.text, photo)) {
-                    addMessage(personaId, 'assistant', 'image', photo.dataUrl);
+                    const mid = await cloneImage(imageIdOfObj(photo), 'msg_');
+                    addMessage(personaId, 'assistant', 'image', mid ? 'img:' + mid : imageIdOfObj(photo));
                 } else {
                     console.debug('[photo] 已拦截不相关/过频的发图', { desc: photo.desc, text: parsed.text });
                 }
@@ -15066,7 +15788,7 @@ ${forumAnonRules}
                 if (!reply) { toast('AI 返回了空内容'); return false; }
 
                 const before = (data.chats[personaId] || []).length;
-                applyReply(personaId, reply);
+                await applyReply(personaId, reply);
 
                 const cw = document.getElementById('chatWindow');
                 const isOpen = cw.classList.contains('open') && cw.dataset.persona === personaId;
@@ -15093,8 +15815,9 @@ ${forumAnonRules}
             }
         }
 
-        function sendPhotoToChat(personaId, photo) {
-            addMessage(personaId, 'user', 'image', photo.dataUrl);
+        async function sendPhotoToChat(personaId, photo) {
+            const mid = await cloneImage(imageIdOfObj(photo), 'msg_');
+            addMessage(personaId, 'user', 'image', mid ? 'img:' + mid : imageIdOfObj(photo));
             renderMessages(personaId);
             const hasVision = !!(pickApi() && pickApi().vision);
             if (photo.desc) {
@@ -15183,10 +15906,10 @@ ${forumAnonRules}
         function msgBodyHtml(m, personaId) {
             const t = m.type || 'text';
             if (t === 'image') {
-                return '<img class="wx-img" src="' + m.content + '" alt="">';
+                return '<img class="wx-img" data-img="' + escHtml(m.content) + '" src="' + IMAGE_PLACEHOLDER + '" alt="">';
             }
             if (t === 'emoji') {
-                return '<img class="wx-emoji" src="' + m.content + '" alt="">';
+                return '<img class="wx-emoji" data-img="' + escHtml(m.content) + '" src="' + IMAGE_PLACEHOLDER + '" alt="">';
             }
             if (t === 'voice') {
                 const dur = Math.max(1, Math.round(Number(m.duration) || 1));
@@ -15254,7 +15977,7 @@ ${forumAnonRules}
             if (t === 'taobao') {
                 const j = parseJsonSafe(m.content);
                 const thumb = j.image
-                    ? '<div class="mc-thumb"><img src="' + String(j.image).replace(/"/g, '%22') + '" alt=""></div>'
+                    ? '<div class="mc-thumb"><img data-img="' + escHtml(j.image) + '" src="' + IMAGE_PLACEHOLDER + '" alt=""></div>'
                     : '<div class="mc-thumb">' + escHtml(j.emoji || '🛍️') + '</div>';
                 return '<div class="mcard tb">' +
                     '<div class="mc-h">🛍️ 淘宝 · 快递</div>' +
@@ -15689,7 +16412,7 @@ ${forumAnonRules}
                 return;
             }
             const img = e.target.closest('.wx-bubble img.wx-img');
-            if (img) { openPhotoViewer(img.src, ''); return; }
+            if (img) { openPhotoViewer(img.dataset.img || img.src, ''); return; }
             const ne = e.target.closest('[data-open-ne]');
             if (ne) {
                 const id = ne.dataset.openNe;
@@ -16208,18 +16931,33 @@ ${forumAnonRules}
             { name: '墨绿', value: 'linear-gradient(160deg,#1e2c22,#0d1210)' }
         ];
 
-        function applyChatBackground(personaId) {
+        async function applyChatBackground(personaId) {
             const container = document.getElementById('chatMessages');
             if (!container) return;
             const bg = (data.chatBackgrounds || {})[personaId] || '';
-            container.style.backgroundImage = bg || 'none';
             container.style.backgroundColor = '#111';
+            if (!bg) { container.style.backgroundImage = 'none'; return; }
+            // 预设（渐变）/ 老数据（url(data:...)）/ 外链：原样用
+            if (IMG_DIRECT_RE.test(bg) || /^(url\(|linear-gradient|radial-gradient|none)/i.test(bg)) {
+                container.style.backgroundImage = bg;
+                return;
+            }
+            // 新格式：img:<id>，异步换成 objectURL
+            const url = await getDisplayUrl(bg);
+            if (((data.chatBackgrounds || {})[personaId] || '') !== bg) return;   // 期间又换了一张
+            container.style.backgroundImage = url ? 'url("' + String(url).replace(/"/g, '%22') + '")' : 'none';
         }
 
         function setChatBackground(personaId, value) {
             if (!data.chatBackgrounds) data.chatBackgrounds = {};
+            const old = data.chatBackgrounds[personaId] || '';
             if (value) data.chatBackgrounds[personaId] = value;
             else delete data.chatBackgrounds[personaId];
+            // 换掉的旧背景图（只删自己生成的 bg_ 图，不去动预设和外链）
+            if (old && old !== value) {
+                const oid = imageIdOf(old);
+                if (oid && oid.indexOf('bg_') === 0) deleteImage(oid);
+            }
             saveData();
             applyChatBackground(personaId);
         }
@@ -16265,9 +17003,9 @@ ${forumAnonRules}
             document.getElementById('bgPickPhoto').addEventListener('click', () => {
                 if (!(data.photos || []).length) { toast('相册还是空的，先去相册上传几张'); return; }
                 pickPhotoModal(async (photo) => {
-                    let url = photo.dataUrl;
-                    try { url = await compressDataUrl(photo.dataUrl, 900, 0.72); } catch (e) {}
-                    setChatBackground(personaId, `url("${url}")`);
+                    const bid = await saveImageVariant(imageIdOfObj(photo), 900, 0.72, 'bg_');
+                    if (!bid) { toast('背景设置失败，换张图试试'); return; }
+                    setChatBackground(personaId, 'img:' + bid);
                     toast('聊天背景已更新');
                 });
             });
@@ -17943,7 +18681,7 @@ ${forumAnonRules}
             if (!el) return;
             const cover = getCallCover('player');
             if (cover) {
-                el.innerHTML = '<img src="' + String(cover).replace(/"/g, '%22') + '" alt="">';
+                el.innerHTML = '<img data-img="' + escHtml(cover) + '" src="' + IMAGE_PLACEHOLDER + '" alt="">';
             } else {
                 const p = data.profile || {};
                 const ch = (p.nickname || p.name || '我').charAt(0) || '我';
@@ -17977,11 +18715,7 @@ ${forumAnonRules}
 
             const cover = getCallCover(callState.personaId);
             const bg = document.getElementById('wxCallBg');
-            if (bg) {
-                bg.style.backgroundImage = cover
-                    ? 'url("' + String(cover).replace(/"/g, '%22') + '")'
-                    : 'linear-gradient(160deg,#242a35,#101116)';
-            }
+            paintBgToken(bg, cover, 'linear-gradient(160deg,#242a35,#101116)');
             const av = document.getElementById('wxCallAvatar');
             if (av) av.innerHTML = avatarHtml(callState.personaId, 118);
 
@@ -18453,7 +19187,7 @@ ${forumAnonRules}
             if (!g) return '<div class="' + cls + '" style="' + base + '">?</div>';
             if (g.avatar) {
                 return '<div class="' + cls + '" style="' + base + '">'
-                    + '<img src="' + String(g.avatar).replace(/"/g, '%22').replace(/'/g, '%27') + '" alt="" '
+                    + '<img data-img="' + escHtml(g.avatar) + '" src="' + IMAGE_PLACEHOLDER + '" alt="" '
                     + 'style="width:100%;height:100%;object-fit:cover;display:block;">'
                     + '</div>';
             }
@@ -18471,7 +19205,7 @@ ${forumAnonRules}
                 return '<div style="overflow:hidden;background:#3a3a3a;display:flex;align-items:center;'
                     + 'justify-content:center;color:#cfcfcf;font-size:' + fs + 'px;line-height:1.1;">'
                     + (url
-                        ? '<img src="' + String(url).replace(/"/g, '%22').replace(/'/g, '%27') + '" alt="" '
+                        ? '<img data-img="' + escHtml(url) + '" src="' + IMAGE_PLACEHOLDER + '" alt="" '
                             + 'style="width:100%;height:100%;object-fit:cover;display:block;">'
                         : escHtml(ch))
                     + '</div>';
@@ -18928,7 +19662,7 @@ ${forumAnonRules}
             if (groupIcebreakerInFlight.has(gid)) return false;
 
             // ① 公用相册（必须有描述，才能让 AI 挑）
-            const pubs = (data.photos || []).filter(p => p.isPublic && p.desc && p.dataUrl);
+            const pubs = (data.photos || []).filter(p => p.isPublic && p.desc && imageIdOfObj(p));
             if (!pubs.length) return false;
 
             // ② 冷场：最近一条消息在 30 分钟以前
@@ -19009,7 +19743,8 @@ ${forumAnonRules}
 
                 // ⑨ 写入：先图后文，间隔 260ms（列表预览取最后一条消息，文字在后才不会被 [图片] 顶掉）
                 if (photo) {
-                    addGroupMessage(gid, speakerId, 'image', photo.dataUrl);
+                    const gmid = await cloneImage(imageIdOfObj(photo), 'gmsg_');
+                    addGroupMessage(gid, speakerId, 'image', gmid ? 'img:' + gmid : imageIdOfObj(photo));
                     if (isGroupChatOpenWith(gid)) renderGroupMessages(gid);
                 }
                 if (text) {
@@ -19440,11 +20175,12 @@ ${forumAnonRules}
             document.getElementById('gsAvPick').addEventListener('click', () => {
                 if (!(data.photos || []).length) { toast('相册还是空的，先去相册上传几张'); return; }
                 pickPhotoModal(async (photo) => {
-                    let small;
-                    try { small = await compressDataUrl(photo.dataUrl, 320, 0.8); }
-                    catch (e) { small = photo.dataUrl; }
-                    g.avatar = small;
+                    const old = g.avatar;
+                    const aid = await saveImageVariant(imageIdOfObj(photo), 320, 0.8, 'gv_');
+                    if (!aid) { toast('设置失败，换张图试试'); return; }
+                    g.avatar = aid;
                     saveData();
+                    if (old && old !== aid && String(old).indexOf('gv_') === 0) deleteImage(old);
                     renderGroupSettings(gid);
                     refreshGroupHeads(gid);
                     toast('群头像已更新');
@@ -19530,6 +20266,13 @@ ${forumAnonRules}
             const g = getGroup(gid);
             if (!g) return;
             data.groups = (data.groups || []).filter(x => x.id !== gid);
+            // 群头像 / 群里的图片消息不再需要
+            if (g.avatar) deleteImage(imageIdOf(g.avatar));
+            ((data.groupChats || {})[gid] || []).forEach(m => {
+                if (m && (m.type === 'image' || m.type === 'emoji') && typeof m.content === 'string' && m.content.indexOf('img:') === 0) {
+                    deleteImage(imageIdOf(m.content));
+                }
+            });
             delete data.groupChats[gid];
             delete data.groupUnread[gid];
             delete data.groupPendingReplies[gid];
@@ -19600,56 +20343,92 @@ ${forumAnonRules}
 
         // ============================================================
         //  初始化
+        //  ------------------------------------------------------------
+        //  migrateImagesToDB() 是异步的：先把历史 base64 图片搬进 IndexedDB，
+        //  再渲染首屏，避免"先渲染出老图、再被洗掉"的闪烁。
         // ============================================================
-        if (!data.forumActiveGlobalIds || data.forumActiveGlobalIds.length === 0) {
-            const globals = data.worldBooks.filter(w => w.scope === 'global' && !w.forumExcluded).map(w => w.id);
-            data.forumActiveGlobalIds = globals;
-            saveData();
-        }
-        renderWechatList();
-        renderSettings();
-        renderWorldbooks();
-        renderForumWbConfig();
-        renderForumList();
-        renderProfile();
-        switchWechatTab('chat');
+        (async function boot() {
+            // 首次升级要把历史 base64 搬进 IndexedDB，可能要一两秒，先盖一层提示，别看着像卡死
+            let bootVeil = null;
+            try {
+                if (JSON.stringify(data).indexOf('data:image') !== -1) {
+                    bootVeil = document.createElement('div');
+                    bootVeil.textContent = '正在把旧图片整理到本地图片库…';
+                    bootVeil.style.cssText = 'position:absolute;inset:0;z-index:9998;display:flex;align-items:center;' +
+                        'justify-content:center;background:rgba(8,8,14,.88);color:rgba(255,255,255,.82);' +
+                        'font-size:13px;letter-spacing:.5px;text-align:center;padding:0 30px;line-height:1.8;';
+                    document.querySelector('.phone').appendChild(bootVeil);
+                }
+            } catch (e) {}
 
-        applyWallpaper(data.wallpaper.dataUrl, data.wallpaper.preset);
-        renderMemos();
-        renderWallpaperPage();
-        renderAlbum();
-        renderProfileAvatar();
-        renderListenTogether();
+            try {
+                await migrateImagesToDB();
+            } catch (e) {
+                console.warn('图片迁移失败，按老数据继续渲染：', e);
+            }
 
-        // 恢复上次的沉浸式全屏布局（浏览器全屏需用户手势，这里只恢复铺满布局）
-        if (data.uiSettings && data.uiSettings.immersive) {
-            setImmersive(true, { request: false, silent: true });
-        }
+            try {
+                const n = await ImageDB.count();
+                console.log('🖼️ IndexedDB 图片库：' + n + ' 张');
+            } catch (e) {}
+            logStorageUsage();
 
-        // ============================================================
-        //  v17 · 淘宝页面注册 + 预设商品灌入
-        // ============================================================
-        pages.taobao = document.getElementById('pageTaobao');
+            if (!data.forumActiveGlobalIds || data.forumActiveGlobalIds.length === 0) {
+                const globals = data.worldBooks.filter(w => w.scope === 'global' && !w.forumExcluded).map(w => w.id);
+                data.forumActiveGlobalIds = globals;
+                saveData();
+            }
+            renderWechatList();
+            renderSettings();
+            renderWorldbooks();
+            renderForumWbConfig();
+            renderForumList();
+            renderProfile();
+            switchWechatTab('chat');
 
-        const _showPageV17 = showPage;
-        showPage = function (name) {
-            _showPageV17(name);
-            if (name === 'taobao') renderTaobao();
-        };
+            applyWallpaper(currentWallpaperToken(), data.wallpaper.preset);
+            renderMemos();
+            renderWallpaperPage();
+            renderAlbum();
+            renderProfileAvatar();
+            renderListenTogether();
 
-        // 淘宝预设商品灌入（仅首次：货架为空时）
-        if (tbData().goods.length === 0) {
-            data.taobao.goods = TAOBAO_PRESET_GOODS.map(g => Object.assign({}, g, {
-                image: '',
-                fromPreset: true,
-                createdAt: Date.now()
-            }));
-            saveData();
-        }
+            // 恢复上次的沉浸式全屏布局（浏览器全屏需用户手势，这里只恢复铺满布局）
+            if (data.uiSettings && data.uiSettings.immersive) {
+                setImmersive(true, { request: false, silent: true });
+            }
 
-        showPage('home');
-        console.log('📱 AI 小手机 · v18：群聊（建群 / 群设置 / @ 提醒 / 引用回复）');
-        console.log('数据:', data);
+            // ============================================================
+            //  v17 · 淘宝页面注册 + 预设商品灌入
+            // ============================================================
+            pages.taobao = document.getElementById('pageTaobao');
+
+            const _showPageV17 = showPage;
+            showPage = function (name) {
+                _showPageV17(name);
+                if (name === 'taobao') renderTaobao();
+            };
+
+            // 淘宝预设商品灌入（仅首次：货架为空时）
+            if (tbData().goods.length === 0) {
+                data.taobao.goods = TAOBAO_PRESET_GOODS.map(g => Object.assign({}, g, {
+                    image: '',
+                    fromPreset: true,
+                    createdAt: Date.now()
+                }));
+                saveData();
+            }
+
+            showPage('home');
+            console.log('📱 AI 小手机 · v18：群聊（建群 / 群设置 / @ 提醒 / 引用回复）');
+            console.log('数据:', data);
+
+            if (bootVeil) {
+                bootVeil.style.transition = 'opacity .3s';
+                bootVeil.style.opacity = '0';
+                setTimeout(() => { try { bootVeil.remove(); } catch (e) {} }, 320);
+            }
+        })();
 
         // ============================================================
         //  公告弹窗
