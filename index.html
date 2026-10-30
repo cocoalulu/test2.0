@@ -18584,6 +18584,89 @@ ${tonePrompt}
             return withRomanceLock(base + '\n\n' + PHONE_MODE_PROMPT);
         }
 
+        // ------------------------------------------------------------
+        //  时间：只做"状态底色"，绝不做话题
+        //  旧写法（"必须符合真实生活 / 中午可能刚吃完"）挂在每轮 user 消息的末尾，
+        //  等于每轮都在提醒模型"现在是饭点"，模型就把"吃饭"当成最高优先级锚点，
+        //  于是出现"吃了吗"打卡式复读。现在拆成两层：
+        //    1) 状态暗示 —— 只影响语气和话的多少；
+        //    2) 话题禁令 —— 明确禁止拿时间/三餐当由头。
+        // ------------------------------------------------------------
+        const TIME_STATE_LINE = {
+            '凌晨': '你困得厉害，脑子转得慢，句子短、懒得展开，除非对方特别来劲',
+            '清晨': '你刚醒或正在洗漱、赶路，还有点懵，回复偏短',
+            '上午': '你在忙自己的事，注意力不算特别集中',
+            '中午': '你饭后发懒、有点犯困，语气偏慵懒',
+            '下午': '你手头有事在做，偶尔走神',
+            '傍晚': '你刚结束一整天的忙乱，稍微松下来一点',
+            '晚上': '你处在放松状态，可能窝着刷手机，但还没到困的程度',
+            '深夜': '你明显困了、反应变慢，不会主动开长话题（除非对方先聊）'
+        };
+
+        function timeAsBackgroundHint(bj) {
+            const state = TIME_STATE_LINE[bj.period] || '保持平常的说话状态';
+            // 注意：这里只保留"一句状态 + 一句禁令"，不举例、不复述被禁的问句，
+            // 免得模型把示例当成话题种子（越说别问，越容易问）。
+            return `现在是北京时间 ${bj.timeStr}（${bj.period}）。你此刻的状态：${state}。` +
+                `这个时间只用来决定你的语气和话的多少，它不是话题：不要报时间，也别拿三餐、上下班当由头，` +
+                `更不要用打卡式的问候开场。` +
+                `接着上文说：回应对方刚说的话、延续正在聊的话题，或者讲一件你此刻正在做的具体小事。`;
+        }
+
+        // ------------------------------------------------------------
+        //  防复读兜底（代码层拦截，不指望模型自觉）
+        //  applyReply 会把一条回复按行拆成多条消息，所以先按"轮"聚合再判断，
+        //  否则连续两条 assistant 很可能只是同一句话的两行，误判成"复读两次"。
+        // ------------------------------------------------------------
+        const FOOD_WORD_RE = /吃|饭|饿|外卖|夜宵|宵夜|早餐|午饭|晚饭|零食|食堂|奶茶/;
+        const MEAL_ASK_RE = /吃了吗|吃了没|吃饭了吗|吃饭没|吃啥|吃什么|饿不饿|饿了吧|点外卖|要不要吃|宵夜|夜宵|该吃饭/;
+
+        function recentAssistantTurns(personaId, maxTurns) {
+            const all = data.chats[personaId] || [];
+            const turns = [];
+            let cur = null;
+            let lastIdx = -2;
+            all.forEach((m, i) => {
+                if (!m || m.recalled) return;
+                if (m.sender === 'user') { cur = null; lastIdx = -2; return; }
+                if (m.sender !== 'assistant') return;
+                if (!cur || lastIdx !== i - 1) { cur = { text: '' }; turns.push(cur); }
+                if (m.type === 'text') cur.text += String(m.content || '') + '\n';
+                lastIdx = i;
+            });
+            return turns.slice(-Math.max(1, maxTurns));
+        }
+
+        // 返回 '' 表示本轮不需要干预
+        function buildAntiRepeatHint(personaId) {
+            // 玩家自己就在聊吃的：顺着说很正常，别硬禁
+            const all = data.chats[personaId] || [];
+            for (let i = all.length - 1; i >= 0; i--) {
+                const m = all[i];
+                if (!m || m.recalled) continue;
+                if (m.sender !== 'user') continue;
+                if (m.type !== 'text' && m.type !== 'voice') break;
+                if (FOOD_WORD_RE.test(String(m.content || ''))) return '';
+                break;
+            }
+
+            const turns = recentAssistantTurns(personaId, 3);
+            if (!turns.length) return '';
+            const foodTurns = turns.filter(t => FOOD_WORD_RE.test(t.text)).length;
+            const lastIsMealAsk = MEAL_ASK_RE.test(turns[turns.length - 1].text);
+
+            if (lastIsMealAsk || foodTurns >= 2) {
+                return '【最高优先级·禁止复读】吃饭这个话题你最近几轮已经翻来覆去说过了，对方很可能已经觉得你在打卡。' +
+                    '这一轮彻底换台：不准再问对方吃了没、饿不饿，也不准用"该吃饭了""点个外卖"之类的句子绕回来。' +
+                    '换个方向：说一件你此刻正在做的具体小事（刚洗完澡、在追某部剧、被楼下装修吵到），' +
+                    '或者就着上文里对方提过的一个细节继续聊。';
+            }
+            if (foodTurns === 1) {
+                return '（提醒：上一轮你已经提过吃饭相关的话，这一轮别再绕回去，接着聊点别的。）';
+            }
+            return '';
+        }
+
         // 动态尾部：每轮可能变化的内容，全部拼到"最新一条 user 消息"的末尾
         // 这样 System + 历史前缀保持字节一致，只有最后一点点 token 需要重算
         // 天气 / 特殊日子【不在这里】常驻注入：两者都由 sendUserMessage 在代码层判定，
@@ -18595,15 +18678,9 @@ ${tonePrompt}
 
             const parts = [];
 
-            // ---- 北京时间（权重最高，放在最前）----
+            // ---- 北京时间（只做"状态底色"，严禁变成话题；见 timeAsBackgroundHint）----
             const bj = beijingTimeHint();
-            parts.push(
-                `现在是北京时间 ${bj.timeStr}（${bj.period}）。` +
-                `你的回复内容、语气、作息节奏必须符合这个时间段的真实生活：` +
-                `例如凌晨不要显得精神抖擞，清晨可能刚起床或在路上，中午可能刚吃完或犯困，` +
-                `深夜不要主动开启长时间闲聊（除非用户先聊）。` +
-                `不要主动说出具体时间，除非对方问起。`
-            );
+            parts.push(timeAsBackgroundHint(bj));
 
             // 用户设定已上移到 System（内容稳定，能命中缓存）；尾部只留"本轮才有"的内容，
             // 免得最后一段全是任务说明，把人设的相对权重压下去。
@@ -18923,8 +19000,10 @@ ${tonePrompt}
             const useVision = !!(api.vision !== false && opts.allowVision);
             // System 字节级稳定；本轮的情境/状态/相册全部挂在最后一条 user 后面
             const system = buildStaticPersonaSystem(personaId);
+            // 代码层防复读：模型要是无视"别问吃饭"，这里直接把禁令顶到 prompt 最后
+            const antiRepeat = buildAntiRepeatHint(personaId);
             const tail = buildChatDynamicTail(personaId, {
-                extraList: mergeExtraList(opts)
+                extraList: mergeExtraList(opts).concat(antiRepeat ? [antiRepeat] : [])
             });
             replying[personaId] = true;
             // instant = 关闭了模拟打字延迟：直接从 API 拿结果，不挂"正在输入"气泡
@@ -18963,7 +19042,7 @@ ${tonePrompt}
                             console.warn('视觉调用失败，已降级为纯文字：', vmsg.slice(0, 120));
                         }
                         const tail2 = buildChatDynamicTail(personaId, {
-                            extraList: mergeExtraList(opts),
+                            extraList: mergeExtraList(opts).concat(antiRepeat ? [antiRepeat] : []),
                             blind: true
                         });
                         const msgs2 = attachDynamicTail(buildChatHistory(personaId, getContextMemory(), false), tail2);
@@ -20048,12 +20127,17 @@ ${tonePrompt}
 
             // 时间信息统一交给 buildChatDynamicTail（北京时间），这里只描述"主动发消息"这件事
             const system = buildStaticPersonaSystem(personaId);
+            // 主动消息同样要做防复读：定时推送最容易变成"饭点打卡"
+            const proactiveAntiRepeat = buildAntiRepeatHint(personaId);
             const tail = buildChatDynamicTail(personaId, {
                 extra: `现在你主动给用户发一条微信消息（时间参考见上文，不要明说几点）。` +
-                    `不要提"主动""系统""很久没聊"这类词，也不要说教。内容自然、简短（10-40字），` +
-                    `像朋友突然想起你：可以问候近况、分享此刻在做的小事、根据时间说一句、或者接着上次的话题。` +
-                    `注意作息真实感：凌晨不要主动闲聊，饭点可以问吃没吃，深夜别开长话题。` +
-                    `只输出消息内容，不要带引号、不要解释。`
+                    `不要提"主动""系统""很久没聊"这类词，也不要说教。内容自然、简短（10-40字）。` +
+                    `【重要约束】严禁问"吃了吗""在干嘛""忙不忙"这种废话式问候，也不要拿"该吃饭了""早点睡"当开场。` +
+                    `请直接给出一件具体的东西：你此刻正在做的小事（刚洗完澡、在等一锅汤、刚被楼下遛狗的拽了一跤），` +
+                    `或者一个你最近真的好奇、想听对方怎么说的问题，或者顺着上次没聊完的话题往下说。` +
+                    `注意作息真实感：凌晨不要主动闲聊，深夜别开长话题。` +
+                    (proactiveAntiRepeat ? `\n` + proactiveAntiRepeat : '') +
+                    `\n只输出消息内容，不要带引号、不要解释。`
             });
             // 主动消息时历史通常以 assistant 结尾，attachDynamicTail 会补一条 user 承载指令
             // 主动消息最容易"掉人设"：它没有用户消息做参照，全靠历史 + System。
@@ -24271,7 +24355,12 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 // 动态尾部只留场景说明：标点与格式统一由电话模式 System 负责
                 const extra = `你们正在${kindText}通话中。请像打电话一样短句口语回应，30 字以内，必须带正常标点。`;
                 const system = buildCallStaticSystem(personaId);
-                const tail = buildChatDynamicTail(personaId, { extra, skipPhotoMenu: true });
+                // 通话里同样禁止"吃了吗"打卡（一张嘴就问吃饭最出戏）
+                const callAntiRepeat = buildAntiRepeatHint(personaId);
+                const tail = buildChatDynamicTail(personaId, {
+                    extra: extra + (callAntiRepeat ? '\n' + callAntiRepeat : ''),
+                    skipPhotoMenu: true
+                });
                 let reply = await callChatRomance({
                     system,
                     messages: attachDynamicTail(buildChatHistory(personaId, getContextMemory(), false), tail),
