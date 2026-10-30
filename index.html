@@ -7622,9 +7622,9 @@
                         <!-- 快速复刻 -->
                         <div class="setting-item" style="margin-top:14px;">
                             <div class="label">快速复刻音色</div>
-                            <div class="desc">上传 10 秒 – 5 分钟的清晰人声（mp3 / m4a / wav，≤20MB），复刻完自动加入卡片。</div>
+                            <div class="desc">上传 10 秒 – 5 分钟的清晰人声（mp3 / m4a / wav，≤20MB），复刻完自动加入卡片。iPhone 上没后缀的录音也能自动识别。</div>
                             <button class="btn btn-sm mt-8" id="vcCloneBtn" type="button" style="width:100%;">🎙 上传音频复刻</button>
-                            <input type="file" id="vcCloneFile" accept="audio/*" style="display:none;" />
+                            <input type="file" id="vcCloneFile" accept="audio/*,.mp3,.m4a,.mp4,.wav,.aac,.flac,.ogg,.opus,.amr,.caf,application/octet-stream" style="display:none;" />
                             <div class="ctx-hint">复刻后会立刻合成一次完成「激活」，否则 get_voice 查不到。</div>
                         </div>
 
@@ -22789,6 +22789,11 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             if (typeof v.vol !== 'number' || !isFinite(v.vol)) v.vol = 1.0;
             if (v.enabled === undefined) v.enabled = true;
             if (v.mmRegion !== 'io') v.mmRegion = 'cn';
+            // Key 里混进空格 / 换行 / 零宽字符会让鉴权直接 401，读的时候统一洗一遍
+            if (typeof v.mmKey === 'string') {
+                const cleanKey = v.mmKey.replace(/[\s\u200B-\u200D\uFEFF]+/g, '');
+                if (cleanKey !== v.mmKey) v.mmKey = cleanKey;
+            }
             return v;
         }
         function mmCards() { return mmSettings().cards; }
@@ -23298,16 +23303,30 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             }
 
             // 1. 上传音频，拿 file_id
+            //    文件名必须带后缀且带 audio/* 类型，服务端是按这个判格式的
             const fd = new FormData();
             fd.append('purpose', 'voice_clone');
-            fd.append('file', file, file.name || 'voice.mp3');
+            fd.append('file', file, cloneFileName(file));
             const up = await mmFetch('/v1/files/upload', {
                 method: 'POST',
                 headers: { 'Authorization': 'Bearer ' + v.mmKey },
                 body: fd
             });
-            if (!up.ok) throw new Error('上传失败 HTTP ' + up.status);
+            if (!up.ok) {
+                let detail = '';
+                try {
+                    const txt = await up.text();
+                    try {
+                        const ej = JSON.parse(txt);
+                        detail = (ej.base_resp && ej.base_resp.status_msg) || ej.message || '';
+                    } catch (e) { detail = String(txt || '').slice(0, 120); }
+                } catch (e) {}
+                throw new Error('上传失败 HTTP ' + up.status + (detail ? '：' + detail : ''));
+            }
             const upJson = await up.json();
+            if (upJson.base_resp && upJson.base_resp.status_code !== 0) {
+                throw new Error('上传失败：' + (upJson.base_resp.status_msg || '未知错误'));
+            }
             const fileId = (upJson.file && upJson.file.file_id) || upJson.file_id;
             if (!fileId) throw new Error('没拿到 file_id');
 
@@ -23345,20 +23364,217 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             input.click();
         }
 
-        function onCloneFilePicked(file) {
+        // ------------------------------------------------------------
+        //  iOS 兼容：没有后缀 / 没有 MIME 的音频文件
+        //  「文件」App 里的文件常常 file.type 为空、名字也没后缀，
+        //  这里改成三级判定：后缀 → 文件头（magic bytes）→ 用户确认，
+        //  上传前统一补上真实后缀，避免服务端按文件名判类型失败。
+        // ------------------------------------------------------------
+        const AUDIO_EXT_RE = /\.(mp3|m4a|mp4|wav|aac|flac|ogg|oga|opus|amr|caf|aif|aiff|weba|webm)$/i;
+        const AUDIO_EXT_MIME = {
+            mp3: 'audio/mpeg', m4a: 'audio/mp4', mp4: 'audio/mp4', wav: 'audio/wav',
+            aac: 'audio/aac', flac: 'audio/flac', ogg: 'audio/ogg', oga: 'audio/ogg',
+            opus: 'audio/ogg', amr: 'audio/amr', caf: 'audio/x-caf',
+            aif: 'audio/aiff', aiff: 'audio/aiff', weba: 'audio/webm', webm: 'audio/webm'
+        };
+
+        function mimeToAudioExt(mime) {
+            const map = {
+                'audio/mpeg': 'mp3', 'audio/mp3': 'mp3', 'audio/mp4': 'm4a', 'audio/x-m4a': 'm4a',
+                'audio/m4a': 'm4a', 'audio/aac': 'aac', 'audio/x-aac': 'aac',
+                'audio/wav': 'wav', 'audio/x-wav': 'wav', 'audio/wave': 'wav',
+                'audio/flac': 'flac', 'audio/x-flac': 'flac',
+                'audio/ogg': 'ogg', 'audio/oga': 'ogg', 'audio/opus': 'ogg',
+                'audio/amr': 'amr', 'audio/x-caf': 'caf', 'audio/aiff': 'aiff', 'audio/x-aiff': 'aiff'
+            };
+            return map[String(mime || '').toLowerCase()] || '';
+        }
+
+        // FileReader 而不是 blob.arrayBuffer()：老 iOS Safari 没有后者
+        function readFileHead(file, n) {
+            return new Promise(resolve => {
+                try {
+                    const slice = file.slice ? file.slice(0, n || 64) : file;
+                    const fr = new FileReader();
+                    fr.onload = () => resolve(fr.result);
+                    fr.onerror = () => resolve(null);
+                    fr.readAsArrayBuffer(slice);
+                } catch (e) { resolve(null); }
+            });
+        }
+
+        // 只看前 64 字节，够判断主流音频容器
+        async function sniffAudioFormat(file) {
+            const buf = await readFileHead(file, 64);
+            if (!buf || !buf.byteLength || buf.byteLength < 4) return null;
+            const b = new Uint8Array(buf);
+            const tag = (start, len) => {
+                let s = '';
+                for (let i = start; i < start + len && i < b.length; i++) s += String.fromCharCode(b[i]);
+                return s;
+            };
+            if (tag(0, 3) === 'ID3') return { ext: 'mp3' };
+            if (tag(0, 4) === 'fLaC') return { ext: 'flac' };
+            if (tag(0, 4) === 'OggS') return { ext: 'ogg' };
+            if (tag(0, 4) === '#!AM') return { ext: 'amr' };
+            if (tag(0, 4) === 'caff') return { ext: 'caf' };
+            if (tag(0, 4) === 'RIFF' && tag(8, 4) === 'WAVE') return { ext: 'wav' };
+            if (tag(0, 4) === 'FORM' && (tag(8, 4) === 'AIFF' || tag(8, 4) === 'AIFC')) return { ext: 'aiff' };
+            if (tag(4, 4) === 'ftyp') return { ext: 'm4a' };                  // m4a / mp4 容器
+            if (b[0] === 0xFF && (b[1] & 0xE0) === 0xE0) {                    // 裸帧（无 ID3 头）
+                const layer = (b[1] >> 1) & 0x03;
+                return { ext: layer === 0 ? 'aac' : 'mp3' };
+            }
+            return null;
+        }
+
+        // 生成一个带正确后缀和 MIME 的文件，后续上传/播放都用它
+        function normalizeAudioFile(file, ext) {
+            ext = String(ext || 'mp3').toLowerCase().replace(/^\./, '');
+            if (!AUDIO_EXT_MIME[ext]) ext = 'mp3';
+            const mime = AUDIO_EXT_MIME[ext];
+            const raw = String(file.name || '');
+            const base = (raw.replace(/\.[^.\/\\]*$/, '') || 'voice').trim() || 'voice';
+            const name = base + '.' + ext;
+            if (raw === name && file.type === mime) return file;
+            try {
+                return new File([file], name, { type: mime, lastModified: file.lastModified || Date.now() });
+            } catch (e) {
+                // 极老的 WebView 没有 File 构造器：退回 Blob，并挂上目标文件名
+                try {
+                    const blob = new Blob([file], { type: mime });
+                    blob.__uploadName = name;
+                    return blob;
+                } catch (e2) { return file; }
+            }
+        }
+
+        function cloneFileName(file) {
+            return (file && (file.__uploadName || file.name)) || 'voice.mp3';
+        }
+
+        // 尽力探测时长：解不出 metadata 就返回 0，交给服务端兜底
+        function readAudioDuration(file) {
+            return new Promise(resolve => {
+                let url = '';
+                let timer = 0;
+                let settled = false;
+                const finish = v => {
+                    if (settled) return;
+                    settled = true;
+                    if (timer) clearTimeout(timer);
+                    try { if (url) URL.revokeObjectURL(url); } catch (e) {}
+                    resolve(v);
+                };
+                try {
+                    url = URL.createObjectURL(file);
+                    const a = document.createElement('audio');
+                    a.preload = 'metadata';
+                    a.onloadedmetadata = () => {
+                        const d = a.duration;
+                        finish(isFinite(d) && d > 0 ? d : 0);
+                    };
+                    a.onerror = () => finish(0);
+                    timer = setTimeout(() => finish(0), 4000);
+                    a.src = url;
+                } catch (e) { finish(0); }
+            });
+        }
+
+        // 统一确认弹窗（原生 confirm 在部分 WebView 里会被拦）
+        function askConfirm(title, hintHtml, okText) {
+            return new Promise(resolve => {
+                showModal(
+                    '<div class="modal-title">' + escHtml(title) + '</div>' +
+                    '<div class="ctx-hint">' + hintHtml + '</div>' +
+                    '<div class="btn-row">' +
+                        '<button class="btn" id="cloneAskNo">取消</button>' +
+                        '<button class="btn btn-primary" id="cloneAskYes">' + escHtml(okText || '继续') + '</button>' +
+                    '</div>'
+                );
+                const overlay = document.getElementById('modalOverlay');
+                let settled = false;
+                const finish = v => {
+                    if (settled) return;
+                    settled = true;
+                    if (overlay) overlay.removeEventListener('click', onOverlay);
+                    closeModal();
+                    resolve(v);
+                };
+                const onOverlay = e => { if (e.target === e.currentTarget) finish(false); };
+                if (overlay) overlay.addEventListener('click', onOverlay);
+                const yes = document.getElementById('cloneAskYes');
+                if (yes) yes.addEventListener('click', () => finish(true));
+                const no = document.getElementById('cloneAskNo');
+                if (no) no.addEventListener('click', () => finish(false));
+            });
+        }
+
+        // 判定一个 File 到底能不能当音频用；能则返回规整后的文件，不能返回 null
+        async function resolveCloneAudioFile(file) {
+            const rawName = String(file.name || '');
+            const nameExt = (rawName.match(AUDIO_EXT_RE) || [''])[0].replace(/^\./, '').toLowerCase();
+            const mimeOk = /^audio\//i.test(file.type || '');
+
+            // 1) 有后缀或系统给了 audio/*：直接放行
+            if (nameExt || mimeOk) {
+                return normalizeAudioFile(file, nameExt || mimeToAudioExt(file.type) || 'mp3');
+            }
+
+            // 2) iOS 无后缀 + file.type 为空：读文件头判断
+            const sniffed = await sniffAudioFormat(file);
+            if (sniffed) {
+                toast('已按文件内容识别为 ' + sniffed.ext.toUpperCase() + ' 音频', 2200);
+                return normalizeAudioFile(file, sniffed.ext);
+            }
+
+            // 3) 完全认不出来：让用户自己决定要不要试
+            const go = await askConfirm(
+                '系统没识别出这个文件的类型',
+                '已选：' + escHtml(rawName || '未命名') + '（' + (file.size / 1048576).toFixed(1) + ' MB）<br>' +
+                'iOS「文件」App 里的文件经常没有后缀。可以按 mp3 格式试一次；<br>' +
+                '如果复刻失败，请在「文件」App 里把它重命名为 xxx.mp3 再上传。',
+                '仍然试一次'
+            );
+            return go ? normalizeAudioFile(file, 'mp3') : null;
+        }
+
+        async function onCloneFilePicked(file) {
             if (!file) return;
-            if (!/^audio\//i.test(file.type || '') && !/\.(mp3|m4a|wav|aac|flac|ogg)$/i.test(file.name || '')) {
-                toast('请选择音频文件（mp3 / m4a / wav）');
+
+            const sizeMb = file.size / 1048576;
+            if (!file.size) {
+                toast('读不到文件内容：如果它在 iCloud 里，请先下载到本机再选');
                 return;
             }
-            const sizeMb = file.size / 1048576;
             if (sizeMb > 20) { toast('音频请控制在 20MB 以内'); return; }
             if (sizeMb < 0.02) { toast('音频太短，建议 10 秒以上'); return; }
 
+            const picked = await resolveCloneAudioFile(file);
+            if (!picked) return;
+
+            // 时长只做尽力校验：探测不到就跳过，别挡住正常文件
+            const dur = await readAudioDuration(picked);
+            if (dur > 0 && (dur < 9.5 || dur > 305)) {
+                const fact = dur < 9.5
+                    ? '只读到 ' + dur.toFixed(1) + ' 秒'
+                    : '读到 ' + Math.round(dur) + ' 秒';
+                const go = await askConfirm(
+                    '这段音频时长可能不合规',
+                    'MiniMax 快速复刻要求 10 秒 – 5 分钟，' + fact + '，提交后服务端会直接报错。',
+                    '仍然上传'
+                );
+                if (!go) return;
+            }
+
+            openCloneVoiceModal(picked, sizeMb);
+        }
+
+        function openCloneVoiceModal(file, sizeMb) {
             const defId = 'myvoice' + Date.now().toString(36);
             showModal(
                 '<div class="modal-title">快速复刻音色</div>' +
-                '<div class="ctx-hint">音频：' + escHtml(file.name) + ' · ' + sizeMb.toFixed(1) + ' MB</div>' +
+                '<div class="ctx-hint">音频：' + escHtml(cloneFileName(file)) + ' · ' + sizeMb.toFixed(1) + ' MB</div>' +
                 '<label>voice_id（自定义，字母开头）</label>' +
                 '<input id="cloneVid" value="' + escHtml(defId) + '" maxlength="64" autocomplete="off" />' +
                 '<div class="ctx-hint">建议 10 秒 – 5 分钟的清晰人声。复刻后会自动合成一次完成激活。</div>' +
@@ -23399,7 +23615,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         // ---------- 端口保存并测试 ----------
         async function saveMiniMaxPort() {
             const v = mmSettings();
-            v.mmKey = (document.getElementById('mmKey').value || '').trim();
+            v.mmKey = (document.getElementById('mmKey').value || '').replace(/[\s\u200B-\u200D\uFEFF]+/g, '');
             v.mmRegion = document.getElementById('mmRegion').value === 'io' ? 'io' : 'cn';
             v.mmModel = document.getElementById('mmModel').value || 'speech-02-turbo';
             v.mmAsrModel = (document.getElementById('mmAsrModel').value || '').trim();
