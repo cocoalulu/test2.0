@@ -8428,7 +8428,7 @@
 每一个角色都没有过感情经历，在遇到用户之前都是白纸一张，用户是他们的绝对初恋，用户是什么样子他们就喜欢什么样子！
 ②由于是网上聊天，请符合网络聊天的常理，不要说出自己的心理活动！
 【绝对禁止动作描写】你在用手机打字，不是在写小说。绝对禁止出现“（顿了顿）”“（轻笑）”“（沉默）”“*叹气*”这种括号/星号里的动作、神态、心理旁白。直接打字！
-③模拟现实聊天语气，贴合现实真人的心理活动和回复方式，适当的断句。你是一个真人，有自己的生活和自己的情绪！不是陪聊！有自己想要分享的东西！！一句话超过20个字，必须用换行拆成两三条短句发出去，别糊成一大段。
+③模拟现实聊天语气，贴合现实真人的心理活动和回复方式，适当的断句。你是一个真人，有自己的生活和自己的情绪！不是陪聊！有自己想要分享的东西！！一句话超过20个字，必须用换行拆成两三条短句发出去，别糊成一大段。严禁用空格代替换行来分隔短句，必须直接使用换行符（Enter）进行断句！
 ④禁止文绉绉的用语，禁止长篇大论，可以参杂碎碎念
 【禁止爹味说教】不要像家长或客服一样整天叮嘱对方“早点睡”“注意身体”“明天还得靠你”“记得吃饭”。过度关心会显得很假、很烦人。你只需要像同龄朋友一样分享自己的生活或情绪即可。
 ##【强制执行检查表】每次回复前必须过
@@ -8578,6 +8578,10 @@
         const CHAT_RULES_FORMAT_PATCH = '\n【绝对禁止动作描写】你在用手机打字，不是在写小说。绝对禁止出现“（顿了顿）”“（轻笑）”“（沉默）”“*叹气*”这种括号/星号里的动作、神态、心理旁白。直接打字！' +
             '\n【禁止爹味说教】不要像家长或客服一样整天叮嘱对方“早点睡”“注意身体”“明天还得靠你”“记得吃饭”。过度关心会显得很假、很烦人。你只需要像同龄朋友一样分享自己的生活或情绪即可。' +
             '\n【断句要求】一句话超过20个字，必须用换行拆成两三条短句发出去，别糊成一大段。';
+        // v28 · 长上下文里模型会偷懒用空格代替换行，单独用一个新标记幂等追加，
+        // 因为上面的 FORMAT_MARK 在老存档里早就存在，改那份文案对老用户不生效。
+        const CHAT_RULES_SPACE_MARK = '严禁用空格代替换行';
+        const CHAT_RULES_SPACE_PATCH = '\n【严禁空格断句】严禁用空格代替换行来分隔短句，必须直接使用换行符（Enter）进行断句：每敲一次回车才算一条新消息，一条消息里只放一句话。';
 
         // 老存档的世界书是 v21 版文案，不会自动更新；这里只做"追加缺失段落"，
         // 不覆盖用户自己改过的内容（已有标记就跳过）。
@@ -8605,6 +8609,10 @@
                 }
                 if (isChatRules && content.indexOf(CHAT_RULES_FORMAT_MARK) === -1) {
                     w.content = String(w.content || '') + CHAT_RULES_FORMAT_PATCH;
+                    touched = true;
+                }
+                if (isChatRules && String(w.content || '').indexOf(CHAT_RULES_SPACE_MARK) === -1) {
+                    w.content = String(w.content || '') + CHAT_RULES_SPACE_PATCH;
                     touched = true;
                 }
             });
@@ -20183,6 +20191,23 @@ ${tonePrompt}
             return final.filter(Boolean);
         }
 
+        // 长上下文下模型会"偷懒"，用空格代替换行把几条短句糊成一段，导致全部挤进同一个气泡。
+        // 兜底：空格两边都是中文/中文标点时，判定为"本该换行"，强制换成 \n。
+        // 只收中文与中文标点，所以 "Hello world"、"1 2 3"、emoji 之间的空格保持原样，不会误伤。
+        const CN_SPACE_BREAK_RE = /([\u4e00-\u9fa5，。！？；：、…—～》《》「」『』（）【】])(?:[ \t\u00A0\u3000]+)(?=[\u4e00-\u9fa5，。！？；：“‘、…—～《「『（【])/g;
+        function normalizeSpaceBreaks(text) {
+            let s = String(text == null ? '' : text);
+            // 没有空格就不跑正则，省一次全量扫描
+            if (!/[ \t\u00A0\u3000]/.test(s)) return s;
+            let prev;
+            // 替换是单调的（空格 → 换行），几轮必然收敛；循环只为兜住"我 你 他"这类相邻空格
+            do {
+                prev = s;
+                s = s.replace(CN_SPACE_BREAK_RE, '$1\n');
+            } while (s !== prev);
+            return s;
+        }
+
         async function applyReply(personaId, reply) {
             const raw = String(reply == null ? '' : reply);
             const hasThreat = /\[\[BLOCK_THREAT\]\]/.test(raw);
@@ -20215,7 +20240,8 @@ ${tonePrompt}
 
             if (parsed.text) {
                 const lines = [];
-                parsed.text.split('\n').map(l => l.trim()).filter(l => l.length > 0)
+                // [FIX] 先把"用空格冒充换行"的段落还原成多行，再走原有拆行逻辑
+                normalizeSpaceBreaks(parsed.text).split('\n').map(l => l.trim()).filter(l => l.length > 0)
                     .forEach(l => splitLongLine(l, 26).forEach(x => lines.push(x)));
 
                 if (lines.length === 0) {
@@ -20227,7 +20253,8 @@ ${tonePrompt}
                     let out = lines;
                     if (lines.length > MAX_BUBBLES) {
                         out = lines.slice(0, MAX_BUBBLES - 1);
-                        out.push(lines.slice(MAX_BUBBLES - 1).join(' '));
+                        // 用换行而不是空格拼接：气泡是 pre-wrap，换行还能读，空格又糊成一坨
+                        out.push(lines.slice(MAX_BUBBLES - 1).join('\n'));
                     }
                     out.forEach(line => {
                         addMessage(personaId, 'assistant', 'text', line);
@@ -27598,7 +27625,8 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 // 群聊不开放红包/转账：模型万一吐了标记，直接摘掉，别让原始标记出现在气泡里
                 .replace(/\[\s*(?:hongbao|transfer)\s*[:：][^\]\n]*\]/g, '')
                 .trim();
-            const lines = text.split('\n').map(l => l.trim()).filter(Boolean).slice(0, 3);
+            // [FIX] 同 applyReply：群里模型也会用空格代替换行，先还原再拆
+            const lines = normalizeSpaceBreaks(text).split('\n').map(l => l.trim()).filter(Boolean).slice(0, 3);
             if (!lines.length) return;
 
             let quote = parsed.quote;
