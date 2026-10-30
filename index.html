@@ -2409,6 +2409,90 @@
             line-height: 1.9;
         }
 
+        /* ---------- 表情包（相册第三 tab / 聊天选择器 / 编辑器）---------- */
+        /* 表情包多为透明底 / 方图，用 contain 才不会把角标裁掉 */
+        .album-cell.sticker {
+            background: rgba(255, 255, 255, .04);
+        }
+        .album-cell.sticker img {
+            object-fit: contain;
+            padding: 6px;
+        }
+        .album-cell .badge.use {
+            left: auto;
+            right: 4px;
+            background: rgba(7, 193, 96, .55);
+        }
+        .sticker-panel-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 8px;
+            max-height: 44vh;
+            overflow-y: auto;
+            padding: 2px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .sticker-panel-grid .cell,
+        .sticker-recent-row .cell {
+            position: relative;
+            aspect-ratio: 1;
+            border-radius: 12px;
+            overflow: hidden;
+            background: rgba(255, 255, 255, .06);
+            border: 1px solid rgba(255, 255, 255, .08);
+            cursor: pointer;
+            transition: transform .16s var(--ease);
+        }
+        .sticker-panel-grid .cell:active,
+        .sticker-recent-row .cell:active { transform: scale(.94); }
+        .sticker-panel-grid .cell img,
+        .sticker-recent-row .cell img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            display: block;
+            padding: 4px;
+        }
+        .sticker-recent-row {
+            display: flex;
+            gap: 8px;
+            overflow-x: auto;
+            padding: 2px 0 10px;
+            -webkit-overflow-scrolling: touch;
+        }
+        .sticker-recent-row .cell {
+            width: 58px;
+            height: 58px;
+            flex: 0 0 58px;
+            aspect-ratio: auto;
+        }
+        .sticker-sec-title {
+            font-size: 11.5px;
+            color: rgba(255, 255, 255, .45);
+            margin: 4px 0 6px;
+        }
+        .sticker-tag-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin: 8px 0 2px;
+        }
+        .sticker-tag-list .tag {
+            padding: 6px 11px;
+            border-radius: 999px;
+            font-size: 12px;
+            background: rgba(255, 255, 255, .07);
+            border: 1px solid transparent;
+            color: var(--text-2);
+            cursor: pointer;
+            user-select: none;
+        }
+        .sticker-tag-list .tag.on {
+            background: rgba(7, 193, 96, .18);
+            border-color: rgba(7, 193, 96, .5);
+            color: #8ef0b6;
+        }
+
         /* ---------- 音乐 ---------- */
         .music-hero {
             padding: 18px 16px;
@@ -6660,6 +6744,291 @@
         .wx-call-overlay.speaking .wx-call-avatar {
             animation: vcSpeakPulse 1.6s ease-in-out infinite;
         }
+
+        /* ============================================================
+           红包 / 转账 卡片
+           ============================================================ */
+        .money-card {
+            width: 232px;
+            max-width: 100%;
+            border-radius: 10px;
+            overflow: hidden;
+            position: relative;
+            text-align: left;
+            cursor: pointer;
+            transition: transform .12s var(--ease), opacity .2s;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .money-card:active { transform: scale(.985); }
+        .money-card.dead { cursor: default; }
+
+        /* ---- 红包 ---- */
+        .money-card.rp {
+            background: linear-gradient(135deg, #f0603c, #e0341d);
+            color: #fff;
+            box-shadow: 0 2px 10px rgba(224, 52, 29, .28);
+        }
+        .money-card.rp .rp-top {
+            display: flex;
+            align-items: center;
+            gap: 9px;
+            padding: 12px 12px 10px;
+        }
+        .money-card.rp .rp-ic {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, .2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+        .money-card.rp .rp-bless {
+            font-size: 14px;
+            font-weight: 600;
+            line-height: 1.3;
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .money-card.rp .rp-foot {
+            background: rgba(0, 0, 0, .1);
+            padding: 7px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 11px;
+            opacity: .95;
+        }
+        .money-card.rp .rp-open {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            background: #f8dfae;
+            color: #b62a17;
+            font-size: 13px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            margin: -2px 0;
+        }
+        .money-card.rp .rp-amt {
+            font-size: 21px;
+            font-weight: 700;
+            letter-spacing: .3px;
+        }
+        .money-card.rp.opened,
+        .money-card.rp.expired,
+        .money-card.rp.returned {
+            background: linear-gradient(135deg, #f3e3c7, #e9d3b2);
+            color: #8d5a2c;
+            box-shadow: none;
+        }
+        .money-card.rp.opened .rp-ic,
+        .money-card.rp.expired .rp-ic,
+        .money-card.rp.returned .rp-ic { background: rgba(141, 90, 44, .14); }
+        .money-card.rp.opened .rp-foot,
+        .money-card.rp.expired .rp-foot,
+        .money-card.rp.returned .rp-foot { background: rgba(141, 90, 44, .08); }
+
+        /* ---- 转账 ---- */
+        .money-card.tf {
+            background: linear-gradient(135deg, #f7a83e, #ef8a1c);
+            color: #fff;
+            box-shadow: 0 2px 10px rgba(239, 138, 28, .26);
+        }
+        .money-card.tf .tf-top {
+            padding: 12px 12px 9px;
+            display: flex;
+            align-items: center;
+            gap: 9px;
+        }
+        .money-card.tf .tf-ic {
+            width: 28px;
+            height: 28px;
+            border-radius: 8px;
+            background: rgba(255, 255, 255, .2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 15px;
+            flex-shrink: 0;
+        }
+        .money-card.tf .tf-amt { font-size: 20px; font-weight: 700; line-height: 1.2; }
+        .money-card.tf .tf-note {
+            font-size: 11.5px;
+            opacity: .92;
+            margin-top: 2px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .money-card.tf .tf-foot {
+            background: rgba(0, 0, 0, .1);
+            padding: 7px 12px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 8px;
+            font-size: 11px;
+        }
+        .money-card.tf .tf-btn {
+            border: none;
+            background: #fff;
+            color: #d9790f;
+            border-radius: 6px;
+            padding: 4px 10px;
+            font-size: 11.5px;
+            font-weight: 600;
+            cursor: pointer;
+        }
+        .money-card.tf .tf-btn:active { opacity: .8; }
+        .money-card.tf.received,
+        .money-card.tf.expired,
+        .money-card.tf.returned {
+            background: linear-gradient(135deg, #f6e6cf, #eddcc2);
+            color: #8d6a3c;
+            box-shadow: none;
+        }
+        .money-card.tf.received .tf-ic,
+        .money-card.tf.expired .tf-ic,
+        .money-card.tf.returned .tf-ic { background: rgba(141, 106, 60, .14); }
+        .money-card.tf.received .tf-foot,
+        .money-card.tf.expired .tf-foot,
+        .money-card.tf.returned .tf-foot { background: rgba(141, 106, 60, .08); }
+
+        @keyframes rpFlip {
+            0% { transform: rotateY(0deg) scale(1); }
+            45% { transform: rotateY(88deg) scale(.94); }
+            100% { transform: rotateY(0deg) scale(1); }
+        }
+        .money-card.flip { animation: rpFlip .42s var(--ease); }
+
+        /* 拆红包弹窗 */
+        .rp-pop {
+            text-align: center;
+            padding: 6px 4px 2px;
+        }
+        .rp-pop .rp-pop-face {
+            width: 84px;
+            height: 84px;
+            margin: 8px auto 12px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #f0603c, #e0341d);
+            color: #f8dfae;
+            font-size: 30px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            box-shadow: 0 6px 18px rgba(224, 52, 29, .35);
+            user-select: none;
+        }
+        .rp-pop .rp-pop-face:active { transform: scale(.94); }
+        .rp-pop .rp-pop-from {
+            font-size: 12.5px;
+            color: rgba(255, 255, 255, .6);
+            margin-bottom: 4px;
+        }
+        .rp-pop .rp-pop-amt {
+            font-size: 30px;
+            font-weight: 700;
+            color: #ffd9a0;
+            margin: 2px 0 6px;
+            letter-spacing: .5px;
+        }
+        .rp-pop .rp-pop-bless {
+            font-size: 13px;
+            color: rgba(255, 255, 255, .78);
+            line-height: 1.6;
+        }
+        .rp-pop .rp-pop-tip {
+            font-size: 11.5px;
+            color: rgba(255, 255, 255, .42);
+            margin-top: 14px;
+        }
+
+        /* 发红包 / 转账 底部面板 */
+        .money-sheet { padding: 14px 16px calc(20px + env(safe-area-inset-bottom)); }
+        .money-sheet .ms-head {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+        .money-sheet .ms-head .t { font-size: 15px; font-weight: 600; color: #eee; }
+        .money-sheet .ms-head .x {
+            border: none; background: none; color: rgba(255, 255, 255, .45);
+            font-size: 17px; cursor: pointer; padding: 2px 6px;
+        }
+        .money-sheet .ms-lbl {
+            display: block;
+            font-size: 11.5px;
+            color: rgba(255, 255, 255, .4);
+            margin: 0 0 6px 2px;
+        }
+        .money-sheet .ms-amt {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            background: rgba(255, 255, 255, .06);
+            border-radius: 10px;
+            padding: 8px 12px;
+            margin-bottom: 14px;
+        }
+        .money-sheet .ms-amt span { font-size: 22px; font-weight: 600; color: #fff; }
+        .money-sheet .ms-amt input {
+            flex: 1;
+            min-width: 0;
+            border: none;
+            background: none;
+            outline: none;
+            color: #fff;
+            font-size: 24px;
+            font-weight: 600;
+            padding: 0;
+        }
+        .money-sheet .ms-amt input::placeholder { color: rgba(255, 255, 255, .22); }
+        .money-sheet .ms-note {
+            width: 100%;
+            box-sizing: border-box;
+            border: none;
+            background: rgba(255, 255, 255, .06);
+            border-radius: 10px;
+            padding: 11px 12px;
+            color: #fff;
+            font-size: 14px;
+            outline: none;
+            margin-bottom: 16px;
+        }
+        .money-sheet .ms-note::placeholder { color: rgba(255, 255, 255, .22); }
+        .money-sheet .ms-send {
+            width: 100%;
+            border: none;
+            border-radius: 10px;
+            padding: 13px;
+            font-size: 15.5px;
+            font-weight: 600;
+            color: #fff;
+            background: linear-gradient(135deg, #f0603c, #e0341d);
+            cursor: pointer;
+        }
+        .money-sheet .ms-send:active { opacity: .88; }
+        .money-sheet .ms-send.tf { background: linear-gradient(135deg, #f7a83e, #ef8a1c); }
+        .money-sheet .ms-hint {
+            font-size: 11px;
+            color: rgba(255, 255, 255, .32);
+            margin-top: 8px;
+            text-align: center;
+            line-height: 1.6;
+        }
     </style>
 </head>
 <body>
@@ -6935,6 +7304,7 @@
                             <span style="color:rgba(255,255,255,.4);font-size:12px;">在「录音机 · 语音服务」里配置</span>
                             <span style="color:rgba(255,255,255,.3);font-size:16px;line-height:1;">›</span>
                         </div>
+                        <button class="btn btn-sm" id="voiceSelfCheckBtn" type="button" style="width:100%;margin:2px 0 16px;">语音服务自检</button>
                     </div>
                 </div>
             </div>
@@ -7126,6 +7496,8 @@
                                 <button class="opt" id="sendPhotoOpt"><svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2.5"/><circle cx="8.5" cy="9.5" r="1.6"/><path d="M3.6 17.4l5-4.4 3.4 2.9 3-2.4 5.4 3.9"/></svg> 发送相册图片</button>
                                 <button class="opt" id="callVoiceOpt"><svg viewBox="0 0 24 24"><path d="M6.5 3.5h3l1.5 4-2 1.5a11 11 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.7 2 2 0 0 1 6.5 3.5z"/></svg> 语音通话</button>
                                 <button class="opt" id="callVideoOpt"><svg viewBox="0 0 24 24"><rect x="2.5" y="6" width="13" height="12" rx="2.5"/><path d="M15.5 10.5l6-3.2v9.4l-6-3.2z"/></svg> 视频通话</button>
+                                <button class="opt" id="sendRedPacketOpt"><svg viewBox="0 0 24 24"><rect x="3.5" y="5" width="17" height="14" rx="2.5"/><path d="M3.5 9.5c3.2 2.6 5.8 3.4 8.5 3.4s5.3-.8 8.5-3.4"/><path d="M12 12.9v6"/></svg> 红包</button>
+                                <button class="opt" id="sendTransferOpt"><svg viewBox="0 0 24 24"><path d="M4 8h13l-3-3"/><path d="M20 16H7l3 3"/></svg> 转账</button>
                                 <button class="opt" id="sendTakeoutToThemOpt"><svg viewBox="0 0 24 24"><path d="M4 10h16l-1.4 9.2A2 2 0 0 1 16.6 21H7.4a2 2 0 0 1-2-1.8L4 10z"/><path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10"/></svg> 外卖 · 买给ta的</button>
                                 <button class="opt" id="sendTakeoutToMeOpt"><svg viewBox="0 0 24 24"><path d="M4 10h16l-1.4 9.2A2 2 0 0 1 16.6 21H7.4a2 2 0 0 1-2-1.8L4 10z"/><path d="M8.5 10V7.5a3.5 3.5 0 0 1 7 0V10"/><path d="M9.5 14.5h5"/></svg> 外卖 · 买给自己的</button>
                             </div>
@@ -7204,6 +7576,10 @@
                 <!-- 消息长按菜单 -->
                 <div class="as-mask" id="msgSheetMask"></div>
                 <div class="as-sheet" id="msgSheet"></div>
+
+                <!-- 发红包 / 转账 -->
+                <div class="as-mask" id="moneyMask"></div>
+                <div class="as-sheet money-sheet" id="moneySheet"></div>
             </div>
 
             <!-- 世界书 -->
@@ -7386,6 +7762,7 @@
                 <div class="seg-tabs">
                     <div class="t active" data-album-tab="public">公用</div>
                     <div class="t" data-album-tab="private">仅我</div>
+                    <div class="t" data-album-tab="sticker">表情包</div>
                 </div>
                 <div class="page-body">
                     <div class="album-grid" id="albumGrid"></div>
@@ -7617,7 +7994,7 @@
                         <button class="wp-pick-btn" id="vcAddBtn" style="margin-top:10px;">
                             ＋ 从列表添加卡片
                         </button>
-                        <div class="ctx-hint">每张卡片绑定一个角色。没绑定卡片的角色，通话只显示字幕、不发声。</div>
+                        <div class="ctx-hint">卡片的「绑定角色」里可以选「所有角色（全局）」做全局声线；单独指定的角色优先用自己那张卡。既没绑卡也没有全局声线的角色，通话只显示字幕、不发声。</div>
 
                         <!-- 快速复刻 -->
                         <div class="setting-item" style="margin-top:14px;">
@@ -7626,6 +8003,7 @@
                             <button class="btn btn-sm mt-8" id="vcCloneBtn" type="button" style="width:100%;">🎙 上传音频复刻</button>
                             <input type="file" id="vcCloneFile" accept="audio/*,.mp3,.m4a,.mp4,.wav,.aac,.flac,.ogg,.opus,.amr,.caf,application/octet-stream" style="display:none;" />
                             <div class="ctx-hint">复刻后会立刻合成一次完成「激活」，否则 get_voice 查不到。</div>
+                            <div class="ctx-hint" style="color:#ffb35c;">⚠️ 免费额度通常只够复刻一份，第二份起会照常计费，余额不足会欠费。</div>
                         </div>
 
                         <!-- 全局语音参数（不属于卡片） -->
@@ -8049,8 +8427,10 @@
 ①在没和玩家熟起来之前，角色的态度会比较疏离且忧郁❗️但在熟起来之后就会放开，逐渐显露出自己的真实性格❗️
 每一个角色都没有过感情经历，在遇到用户之前都是白纸一张，用户是他们的绝对初恋，用户是什么样子他们就喜欢什么样子！
 ②由于是网上聊天，请符合网络聊天的常理，不要说出自己的心理活动！
-③模拟现实聊天语气，贴合现实真人的心理活动和回复方式，适当的断句。你是一个真人，有自己的生活和自己的情绪！不是陪聊！有自己想要分享的东西！！
+【绝对禁止动作描写】你在用手机打字，不是在写小说。绝对禁止出现“（顿了顿）”“（轻笑）”“（沉默）”“*叹气*”这种括号/星号里的动作、神态、心理旁白。直接打字！
+③模拟现实聊天语气，贴合现实真人的心理活动和回复方式，适当的断句。你是一个真人，有自己的生活和自己的情绪！不是陪聊！有自己想要分享的东西！！一句话超过20个字，必须用换行拆成两三条短句发出去，别糊成一大段。
 ④禁止文绉绉的用语，禁止长篇大论，可以参杂碎碎念
+【禁止爹味说教】不要像家长或客服一样整天叮嘱对方“早点睡”“注意身体”“明天还得靠你”“记得吃饭”。过度关心会显得很假、很烦人。你只需要像同龄朋友一样分享自己的生活或情绪即可。
 ##【强制执行检查表】每次回复前必须过
 □这条回复里有没有“我自己的输出”?
 → 没有的话，加上自己的事/情绪/想法/好奇
@@ -8192,6 +8572,12 @@
         // 世界书补丁标记（老存档按"有没有这段"判断，天然幂等）
         const ALIVE_PRIORITY_MARK = '【人设优先原则】';
         const CHAT_RULES_PATCH_MARK = '和人设一致吗';
+        // v27 · 网聊格式 / 拒绝爹味：老存档的「聊天细则」不会跟着常量更新，
+        // 这里按标记幂等追加一次，用户自己改过的内容一律不覆盖。
+        const CHAT_RULES_FORMAT_MARK = '【绝对禁止动作描写】';
+        const CHAT_RULES_FORMAT_PATCH = '\n【绝对禁止动作描写】你在用手机打字，不是在写小说。绝对禁止出现“（顿了顿）”“（轻笑）”“（沉默）”“*叹气*”这种括号/星号里的动作、神态、心理旁白。直接打字！' +
+            '\n【禁止爹味说教】不要像家长或客服一样整天叮嘱对方“早点睡”“注意身体”“明天还得靠你”“记得吃饭”。过度关心会显得很假、很烦人。你只需要像同龄朋友一样分享自己的生活或情绪即可。' +
+            '\n【断句要求】一句话超过20个字，必须用换行拆成两三条短句发出去，别糊成一大段。';
 
         // 老存档的世界书是 v21 版文案，不会自动更新；这里只做"追加缺失段落"，
         // 不覆盖用户自己改过的内容（已有标记就跳过）。
@@ -8215,6 +8601,10 @@
                 }
                 if (isChatRules && content.indexOf(CHAT_RULES_PATCH_MARK) === -1) {
                     w.content = content + '\n□我这次分享的这件事，和人设一致吗?\n→人设话少/克制/冷淡的话，“不分享”本身也是对的，不要为了凑“自己的事”硬找话';
+                    touched = true;
+                }
+                if (isChatRules && content.indexOf(CHAT_RULES_FORMAT_MARK) === -1) {
+                    w.content = String(w.content || '') + CHAT_RULES_FORMAT_PATCH;
                     touched = true;
                 }
             });
@@ -8693,6 +9083,7 @@
                 chats: {},
                 forumPosts: [],
                 emojis: [],
+                stickers: [],
                 forumActiveGlobalIds: [],
                 forumSettings: Object.assign({}, FORUM_DEFAULTS),
                 moments: [],
@@ -8716,6 +9107,7 @@
                     speed: 1.0,                   // 运行时参数，不写进卡片
                     pitch: 0,
                     vol: 1.0,
+                    cloneCount: 0,                // 快速复刻累计次数（只增不减，用于"第二份"提醒）
                     cards: [
                         // { voiceId: 'male-qn-qingse', name: '青涩青年',
                         //   source: 'system' | 'voice_cloning' | 'voice_generation',
@@ -8767,6 +9159,10 @@
                 lastInteractionAt: {},
                 unreadCounts: {},
                 lastProactive: {},
+                // v27 · 红包 / 转账（金额、冷却、待续话都在这儿）
+                moneyState: { byPersona: {}, pendingFollowups: {} },
+                // v27 · 深夜"催睡"日级计数（跨轮累积，防溜出窗口）
+                sleepNagState: {},
                 friendRequests: {},
                 jealousy: Object.assign({}, JEALOUSY_DEF),
                 jealousyState: {},
@@ -8829,8 +9225,39 @@
                         d.forumSettings.atmosphere = isFinite(at) ? Math.max(0, Math.min(100, Math.round(at))) : 50;
                     }
                     if (!d.emojis) d.emojis = [];
+                    // ---- v26 · 表情包库：data.emojis（上传流水）→ data.stickers（名称/标签/用量）----
+                    // 老存档只有 emojis，没有库的概念，这里一次性收进 stickers，之后只维护 stickers。
+                    if (!Array.isArray(d.stickers)) {
+                        d.stickers = (Array.isArray(d.emojis) ? d.emojis : []).map(e => ({
+                            id: (e && e.id) || genId(),
+                            imgId: (e && (e.imgId || e.id)) || '',
+                            name: (e && e.name) || '表情包',
+                            tags: [],
+                            usageCount: 0,
+                            lastUsedAt: 0,
+                            createdAt: Date.now()
+                        })).filter(s => !!s.imgId);
+                    } else {
+                        // 结构兜底：缺字段补齐，脏数据（没有 imgId）直接丢
+                        d.stickers = d.stickers.filter(s => s && typeof s === 'object' && (s.imgId || s.id))
+                            .map(s => ({
+                                id: s.id || genId(),
+                                imgId: s.imgId || s.id,
+                                name: s.name || '表情包',
+                                tags: Array.isArray(s.tags) ? s.tags.filter(t => typeof t === 'string') : [],
+                                usageCount: Math.max(0, Number(s.usageCount) || 0),
+                                lastUsedAt: Number(s.lastUsedAt) || 0,
+                                createdAt: Number(s.createdAt) || Date.now()
+                            }));
+                    }
                     if (!d.chats) d.chats = {};
                     if (!d.forumActiveGlobalIds) d.forumActiveGlobalIds = [];
+                    if (!d.moments) d.moments = [];
+                    // ---- v27 · 红包 / 转账 · 深夜计数 ----
+                    if (!d.moneyState || typeof d.moneyState !== 'object') d.moneyState = {};
+                    if (!d.moneyState.byPersona || typeof d.moneyState.byPersona !== 'object') d.moneyState.byPersona = {};
+                    if (!d.moneyState.pendingFollowups || typeof d.moneyState.pendingFollowups !== 'object') d.moneyState.pendingFollowups = {};
+                    if (!d.sleepNagState || typeof d.sleepNagState !== 'object') d.sleepNagState = {};
                     if (!d.moments) d.moments = [];
                     // ---- v18 · 朋友圈结构迁移（image → images / 冗余字段补齐）----
                     if (!Array.isArray(d.moments)) d.moments = [];
@@ -8840,6 +9267,8 @@
                         if (m.image) delete m.image;
                         if (m.isPlayer === undefined) m.isPlayer = (m.senderId === 'player');
                         if (m.aiReplied === undefined) m.aiReplied = false;
+                        // 多人评论：谁已经参与过（老字段 aiReplied 保留为"这轮调度已完成"）
+                        if (!Array.isArray(m.reactedPersonaIds)) m.reactedPersonaIds = [];
                         if (!Array.isArray(m.likes)) m.likes = [];
                         if (!Array.isArray(m.comments)) m.comments = [];
                         if (!Array.isArray(m.imageDescs)) m.imageDescs = [];
@@ -9281,12 +9710,23 @@
                                 c.source = 'system';
                             }
                             if (typeof c.boundPersonaId !== 'string') c.boundPersonaId = '';
-                            // 角色不在了 → 卡片回到未绑定
-                            if (c.boundPersonaId && !personaIds.has(c.boundPersonaId)) c.boundPersonaId = '';
+                            // '__all__' = 全局声线（所有角色共用），不是具体角色，不参与存在性校验
+                            // 这里写字面量而不是 VC_GLOBAL_ID：loadData 在常量初始化之前就会执行
+                            if (c.boundPersonaId && c.boundPersonaId !== '__all__' && !personaIds.has(c.boundPersonaId)) {
+                                c.boundPersonaId = '';
+                            }
                             return true;
                         });
                         // 超出 5 张只保留前 5（正常流程不会超，防御一下）
                         if (vs.cards.length > 5) vs.cards.length = 5;
+                        // 复刻计数：老数据没有这个字段，按现有复刻卡补一份底数，
+                        // 保证"删了卡再复刻"也会被当成第二份提醒
+                        const clonedCards = vs.cards.filter(c => c && c.source === 'voice_cloning').length;
+                        if (typeof vs.cloneCount !== 'number' || !isFinite(vs.cloneCount)) {
+                            vs.cloneCount = clonedCards;
+                        } else {
+                            vs.cloneCount = Math.max(vs.cloneCount, clonedCards);
+                        }
                         // 一个角色只能被一张卡绑定：冲突时后面的自动解绑
                         const boundOnce = new Set();
                         vs.cards.forEach(c => {
@@ -9428,19 +9868,103 @@
             return (prefix || 'img_') + genId();
         }
 
+        // ============================================================
+        //  图片输入兼容层
+        //  把"文件系统给的那堆不靠谱信息"统一收敛成能用的 File：
+        //    · type 是 image/*        → 直接用
+        //    · 有图片后缀、type 空/错  → 按后缀补 type
+        //    · 后缀、type 都没有       → 读文件头猜（iOS「文件」App 常见）
+        // ============================================================
+        const IMAGE_MIME_RE = /^image\//i;
+        const IMAGE_EXT_RE = /\.(jpe?g|jfif|pjpeg|png|gif|webp|bmp|avif|heic|heif|svg|tiff?)$/i;
+        const IMAGE_EXT_MIME = {
+            jpg: 'image/jpeg', jpeg: 'image/jpeg', jfif: 'image/jpeg', pjpeg: 'image/jpeg',
+            png: 'image/png', gif: 'image/gif', webp: 'image/webp', bmp: 'image/bmp',
+            avif: 'image/avif', heic: 'image/heic', heif: 'image/heif',
+            svg: 'image/svg+xml', tif: 'image/tiff', tiff: 'image/tiff'
+        };
+
+        function imageExtOf(name) {
+            const m = String(name || '').match(/\.([a-z0-9]+)$/i);
+            return m ? m[1].toLowerCase() : '';
+        }
+
+        function imageMimeFromExt(name) { return IMAGE_EXT_MIME[imageExtOf(name)] || ''; }
+
+        function looksLikeImageFile(file) {
+            if (!file || typeof file !== 'object') return false;
+            if (IMAGE_MIME_RE.test(String(file.type || ''))) return true;
+            if (IMAGE_EXT_RE.test(String(file.name || ''))) return true;
+            return false;
+        }
+
+        // 读前 32 字节判图：兜住"没后缀 + 没 type"的 iOS 文件
+        async function sniffImageFormat(file) {
+            try {
+                const head = await readFileHead(file, 32);
+                if (!head || head.byteLength < 4) return '';
+                const b = new Uint8Array(head);
+                if (b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF) return 'image/jpeg';
+                if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47) return 'image/png';
+                if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x38) return 'image/gif';
+                if (b[0] === 0x42 && b[1] === 0x4D) return 'image/bmp';
+                if (b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46 &&
+                    b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50) return 'image/webp';
+                if (b[4] === 0x66 && b[5] === 0x74 && b[6] === 0x79 && b[7] === 0x70) {
+                    const brand = String.fromCharCode(b[8] || 0, b[9] || 0, b[10] || 0, b[11] || 0).toLowerCase();
+                    if (brand === 'heic' || brand === 'heix' || brand === 'hevc' ||
+                        brand === 'hevx' || brand === 'mif1' || brand === 'msf1') return 'image/heic';
+                    if (brand === 'avif' || brand === 'avis') return 'image/avif';
+                }
+                const headText = Array.from(b.slice(0, 16), x => String.fromCharCode(x)).join('');
+                if (/^\s*<\?xml/i.test(headText) || /^\s*<svg/i.test(headText)) return 'image/svg+xml';
+                return '';
+            } catch (e) { return ''; }
+        }
+
+        function withImageMime(file, mime) {
+            if (!file || !mime || file.type === mime) return file;
+            const name = String(file.name || '') ||
+                ('image.' + (mime.split('/')[1] || 'jpg').replace(/[^a-z0-9]/gi, ''));
+            try {
+                return new File([file], name, { type: mime, lastModified: file.lastModified || Date.now() });
+            } catch (e) {
+                try {
+                    const blob = new Blob([file], { type: mime });
+                    blob.name = name;
+                    return blob;
+                } catch (e2) { return file; }
+            }
+        }
+
+        async function resolveImageFile(file) {
+            if (!file) return null;
+            if (IMAGE_MIME_RE.test(String(file.type || ''))) return file;
+            const extMime = imageMimeFromExt(file.name);
+            if (extMime) return withImageMime(file, extMime);
+            const sniffed = await sniffImageFormat(file);
+            if (sniffed) return withImageMime(file, sniffed);
+            return null;
+        }
+
         // ---- Base64 ↔ Blob ----
         async function dataUrlToBlob(dataUrl) {
             const s = String(dataUrl || '');
             if (!s) return null;
+            // 优先交给浏览器（Chrome/Safari 都能处理 dataURL）
             try {
                 const res = await fetch(s);
-                return await res.blob();
-            } catch (e) { /* file:// 或老浏览器可能不让 fetch data:，走下面的兜底 */ }
+                if (res.ok) return await res.blob();
+            } catch (e) { /* file:// 或老浏览器不让 fetch data:，走下面的兜底 */ }
             try {
-                const m = s.match(/^data:([^;,]*)(;base64)?,([\s\S]*)$/);
+                // 手动解析：兼容 ";charset=utf-8" 之类的参数（老正则只认 ;base64）
+                const m = s.match(/^data:([^;,]*)((?:;[^,]*)?),([\s\S]*)$/);
                 if (!m) return null;
-                const mime = m[1] || 'image/jpeg';
-                const bin = m[2] ? atob(m[3]) : decodeURIComponent(m[3]);
+                const mime = (m[1] || 'image/jpeg').trim();
+                const params = m[2] || '';
+                const isBase64 = /;base64/i.test(params);
+                const payload = m[3];
+                const bin = isBase64 ? atob(payload) : decodeURIComponent(payload);
                 const len = bin.length;
                 const buf = new Uint8Array(len);
                 for (let i = 0; i < len; i++) buf[i] = bin.charCodeAt(i);
@@ -10372,6 +10896,9 @@ ${tonePrompt}
                 data.unreadCounts = {};
                 data.lastInteractionAt = {};
                 data.lastProactive = {};
+                // 红包/转账的冷却与待续话、催睡计数一起清，别留残余
+                data.moneyState = { byPersona: {}, pendingFollowups: {} };
+                data.sleepNagState = {};
                 saveData();
                 closeChatWindow();
                 renderWechatList();
@@ -11279,9 +11806,14 @@ ${tonePrompt}
             const boundVoiceCard = resolveVoiceCard(persona.id);
             const voiceLabel = document.getElementById('editPersonaVoiceLabel');
             if (voiceLabel) {
-                voiceLabel.textContent = boundVoiceCard
-                    ? (boundVoiceCard.name + ' · ' + boundVoiceCard.voiceId)
-                    : '未绑定（通话只显示字幕）';
+                if (boundVoiceCard) {
+                    // 走全局卡的话标一下，免得以为这个角色单独配过
+                    const viaGlobal = vcIsGlobal(boundVoiceCard);
+                    voiceLabel.textContent = boundVoiceCard.name + ' · ' + boundVoiceCard.voiceId +
+                        (viaGlobal ? '（全局声线）' : '');
+                } else {
+                    voiceLabel.textContent = '未绑定（通话只显示字幕）';
+                }
             }
             const voiceJump = document.getElementById('editPersonaVoiceJump');
             if (voiceJump) {
@@ -12781,6 +13313,11 @@ ${tonePrompt}
             if (cal) extraList.push(buildCalendarPrompt(cal));
             if (wxExtra) extraList.push(wxExtra);
 
+            // 红包/转账：先把这一轮的"钱场景"定下来（索要是否答应，在这里摇一次骰子）
+            prepareMoneyRound(personaId, text);
+            const moneyHint = moneySolicitHint(personaId);
+            if (moneyHint) extraList.push(moneyHint);
+
             renderMessages(personaId);
             renderWechatList();
 
@@ -12811,6 +13348,8 @@ ${tonePrompt}
             };
             if (extra && typeof extra === 'object') Object.assign(msg, extra);
             data.chats[personaId].push(msg);
+            // 催睡日级计数（只统计角色真正说出口的文字）
+            if (sender === 'assistant' && (!type || type === 'text')) trackSleepNag(personaId, content);
             saveData();
             return msg;
         }
@@ -14104,7 +14643,13 @@ ${tonePrompt}
             if (!confirm('删除这条朋友圈？此操作不可撤销。')) return;
             data.moments = data.moments.filter(x => x.id !== mid);
             delete momentReplyTarget[mid];
-            if (momentReactionTimers[mid]) { clearTimeout(momentReactionTimers[mid]); delete momentReactionTimers[mid]; }
+            // 多人评论后定时器是 momentId:personaId，逐个清掉
+            Object.keys(momentReactionTimers).forEach(k => {
+                if (k === mid || k.indexOf(mid + ':') === 0) {
+                    clearTimeout(momentReactionTimers[k]);
+                    delete momentReactionTimers[k];
+                }
+            });
             saveData();
             refreshMomentViews();
             toast('已删除');
@@ -14290,6 +14835,17 @@ ${tonePrompt}
             // 玩家评论角色的朋友圈 → 作者 30–90 秒后回复
             if (moment.senderId !== 'player') {
                 scheduleCommentReply(momentId, moment.senderId, c.id);
+            } else {
+                // 玩家在自己朋友圈下补充说明 → 还没来过的角色可能"路过又看了一眼"
+                const already = new Set(moment.reactedPersonaIds || []);
+                const rest = (data.personas || [])
+                    .filter(p => personaStatus(p) === 'active' && !already.has(p.id));
+                if (rest.length && Math.random() < 0.5) {
+                    const pick = rest[Math.floor(Math.random() * rest.length)];
+                    setTimeout(() => {
+                        reactOnePersona(moment.id, pick.id, {}).catch(() => {});
+                    }, (3 + Math.random() * 9) * 60 * 1000);
+                }
             }
         }
 
@@ -14527,9 +15083,12 @@ ${tonePrompt}
                 `\n- 如果这条朋友圈只有图、既没有文字也没有图片说明，就别评论，最多点个赞` +
                 `\n- 不要用引号包裹、不要解释、不要旁白`;
 
-            sys += `\n\n【重要】你是在给用户（发这条朋友圈的人）留言。` +
-                `\n- 评论区里可能有其他好友的评论，但你不要回复他们、不要提及他们、不要写"@某某""回复某某"` +
-                `\n- 你的评论是独立的一条，不是对谁的回话` +
+            sys += `\n\n【评论隔离 · 重要】你是在给用户（发这条朋友圈的人）留言。` +
+                `\n- 你只看到这条朋友圈的正文，以及玩家自己的补充评论` +
+                `\n- 你看不到其他好友在这条朋友圈下的任何评论，也看不到它们的存在` +
+                `\n- 就算这条朋友圈下已经有别人在评论，你也当看不见` +
+                `\n- 你的评论是独立的一条，不要回复别人、不要引用别人、不要写"@某某""回复某某"` +
+                `\n- 不要提"我看到 XX 说"或类似的话，也不要假装自己在和谁对话` +
                 `\n- 如果没话说就别评论（comment 留空字符串）`;
 
             sys += `\n- 输出严格 JSON，不要 markdown 代码块：{"like": true, "comment": "评论内容，不评论则空字符串"}`;
@@ -14576,84 +15135,154 @@ ${tonePrompt}
             return { like: /点赞|👍/.test(s), comment: s.replace(/^["「『]|["」』]$/g, '').slice(0, 60) };
         }
 
-        function scheduleMomentReaction(momentId) {
-            if (momentReactionTimers[momentId]) return;
-            const cfg = getMomentSettings();
-            const delay = (cfg.reactDelayMin + Math.random() * (cfg.reactDelayMax - cfg.reactDelayMin)) * 1000;
-            momentReactionTimers[momentId] = setTimeout(() => {
-                delete momentReactionTimers[momentId];
-                reactToPlayerMoment(momentId);
-            }, delay);
+        // 参与人数：内容越"值得围观"，来的人越多
+        function rollReactorCount(m) {
+            const text = String((m && m.content) || '');
+            const imgs = (m && m.images) || [];
+            const descs = (m && m.imageDescs) || [];
+            const hasImg = imgs.length > 0;
+            const hasSelfie = hasImg && descs.some(d => /自拍|我|脸|今天穿|穿搭|look/i.test(String(d || '')));
+            const isCelebrate = /考上|过了|赢了|生日|升职|中奖|成功|第一名|拿到offer|涨工资|发了|喜提|录取|上岸/.test(text);
+            const isVent = /累|烦|难受|气死|无语|崩溃|不想活|emo|委屈/.test(text);
+            let n = 2;
+            if (isCelebrate) n = 3 + Math.floor(Math.random() * 2);          // 3–4
+            else if (hasSelfie) n = 3;
+            else if (isVent) n = 2 + Math.floor(Math.random() * 2);          // 2–3
+            else if (hasImg) n = 2 + Math.floor(Math.random() * 2);
+            const active = (data.personas || []).filter(p => personaStatus(p) === 'active');
+            return Math.max(1, Math.min(n, active.length || 1));
         }
 
-        async function reactToPlayerMoment(momentId, opts) {
+        // 一次挑 2–4 人，每人一个独立定时器 → 评论"陆续"出现，而不是同一秒刷进来
+        function scheduleMomentReaction(momentId) {
+            const m = (data.moments || []).find(x => x.id === momentId);
+            if (!m || m.senderId !== 'player' || m.visibility === 'private') return;
+            if (!Array.isArray(m.reactedPersonaIds)) m.reactedPersonaIds = [];
+
+            const already = new Set(m.reactedPersonaIds);
+            const pool = pickReactors(m, 99).filter(p => !already.has(p.id));
+            const need = Math.min(rollReactorCount(m), pool.length);
+            if (!need) { m.aiReplied = true; saveData(); return; }
+
+            const cfg = getMomentSettings();
+            const minSec = Math.max(1, Number(cfg.reactDelayMin) || 20);
+            const maxSec = Math.max(minSec, Number(cfg.reactDelayMax) || 120);
+
+            pool.slice(0, need).forEach((p, idx) => {
+                const timerKey = momentId + ':' + p.id;
+                if (momentReactionTimers[timerKey]) return;
+                const base = (minSec + Math.random() * (maxSec - minSec)) * 1000;
+                // 第二个起再往后叠一段，让时间戳自然错开
+                const delay = Math.min(base * (1 + idx * 0.6), 2147483000);
+                momentReactionTimers[timerKey] = setTimeout(() => {
+                    delete momentReactionTimers[timerKey];
+                    reactOnePersona(momentId, p.id, {})
+                        .catch(e => console.warn('moment reaction fail', p.id, e));
+                }, delay);
+            });
+        }
+
+        // 单个角色独立决策：代码定"评论 or 只点赞"，模型只写"评论内容"
+        async function reactOnePersona(momentId, personaId, opts) {
             opts = opts || {};
             const m = (data.moments || []).find(x => x.id === momentId);
-            if (!m || m.senderId !== 'player' || m.aiReplied) return 0;
-            if (m.visibility === 'private') { m.aiReplied = true; saveData(); return 0; }
+            const p = getPersonaById(personaId);
+            if (!m || !p || personaStatus(p) !== 'active') return 0;
+            if (m.senderId === personaId) return 0;
+            if (!Array.isArray(m.reactedPersonaIds)) m.reactedPersonaIds = [];
+            if (m.reactedPersonaIds.includes(personaId)) return 0;
 
             const api = opts.api || pickApi();
             if (!api) return 0;
-            const reactors = pickReactors(m, 1 + Math.floor(Math.random() * 2));
-            if (!reactors.length) return 0;
+
+            const wantComment = Math.random() < 0.6;   // 60% 评论，40% 只点赞
+
+            let out = { like: false, comment: '' };
+            try {
+                const raw = await callMomentRomance(api, buildMomentReactSystem(p, m), m, buildMomentReactUser(m));
+                out = parseMomentReaction(raw);
+            } catch (e) {
+                console.warn('moment reaction fail', personaId, e);
+                return 0;
+            }
+
+            // 纯图无描述：模型看不到图，任何具体评论都是编的 → 只点赞
+            const hasText = !!(m.content && String(m.content).trim());
+            const hasDesc = (m.imageDescs || []).some(d => String(d || '').trim());
+            const hasImg = (m.images || []).length > 0;
+            if (hasImg && !hasText && !hasDesc) out.comment = '';
+            if (out.comment && violatesRomanceLock(out.comment)) out.comment = '';
+            if (!wantComment) out.comment = '';
+
+            // 想评论但模型没写出来 → 退化成点赞，别留一条空评论
+            const willLike = !wantComment || Math.random() < 0.2 || !out.comment;
 
             let reacted = 0;
-            for (const p of reactors) {
-                if (!(data.moments || []).some(x => x.id === momentId)) break;
-                try {
-                    const raw = await callMomentRomance(api, buildMomentReactSystem(p, m), m, buildMomentReactUser(m));
-                    const out = parseMomentReaction(raw);
-                    // 纯图无描述：模型看不到图，任何具体评论都是编的 → 只点赞、不评论
-                    const hasText = !!(m.content && String(m.content).trim());
-                    const hasDesc = (m.imageDescs || []).some(d => String(d || '').trim());
-                    const hasImg = (m.images || []).length > 0;
-                    if (hasImg && !hasText && !hasDesc) {
-                        out.comment = '';
-                        out.like = true;
-                    }
-                    // 字段级过滤：评论命中违禁内容就整条丢弃，只保留点赞
-                    if (out.comment && violatesRomanceLock(out.comment)) out.comment = '';
-                    if (!Array.isArray(m.likes)) m.likes = [];
-                    if (out.like && !m.likes.includes(p.id)) {
-                        m.likes.push(p.id);
-                        reacted++;
-                    }
-                    if (out.comment) {
-                        const added = pushMomentComment(m, {
-                            commenterId: p.id,
-                            content: out.comment,
-                            replyToId: null
-                        });
-                        if (added) {
-                            reacted++;
-                            // 10% 概率把话题带进私聊
-                            if (Math.random() < 0.1 && personaStatus(p) === 'active') {
-                                const line = '刚刷到你发的朋友圈… ' + out.comment;
-                                addMessage(p.id, 'assistant', 'text', line, { fromMoment: m.id });
-                                if (!isChatOpenWith(p.id)) {
-                                    data.unreadCounts[p.id] = (data.unreadCounts[p.id] || 0) + 1;
-                                    showIncomingNotification(p.id, line);
-                                }
-                            }
+            if (!Array.isArray(m.likes)) m.likes = [];
+            if (willLike && !m.likes.includes(personaId)) {
+                m.likes.push(personaId);
+                reacted++;
+            }
+            if (out.comment) {
+                const added = pushMomentComment(m, {
+                    commenterId: personaId,
+                    content: out.comment,
+                    replyToId: null
+                });
+                if (added) {
+                    reacted++;
+                    // 10% 概率把话题带进私聊
+                    if (Math.random() < 0.1) {
+                        const line = '刚刷到你发的朋友圈… ' + out.comment;
+                        addMessage(personaId, 'assistant', 'text', line, { fromMoment: m.id });
+                        if (!isChatOpenWith(personaId)) {
+                            data.unreadCounts[personaId] = (data.unreadCounts[personaId] || 0) + 1;
+                            showIncomingNotification(personaId, line);
                         }
                     }
-                } catch (e) {
-                    console.warn('moment reaction fail', p && p.id, e);
                 }
             }
 
-            m.aiReplied = true;
-            if (reacted) data.momentUnread = (data.momentUnread || 0) + 1;
-            saveData();
+            m.reactedPersonaIds.push(personaId);
+            // 所有活跃角色都来过了，这条朋友圈才算"处理完"（后续还能继续补人）
+            const activeN = (data.personas || []).filter(x => personaStatus(x) === 'active').length;
+            if ((m.reactedPersonaIds || []).length >= activeN) m.aiReplied = true;
 
             if (reacted) {
+                data.momentUnread = (data.momentUnread || 0) + 1;
                 if (isMomentPageOpen()) {
                     data.momentUnread = 0;
                     refreshMomentViews();
-                    saveData();
                 }
                 updateMomentBadge();
                 updateWxTabBadge();
+            }
+            saveData();
+            return reacted;
+        }
+
+        // 同步入口：补齐"还没参与"的人（刷新朋友圈时用）。不强求一次到齐，剩下的下次刷新继续。
+        async function reactToPlayerMoment(momentId, opts) {
+            opts = opts || {};
+            const m = (data.moments || []).find(x => x.id === momentId);
+            if (!m || m.senderId !== 'player') return 0;
+            if (m.visibility === 'private') { m.aiReplied = true; saveData(); return 0; }
+            if (!Array.isArray(m.reactedPersonaIds)) m.reactedPersonaIds = [];
+            if (m.aiReplied) return 0;
+
+            const api = opts.api || pickApi();
+            if (!api) return 0;
+
+            const already = new Set(m.reactedPersonaIds);
+            const pool = pickReactors(m, 99).filter(p => !already.has(p.id));
+            const need = Math.min(rollReactorCount(m), pool.length);
+            if (!need) { m.aiReplied = true; saveData(); return 0; }
+
+            let reacted = 0;
+            // 刷新是手动操作，一次最多补 2 个人，别让按钮转太久
+            for (const p of pool.slice(0, Math.min(2, need))) {
+                if (!(data.moments || []).some(x => x.id === momentId)) break;
+                reacted += await reactOnePersona(momentId, p.id, { api });
             }
             return reacted;
         }
@@ -15243,32 +15872,28 @@ ${tonePrompt}
             document.getElementById('plusPopup').classList.remove('show');
         });
 
+        // 表情按钮不再直接拉文件选择：先开表情包面板（最近使用 + 全部 + 上传）
         document.getElementById('emojiBtn').addEventListener('click', () => {
-            document.getElementById('emojiFileInput').click();
+            openStickerPicker();
         });
 
         document.getElementById('emojiOpt').addEventListener('click', () => {
-            document.getElementById('emojiFileInput').click();
             document.getElementById('plusPopup').classList.remove('show');
+            openStickerPicker();
         });
 
-        document.getElementById('emojiFileInput').addEventListener('change', function(e) {
-            const files = e.target.files;
+        document.getElementById('emojiFileInput').addEventListener('change', async function(e) {
+            const files = Array.from(this.files || []);
+            this.value = '';
             if (!files.length) return;
             const cw = document.getElementById('chatWindow');
-            const personaId = cw.dataset.persona;
+            const personaId = cw && cw.dataset.persona;
             if (!personaId) return;
-
-            Array.from(files).forEach(async file => {
-                if (!file.type.startsWith('image/')) return;
-                const name = file.name.replace(/\.[^.]+$/, '');
-                const eid = await saveImageBlob(file, 'em_');   // 表情包原图直接进 IndexedDB
-                if (!eid) { toast('「' + name + '」保存失败'); return; }
-                data.emojis.push({ id: eid, imgId: eid, name });
-                addMessage(personaId, 'user', 'emoji', 'img:' + eid);   // saveData 在 addMessage 里
-                renderMessages(personaId);
-            });
-            this.value = '';
+            // 上传即入库 + 立即发出（保持原来的手感），同时 usageCount 记一次
+            for (const file of files) {
+                const s = await createStickerFromFile(file);
+                if (s) sendStickerToChat(personaId, s);
+            }
         });
 
         // ============================================================
@@ -15299,27 +15924,125 @@ ${tonePrompt}
             'linear-gradient(165deg, #1d1d36 0%, #141a2e 45%, #0c0c17 100%)';
         const WP_MAX = 5;
 
-        function compressImage(file, maxSide = 900, quality = 0.8) {
-            return new Promise((resolve, reject) => {
-                const url = URL.createObjectURL(file);
-                const img = new Image();
-                img.onload = () => {
-                    const scale = Math.min(1, maxSide / Math.max(img.width, img.height));
-                    const c = document.createElement('canvas');
-                    c.width = Math.max(1, Math.round(img.width * scale));
-                    c.height = Math.max(1, Math.round(img.height * scale));
-                    const ctx = c.getContext('2d');
-                    ctx.drawImage(img, 0, 0, c.width, c.height);
-                    URL.revokeObjectURL(url);
-                    try {
-                        resolve(c.toDataURL('image/jpeg', quality));
-                    } catch (e) {
-                        reject(e);
+        // Canvas 压缩。相比旧版修了：
+        //  · createImageBitmap 优先（更快、EXIF 方向自动应用），失败回退 <img>
+        //  · 透明图（PNG/GIF/WebP/SVG）导出 PNG，避免透明区域变黑
+        //  · 超大图分两级降采样（先夹到 4096，再夹到目标），避免 iOS canvas OOM
+        //  · toDataURL 返回空 / "data:," 时自动缩半重试
+        //  · HEIC 解码失败给出可操作提示
+        async function compressImage(file, maxSide = 900, quality = 0.8) {
+            const src = await resolveImageFile(file);
+            if (!src) throw new Error('这不是一张图片，或浏览器读不懂它的格式');
+
+            const mime = String(src.type || '');
+            const isHeic = /heic|heif/i.test(mime);
+            const isSvg = /svg/i.test(mime);
+            const srcName = String(src.name || (file && file.name) || '');
+
+            // 1. 解码
+            let source = null;
+            let objectUrl = '';
+            if (!isSvg && typeof createImageBitmap === 'function') {
+                try { source = await createImageBitmap(src, { imageOrientation: 'from-image' }); }
+                catch (e) {
+                    try { source = await createImageBitmap(src); } catch (e2) { source = null; }
+                }
+            }
+            if (!source) {
+                try { objectUrl = URL.createObjectURL(src); } catch (e) { throw new Error('这张图读不出来，换个格式试试'); }
+                try {
+                    source = await new Promise((resolve, reject) => {
+                        const img = new Image();
+                        img.onload = () => resolve(img);
+                        img.onerror = () => reject(new Error('decode'));
+                        img.src = objectUrl;
+                    });
+                } catch (e) {
+                    URL.revokeObjectURL(objectUrl);
+                    if (isHeic) {
+                        throw new Error('浏览器不支持 HEIC 格式，请在相册里导出为 JPG 后再上传');
                     }
+                    throw new Error('图片解码失败，可能文件已损坏');
+                }
+            }
+
+            try {
+                let sw = source.width || source.naturalWidth || 0;
+                let sh = source.height || source.naturalHeight || 0;
+                if (!sw || !sh) throw new Error('图片尺寸异常');
+
+                // 2. 超大图先夹到 4096，避免 iOS canvas 面积上限导致黑屏
+                const MAX_SIDE = 4096;
+                if (sw > MAX_SIDE || sh > MAX_SIDE) {
+                    const s2 = Math.min(MAX_SIDE / sw, MAX_SIDE / sh);
+                    const mw = Math.max(1, Math.round(sw * s2));
+                    const mh = Math.max(1, Math.round(sh * s2));
+                    try {
+                        const mid = document.createElement('canvas');
+                        mid.width = mw; mid.height = mh;
+                        const mctx = mid.getContext('2d');
+                        if (mctx) {
+                            mctx.drawImage(source, 0, 0, mw, mh);
+                            source = mid;
+                            sw = mw; sh = mh;
+                        }
+                    } catch (e) { /* 失败保留原图，后面还有兜底 */ }
+                }
+
+                // 3. 目标尺寸
+                const scale = Math.min(1, maxSide / Math.max(sw, sh));
+                const tw = Math.max(1, Math.round(sw * scale));
+                const th = Math.max(1, Math.round(sh * scale));
+
+                // 4. 透明图保留 PNG
+                const hasAlpha = /png|webp|gif|svg/i.test(mime) ||
+                    ['png', 'webp', 'gif', 'svg'].indexOf(imageExtOf(srcName)) !== -1;
+                const outMime = hasAlpha ? 'image/png' : 'image/jpeg';
+                const outQuality = hasAlpha ? undefined : quality;
+
+                const drawTo = (w, h) => {
+                    const c = document.createElement('canvas');
+                    c.width = w; c.height = h;
+                    const ctx = c.getContext('2d');
+                    if (!ctx) throw new Error('画布不可用');
+                    if (!hasAlpha) {
+                        ctx.fillStyle = '#ffffff';
+                        ctx.fillRect(0, 0, w, h);
+                    }
+                    try { ctx.imageSmoothingEnabled = true; ctx.imageSmoothingQuality = 'high'; } catch (e) {}
+                    ctx.drawImage(source, 0, 0, w, h);
+                    return c;
                 };
-                img.onerror = (e) => { URL.revokeObjectURL(url); reject(e); };
-                img.src = url;
-            });
+
+                let canvas;
+                try { canvas = drawTo(tw, th); }
+                catch (e) { canvas = drawTo(Math.max(1, tw >> 1), Math.max(1, th >> 1)); }
+
+                // 5. 导出：空串 / "data:," 时缩半重试
+                let dataUrl = '';
+                try { dataUrl = canvas.toDataURL(outMime, outQuality); } catch (e) { dataUrl = ''; }
+                if (!dataUrl || dataUrl === 'data:,' || dataUrl.indexOf('data:') !== 0) {
+                    const half = document.createElement('canvas');
+                    half.width = Math.max(1, canvas.width >> 1);
+                    half.height = Math.max(1, canvas.height >> 1);
+                    const hctx = half.getContext('2d');
+                    if (hctx) {
+                        if (!hasAlpha) {
+                            hctx.fillStyle = '#ffffff';
+                            hctx.fillRect(0, 0, half.width, half.height);
+                        }
+                        hctx.drawImage(canvas, 0, 0, half.width, half.height);
+                        dataUrl = half.toDataURL(outMime, outQuality);
+                    }
+                }
+                if (!dataUrl || dataUrl === 'data:,' || dataUrl.indexOf('data:') !== 0) {
+                    throw new Error('图片导出失败，可能尺寸太大，请换一张');
+                }
+                return dataUrl;
+            } finally {
+                try { if (source && typeof source.close === 'function') source.close(); } catch (e) {}
+                if (objectUrl) URL.revokeObjectURL(objectUrl);
+            }
         }
 
         function setWpVars(blur, dim) {
@@ -15416,7 +16139,8 @@ ${tonePrompt}
             const file = this.files && this.files[0];
             this.value = '';
             if (!file) return;
-            if (!file.type.startsWith('image/')) { alert('请选择图片文件'); return; }
+            // 有 type 但不是图片 → 直接拒绝；没 type 的（iOS 文件）放行去嗅探
+            if (!looksLikeImageFile(file) && file.type) { alert('请选择图片文件'); return; }
             if ((data.wallpapers || []).length >= WP_MAX) {
                 alert('最多保存 ' + WP_MAX + ' 张壁纸，请先删掉一张再添加。');
                 return;
@@ -15445,7 +16169,7 @@ ${tonePrompt}
                 renderWallpaperPage();
             } catch (err) {
                 console.warn(err);
-                alert('图片处理失败，换一张试试？');
+                alert((err && err.message) ? err.message : '图片处理失败，换一张试试？');
             }
         });
 
@@ -15779,6 +16503,18 @@ ${tonePrompt}
             if (m.type === 'netEase') return '[网易云] ' + (parseJsonSafe(m.content).name || '');
             if (m.type === 'takeout') return '[外卖] ' + (parseJsonSafe(m.content).shopName || '');
             if (m.type === 'taobao') return '[淘宝] ' + (parseJsonSafe(m.content).name || '');
+            if (m.type === 'redPacket') {
+                const j = parseMoneyOf(m);
+                if (j.status === 'opened') return '[红包] ¥' + moneyFmt(j.amount);
+                if (j.status === 'expired') return '[红包] 已过期';
+                return '[微信红包]' + (j.note ? ' ' + j.note : '');
+            }
+            if (m.type === 'transfer') {
+                const j = parseMoneyOf(m);
+                if (j.status === 'received') return '¥' + moneyFmt(j.amount);
+                if (j.status === 'expired') return '[转账] 已过期';
+                return '[转账]';
+            }
             return m.content;
         }
 
@@ -15852,6 +16588,9 @@ ${tonePrompt}
             document.querySelectorAll('[data-album-tab]').forEach(el => {
                 el.classList.toggle('active', el.dataset.albumTab === albumTab);
             });
+            const uploadBtn = document.getElementById('albumUploadBtn');
+            if (uploadBtn) uploadBtn.title = albumTab === 'sticker' ? '上传表情包' : '上传图片';
+            if (albumTab === 'sticker') { renderStickerGrid(grid); return; }
             const list = albumPhotos().slice().sort((a, b) => b.createdAt - a.createdAt);
             if (!list.length) {
                 grid.innerHTML = '<div class="album-empty" style="grid-column:1/-1;">' +
@@ -15864,6 +16603,24 @@ ${tonePrompt}
                     <img data-img="${imageIdOfObj(p)}" src="${IMAGE_PLACEHOLDER}" alt="">
                     ${albumTab === 'public' ? '' : '<span class="badge">仅我</span>'}
                     ${p.desc ? '<div class="cap">' + escHtml(p.desc) + '</div>' : ''}
+                </div>
+            `).join('');
+        }
+
+        // 表情包 tab：按使用次数排（常用优先），角标显示用量
+        function renderStickerGrid(grid) {
+            const list = stickerList().slice().sort((a, b) =>
+                (b.usageCount || 0) - (a.usageCount || 0) || (b.createdAt || 0) - (a.createdAt || 0));
+            if (!list.length) {
+                grid.innerHTML = '<div class="album-empty" style="grid-column:1/-1;">表情包库还是空的<br>' +
+                    '右上角 + 上传几张，聊天里点表情按钮就能一键发</div>';
+                return;
+            }
+            grid.innerHTML = list.map(s => `
+                <div class="album-cell sticker" data-sticker="${escHtml(s.id)}">
+                    <img data-img="${escHtml(s.imgId)}" src="${IMAGE_PLACEHOLDER}" alt="">
+                    ${s.usageCount ? '<span class="badge use">' + s.usageCount + '</span>' : ''}
+                    <div class="cap">${escHtml(s.name || '表情包')}</div>
                 </div>
             `).join('');
         }
@@ -15883,6 +16640,7 @@ ${tonePrompt}
             const files = Array.from(this.files || []);
             this.value = '';
             if (!files.length) return;
+            if (albumTab === 'sticker') { await uploadStickerFiles(files); return; }
             await uploadAlbumFiles(files, albumTab === 'public');
         });
 
@@ -15897,14 +16655,20 @@ ${tonePrompt}
             }
             const cell = e.target.closest('.album-cell');
             if (!cell) return;
+            if (cell.dataset.sticker) { openStickerEditorById(cell.dataset.sticker); return; }
             openPhotoActions(cell.dataset.photo);
         });
 
         async function uploadAlbumFiles(files, isPublic) {
-            const imgs = files.filter(f => f.type && f.type.startsWith('image/'));
-            if (!imgs.length) { toast('只支持图片文件'); return; }
+            // 宽松过滤：type 是 image/*、有图片后缀、或 type 为空（iOS 文件）都进解析流程
+            const candidates = files.filter(f => f && (
+                IMAGE_MIME_RE.test(String(f.type || '')) ||
+                IMAGE_EXT_RE.test(String(f.name || '')) ||
+                !f.type
+            ));
+            if (!candidates.length) { toast('只支持图片文件'); return; }
             let added = 0;
-            for (const file of imgs) {
+            for (const file of candidates) {
                 if ((data.photos || []).length >= PHOTO_MAX) {
                     toast('相册最多 ' + PHOTO_MAX + ' 张，请先删掉几张旧图');
                     break;
@@ -15913,12 +16677,12 @@ ${tonePrompt}
                 try {
                     dataUrl = await compressImage(file, 720, 0.75);   // 仍用 canvas 压缩
                 } catch (e) {
-                    toast('「' + file.name + '」处理失败，已跳过');
+                    toast('「' + (file.name || '这张图') + '」' + (e.message || '处理失败') + '，已跳过', 3200);
                     continue;
                 }
                 const blob = await dataUrlToBlob(dataUrl);
                 if (!blob) {
-                    toast('「' + file.name + '」处理失败，已跳过');
+                    toast('「' + (file.name || '这张图') + '」格式转换失败，已跳过', 3200);
                     continue;
                 }
                 const imgId = newImageId('ph_');
@@ -15931,7 +16695,7 @@ ${tonePrompt}
                 const photo = {
                     id: imgId,
                     imgId: imgId,          // localStorage 里只存 ID
-                    name: file.name.replace(/\.[^.]+$/, ''),
+                    name: String(file.name || '').replace(/\.[^.]+$/, '') || '图片',
                     desc: '',
                     isPublic: !!isPublic,
                     uploader: 'player',
@@ -15978,6 +16742,222 @@ ${tonePrompt}
             toast('已删除');
         }
 
+        // ============================================================
+        //  v26 · 表情包库
+        //  与照片彻底分开：表情包有自己的名称 / 标签 / 使用次数，
+        //  AI 只能按标签挑，不能凭"看起来差不多"乱发。
+        // ============================================================
+        const STICKER_TAGS = [
+            { id: 'happy', label: '开心' }, { id: 'sad', label: '难过' }, { id: 'angry', label: '生气' },
+            { id: 'shy', label: '害羞' }, { id: 'confused', label: '疑惑' }, { id: 'speechless', label: '无语' },
+            { id: 'love', label: '喜欢' }, { id: 'cheer', label: '加油' }, { id: 'night', label: '深夜' },
+            { id: 'work', label: '工作' }, { id: 'food', label: '吃喝' }
+        ];
+
+        function createStickerFromFile(file, opts) {
+            opts = opts || {};
+            const baseName = String(file.name || '').replace(/\.[^.]+$/, '').trim() || '表情包';
+            const isGif = /gif/i.test(String(file.type || '')) || /\.gif$/i.test(String(file.name || ''));
+            return (async () => {
+                let blob = file;
+                if (!isGif) {
+                    try {
+                        // 统一转成 PNG / JPEG，顺便吃下 HEIC、大图（GIF 保留原样，压了会变静图）
+                        const dataUrl = await compressImage(file, 360, 0.9);
+                        const b = await dataUrlToBlob(dataUrl);
+                        if (b) blob = b;
+                    } catch (err) {
+                        toast('「' + baseName + '」' + (err.message || '处理失败'), 3200);
+                        return null;
+                    }
+                }
+                const imgId = await saveImageBlob(blob, 'em_');
+                if (!imgId) { toast('「' + baseName + '」保存失败'); return null; }
+
+                const sticker = {
+                    id: genId(),
+                    imgId: imgId,
+                    name: opts.name || baseName,
+                    tags: Array.isArray(opts.tags) ? opts.tags.slice() : [],
+                    usageCount: 0,
+                    lastUsedAt: 0,
+                    createdAt: Date.now()
+                };
+                stickerList().push(sticker);
+                // 兼容旧字段：data.emojis 同步一份，老版本回退时不至于找不到图
+                if (!Array.isArray(data.emojis)) data.emojis = [];
+                data.emojis.push({ id: imgId, imgId: imgId, name: sticker.name });
+                saveData();
+                return sticker;
+            })();
+        }
+
+        async function uploadStickerFiles(files) {
+            const created = [];
+            for (const file of files) {
+                const s = await createStickerFromFile(file);
+                if (s) created.push(s);
+            }
+            if (!created.length) return;
+            renderAlbum();
+            toast('已添加 ' + created.length + ' 个表情包');
+            // 依次命名 + 打标签：保存/跳过后自动弹下一个
+            let i = 0;
+            const next = () => {
+                if (i >= created.length) return;
+                const s = created[i++];
+                if (stickerList().indexOf(s) < 0) { next(); return; }   // 上一个里被删了
+                openStickerEditor(s, next);
+            };
+            setTimeout(next, 280);
+        }
+
+        // 表情包图片被历史消息引用时不能删，否则聊天记录里的表情会变裂图
+        function stickerInUse(imgId) {
+            const token = 'img:' + imgId;
+            const chats = data.chats || {};
+            return Object.keys(chats).some(k => (chats[k] || []).some(m => m && m.type === 'emoji' && m.content === token));
+        }
+
+        function deleteSticker(id) {
+            const list = stickerList();
+            const idx = list.findIndex(s => s.id === id);
+            if (idx < 0) return;
+            const s = list[idx];
+            if (!confirm('删除这个表情包？')) return;
+            list.splice(idx, 1);
+            if (Array.isArray(data.emojis)) data.emojis = data.emojis.filter(e => !e || e.imgId !== s.imgId);
+            saveData();
+            if (!stickerInUse(s.imgId)) deleteImage(s.imgId);
+            renderAlbum();
+            toast('已删除');
+        }
+
+        function openStickerEditorById(id) {
+            const s = stickerList().find(x => x.id === id);
+            if (!s) return;
+            openStickerEditor(s);
+        }
+
+        // 预览 / 改名 / 打标签 / 删除，一个面板解决
+        function openStickerEditor(sticker, onDone) {
+            if (!sticker) return;
+            const picked = Array.isArray(sticker.tags) ? sticker.tags.slice() : [];
+            const tagHtml = STICKER_TAGS.map(t =>
+                `<div class="tag${picked.indexOf(t.id) >= 0 ? ' on' : ''}" data-tag="${t.id}">${t.label}</div>`
+            ).join('');
+            showModal(`
+                <div class="modal-title">表情包</div>
+                <div style="text-align:center;margin-bottom:10px;">
+                    <img data-img="${escHtml(sticker.imgId)}" src="${IMAGE_PLACEHOLDER}" style="max-width:138px;max-height:138px;border-radius:14px;background:rgba(255,255,255,.05);">
+                </div>
+                <label>名称</label>
+                <input id="stkName" maxlength="12" value="${escHtml(sticker.name || '')}" placeholder="例如：猫猫无语" />
+                <label style="display:block;margin-top:12px;">标签（可多选）</label>
+                <div class="sticker-tag-list" id="stkTags">${tagHtml}</div>
+                <div class="ctx-hint">AI 只在标签与当下情绪匹配时才会用它；不填标签就只能按概率碰运气。</div>
+                <div class="btn-row" style="margin-top:14px;flex-wrap:wrap;gap:8px;">
+                    <button class="btn btn-sm btn-danger" id="stkDel">删除</button>
+                    <button class="btn btn-sm" id="stkSkip">跳过</button>
+                    <button class="btn btn-sm btn-primary" id="stkSave">保存</button>
+                </div>
+            `);
+            const box = document.getElementById('stkTags');
+            if (box) {
+                box.querySelectorAll('[data-tag]').forEach(el => {
+                    el.addEventListener('click', () => {
+                        el.classList.toggle('on');
+                    });
+                });
+            }
+            const finish = () => { if (typeof onDone === 'function') { try { onDone(); } catch (e) {} } };
+            document.getElementById('stkSave').addEventListener('click', () => {
+                const nameEl = document.getElementById('stkName');
+                sticker.name = (nameEl && nameEl.value.trim()) || '表情包';
+                sticker.tags = Array.prototype.slice.call(document.querySelectorAll('#stkTags .tag.on'))
+                    .map(el => el.dataset.tag).filter(Boolean);
+                if (Array.isArray(data.emojis)) {
+                    const em = data.emojis.find(e => e && e.imgId === sticker.imgId);
+                    if (em) em.name = sticker.name;
+                }
+                saveData();
+                closeModal();
+                renderAlbum();
+                toast('已保存');
+                finish();
+            });
+            document.getElementById('stkSkip').addEventListener('click', () => {
+                closeModal();
+                renderAlbum();
+                finish();
+            });
+            document.getElementById('stkDel').addEventListener('click', () => {
+                closeModal();
+                deleteSticker(sticker.id);
+                finish();
+            });
+        }
+
+        // 最近使用：lastUsedAt 倒序，同时间按使用次数加权
+        function recentStickers(n) {
+            return stickerList().slice()
+                .filter(s => s && (s.usageCount || 0) > 0)
+                .sort((a, b) => (b.lastUsedAt || 0) - (a.lastUsedAt || 0) ||
+                    (b.usageCount || 0) - (a.usageCount || 0))
+                .slice(0, n || 8);
+        }
+
+        function sendStickerToChat(personaId, sticker) {
+            if (!sticker || !sticker.imgId) return;
+            addMessage(personaId, 'user', 'emoji', 'img:' + sticker.imgId);
+            sticker.usageCount = (sticker.usageCount || 0) + 1;
+            sticker.lastUsedAt = Date.now();
+            saveData();
+            renderMessages(personaId);
+            renderWechatList();
+        }
+
+        // 玩家端表情包选择器：最近使用 + 全部 + 上传入口
+        function openStickerPicker() {
+            const cw = document.getElementById('chatWindow');
+            const personaId = cw && cw.dataset.persona;
+            if (!personaId) { toast('先打开一个聊天'); return; }
+
+            const all = stickerList().slice().sort((a, b) =>
+                (b.lastUsedAt || 0) - (a.lastUsedAt || 0) || (b.createdAt || 0) - (a.createdAt || 0));
+            const recent = recentStickers(8);
+            const cellHtml = s => `<div class="cell" data-sticker-send="${escHtml(s.id)}"><img data-img="${escHtml(s.imgId)}" src="${IMAGE_PLACEHOLDER}" alt=""></div>`;
+
+            showModal(`
+                <div class="modal-title">表情包</div>
+                ${recent.length ? '<div class="sticker-sec-title">最近使用</div><div class="sticker-recent-row">' + recent.map(cellHtml).join('') + '</div>' : ''}
+                <div class="sticker-sec-title">全部（${all.length}）</div>
+                ${all.length
+                    ? '<div class="sticker-panel-grid">' + all.map(cellHtml).join('') + '</div>'
+                    : '<div style="padding:22px 0;text-align:center;color:rgba(255,255,255,.35);font-size:12.5px;line-height:1.9;">还没有表情包<br>点下面的按钮上传，或在相册的「表情包」里管理</div>'}
+                <div class="btn-row" style="margin-top:14px;">
+                    <button class="btn" id="spUpload">＋ 上传新表情包</button>
+                    <button class="btn btn-primary" onclick="closeModal()">关闭</button>
+                </div>
+            `);
+
+            document.querySelectorAll('#modalContent [data-sticker-send]').forEach(el => {
+                el.addEventListener('click', () => {
+                    const s = stickerList().find(x => x.id === el.dataset.stickerSend);
+                    if (!s) return;
+                    sendStickerToChat(personaId, s);
+                    closeModal();
+                });
+            });
+            const up = document.getElementById('spUpload');
+            if (up) {
+                up.addEventListener('click', () => {
+                    closeModal();
+                    document.getElementById('emojiFileInput').click();
+                });
+            }
+        }
+
         (function initAlbumLongPress() {
             const grid = document.getElementById('albumGrid');
             if (!grid) return;
@@ -15997,13 +16977,15 @@ ${tonePrompt}
 
             const fire = (cell) => {
                 const photoId = cell.dataset.photo;
-                if (!photoId) return;
+                const stickerId = cell.dataset.sticker;
+                if (!photoId && !stickerId) return;
                 cell.classList.add('lp-hit');
                 setTimeout(() => cell.classList.remove('lp-hit'), 300);
                 try { navigator.vibrate && navigator.vibrate(15); } catch (e) {}
                 // 长按命中后，抑制紧随其后的 click
                 albumSuppressClickUntil = Date.now() + 700;
-                deletePhotoFromAlbum(photoId);
+                if (stickerId) deleteSticker(stickerId);
+                else deletePhotoFromAlbum(photoId);
                 // confirm 阻塞期间 pointerup/click 会排队，确认框关掉后才派发；这里重新计时，
                 // 否则用户思考超过 700ms 时，「取消」后仍会误开操作菜单
                 albumSuppressClickUntil = Date.now() + 700;
@@ -16011,7 +16993,7 @@ ${tonePrompt}
 
             grid.addEventListener('pointerdown', (e) => {
                 const cell = e.target.closest('.album-cell');
-                if (!cell || !cell.dataset.photo) return;
+                if (!cell || (!cell.dataset.photo && !cell.dataset.sticker)) return;
                 if (e.pointerType === 'mouse' && e.button !== 0) return;   // 只响应左键
 
                 clearPress();
@@ -16048,8 +17030,9 @@ ${tonePrompt}
                 const cell = e.target.closest('.album-cell');
                 if (!cell) return;
                 e.preventDefault();
-                if (!cell.dataset.photo) return;
                 albumSuppressClickUntil = Date.now() + 700;
+                if (cell.dataset.sticker) { deleteSticker(cell.dataset.sticker); return; }
+                if (!cell.dataset.photo) return;
                 deletePhotoFromAlbum(cell.dataset.photo);
             });
         })();
@@ -17982,13 +18965,15 @@ ${tonePrompt}
 
             // 从任意图片来源派生一张 640px 的副本存进 IndexedDB，商品只记 id
             async function setPic(token, fallbackDataUrl) {
-                let id = await saveImageVariant(token, 640, 0.72, 'tb_');
+                let id = '';
+                try { id = await saveImageVariant(token, 640, 0.72, 'tb_'); } catch (e) { id = ''; }
                 if (!id && fallbackDataUrl) {
                     const blob = await dataUrlToBlob(fallbackDataUrl);
                     if (blob) id = await saveImageBlob(blob, 'tb_');
                 }
                 st.image = id || '';
                 paintPic();
+                if (!id) toast('图片处理失败，换一张试试');
             }
 
             // 读取当前表单，供重开面板时回填
@@ -18013,7 +18998,7 @@ ${tonePrompt}
                         const dataUrl = await compressImage(f, 640, 0.72);
                         await setPic('', dataUrl);
                         strip.querySelectorAll('.ph').forEach(el => el.classList.remove('sel'));
-                    } catch (err) { toast('图片处理失败'); }
+                    } catch (err) { toast((err && err.message) || '图片处理失败', 3200); }
                 };
                 fi.click();
             }
@@ -18621,6 +19606,35 @@ ${tonePrompt}
         const FOOD_WORD_RE = /吃|饭|饿|外卖|夜宵|宵夜|早餐|午饭|晚饭|零食|食堂|奶茶/;
         const MEAL_ASK_RE = /吃了吗|吃了没|吃饭了吗|吃饭没|吃啥|吃什么|饿不饿|饿了吧|点外卖|要不要吃|宵夜|夜宵|该吃饭/;
 
+        // 「睡」这一族只收语义明确的词：把"明天/状态/精神"这种高频泛词放进来，
+        // 会把普通闲聊误判成说教，反而让模型被无谓禁话题。
+        const SLEEP_WORD_RE = /睡|熬夜|晚安|半夜|太晚|失眠/;
+        // 催睡检测：只收语义明确的词（"明天/状态/精神"这种泛词会把普通闲聊误判成说教）。
+        // v27：补上"不早了""明天还得早起""盖好被子"这些常见变体 —— 旧正则漏得太多。
+        const SLEEP_ASK_RE = /早点睡|快去睡|早点休息|快去休息|休息吧|睡觉吧|该睡了|睡吧|别熬夜|别熬了|别玩太晚|别太晚|太晚了|不早了|明天还得|明天还要|明天再聊|明天再说|晚安|睡前|盖好被子|注意身体|注意休息|早点歇|去歇着|该休息了|还没睡/;
+
+        // 23:00 – 08:00 视为"作息敏感时段"（含凌晨/清晨）
+        function isLateNightHour() {
+            const bj = beijingTimeHint();
+            return bj.hh >= 23 || bj.hh < 8;
+        }
+
+        // 日级累积：同一天催睡 ≥2 次后，无论窗口内有没有，直接硬禁
+        function trackSleepNag(personaId, text) {
+            const s = String(text || '');
+            if (!s || !SLEEP_ASK_RE.test(s)) return;
+            const today = todayKey();
+            if (!data.sleepNagState || typeof data.sleepNagState !== 'object') data.sleepNagState = {};
+            const st = data.sleepNagState[personaId] || { date: '', count: 0, lastAt: 0 };
+            if (st.date !== today) { st.date = today; st.count = 0; }
+            // 同一条回复被拆成多条短句时只记一次，别自己把计数刷满
+            if (st.lastAt && Date.now() - st.lastAt < 60 * 1000) return;
+            st.count = (st.count || 0) + 1;
+            st.lastAt = Date.now();
+            data.sleepNagState[personaId] = st;
+            // 统一由 addMessage / addGroupMessage 之后的 saveData 落盘
+        }
+
         function recentAssistantTurns(personaId, maxTurns) {
             const all = data.chats[personaId] || [];
             const turns = [];
@@ -18639,30 +19653,48 @@ ${tonePrompt}
 
         // 返回 '' 表示本轮不需要干预
         function buildAntiRepeatHint(personaId) {
-            // 玩家自己就在聊吃的：顺着说很正常，别硬禁
+            // 玩家自己就在聊这些：顺着说很正常，别硬禁
             const all = data.chats[personaId] || [];
             for (let i = all.length - 1; i >= 0; i--) {
                 const m = all[i];
                 if (!m || m.recalled) continue;
                 if (m.sender !== 'user') continue;
                 if (m.type !== 'text' && m.type !== 'voice') break;
-                if (FOOD_WORD_RE.test(String(m.content || ''))) return '';
+                const uc = String(m.content || '');
+                if (FOOD_WORD_RE.test(uc) || SLEEP_WORD_RE.test(uc)) return '';
                 break;
             }
 
-            const turns = recentAssistantTurns(personaId, 3);
-            if (!turns.length) return '';
-            const foodTurns = turns.filter(t => FOOD_WORD_RE.test(t.text)).length;
-            const lastIsMealAsk = MEAL_ASK_RE.test(turns[turns.length - 1].text);
-
-            if (lastIsMealAsk || foodTurns >= 2) {
-                return '【最高优先级·禁止复读】吃饭这个话题你最近几轮已经翻来覆去说过了，对方很可能已经觉得你在打卡。' +
-                    '这一轮彻底换台：不准再问对方吃了没、饿不饿，也不准用"该吃饭了""点个外卖"之类的句子绕回来。' +
-                    '换个方向：说一件你此刻正在做的具体小事（刚洗完澡、在追某部剧、被楼下装修吵到），' +
-                    '或者就着上文里对方提过的一个细节继续聊。';
+            // 日级累积：当天已经催过 2 次以上，无论窗口里有没有，都强制禁止。
+            // （玩家自己说"我要睡了"时，上面那段已经放行，这里不会误伤一次性的道晚安）
+            const today = todayKey();
+            const nag = (data.sleepNagState || {})[personaId];
+            if (nag && nag.date === today && (nag.count || 0) >= 2) {
+                return '【强制禁令】你今天已经两次提到"睡觉/休息"相关话题了，对方显然不买账。' +
+                    '这一轮绝对禁止再提睡觉、晚安、休息、熬夜——一个字都不要沾。' +
+                    '直接顺着对方的话接下去，或者聊一件你自己此刻正在做的具体小事。';
             }
-            if (foodTurns === 1) {
-                return '（提醒：上一轮你已经提过吃饭相关的话，这一轮别再绕回去，接着聊点别的。）';
+
+            // 窗口 3 → 5：压住"4 轮前刚催过、窗口一过立刻重犯"的空档
+            const turns = recentAssistantTurns(personaId, 5);
+            if (!turns.length) return '';
+
+            const foodTurns = turns.filter(t => FOOD_WORD_RE.test(t.text)).length;
+            const sleepTurns = turns.filter(t => SLEEP_ASK_RE.test(t.text)).length;
+
+            const lastIsMealAsk = MEAL_ASK_RE.test(turns[turns.length - 1].text);
+            const lastIsSleepAsk = SLEEP_ASK_RE.test(turns[turns.length - 1].text);
+
+            // 连续说教（吃饭 / 睡觉）→ 顶到 prompt 最后强行换台
+            if (lastIsMealAsk || lastIsSleepAsk || foodTurns >= 2 || sleepTurns >= 2) {
+                return '【最高优先级·禁止复读】你最近几轮的回复里，一直在重复问"吃了吗""早点睡""注意身体""明天还要…"这类爹味说教和车轱辘话。' +
+                    '对方已经觉得你像复读机或者老妈子了！' +
+                    '这一轮彻底换台：不准再提吃饭和睡觉，不准再说教，不准叮嘱对方注意身体。' +
+                    '直接顺着对方说的话往下聊，或者分享一件你自己现在正在做的、具体的生活小事' +
+                    '（比如刚洗完澡、在听某首歌、被窗外的声音吵到），不要当打卡机器人。';
+            }
+            if (foodTurns === 1 || sleepTurns === 1) {
+                return '（提醒：你上一轮已经提过吃饭或睡觉的话题，这一轮别再绕回去，接着聊点别的具体事情。）';
             }
             return '';
         }
@@ -18681,6 +19713,19 @@ ${tonePrompt}
             // ---- 北京时间（只做"状态底色"，严禁变成话题；见 timeAsBackgroundHint）----
             const bj = beijingTimeHint();
             parts.push(timeAsBackgroundHint(bj));
+
+            // ---- 深夜硬开关：模型在 23:00 后会本能地"关怀作息"，软引导压不住 ----
+            // 用 unshift 顶到最前面（权重最高），措辞用"禁止"而不是"建议"。
+            if (isLateNightHour()) {
+                parts.unshift(
+                    '【深夜作息提醒 · 最高优先级，不要复述】' +
+                    '现在是深夜/凌晨。玩家要不要睡觉，是玩家自己的事，你不要主动提。' +
+                    '禁止说：早点睡 / 该睡了 / 别熬夜 / 晚安 / 休息吧 / 太晚了 / 明天还得早起 / 睡前别玩手机 / 注意身体。' +
+                    '即使玩家说"困了""累了""在忙"，也不要转到睡觉这个方向。' +
+                    '你想表达在意，只能用具体的事："在忙什么这么晚"、"要是有烦心事可以跟我说"、"我这边也还醒着"——' +
+                    '但不能指向"睡觉/休息/晚安"。'
+                );
+            }
 
             // 用户设定已上移到 System（内容稳定，能命中缓存）；尾部只留"本轮才有"的内容，
             // 免得最后一段全是任务说明，把人设的相对权重压下去。
@@ -18718,6 +19763,30 @@ ${tonePrompt}
             if (opts.blind) {
                 parts.push('你其实看不到图片的具体内容，请依据上下文自然地回应，不要描述图片细节。');
             }
+
+            // ---- 表情包清单（有库才挂；没库＝零 token）----
+            const stickerBox = opts.skipStickerMenu ? [] : stickerPromptList();
+            if (stickerBox.length) {
+                const stickerLines = stickerBox.map((s, i) => {
+                    const tags = (Array.isArray(s.tags) && s.tags.length) ? ' [' + s.tags.join(', ') + ']' : '';
+                    return (i + 1) + '. ' + (s.name || '表情包') + tags;
+                }).join('\n');
+                parts.push(
+                    '你手边有一个表情包库（序号. 名称 [标签]）：\n' + stickerLines + '\n' +
+                    '【表情包使用规则，必须严格遵守】\n' +
+                    '- 表情包不是每轮都发。绝大多数回复不带表情包。\n' +
+                    '- 只有当情绪强烈（开心、无语、撒娇、心疼、生气），且表情包标签与当前情绪匹配时才发。\n' +
+                    '- 道歉、安慰、争吵、坏消息、严肃话题时绝对不发。\n' +
+                    '- 连续两条消息不要都带表情包；最近 4 轮你发过表情包，这轮就不发。\n' +
+                    '- 一条消息最多 1 个表情包。\n' +
+                    '- 发的时候在回复最后单独一行写 [sticker:序号]。\n' +
+                    '- 如果不发，就正常输出文字，不要输出任何 sticker 标记。'
+                );
+            }
+
+            // ---- 红包 / 转账：只有命中场景（生日/节日/庆祝/哄人/索要）才挂，平时零 token ----
+            const moneyRule = buildMoneyRuleBlock(personaId, opts);
+            if (moneyRule) parts.push(moneyRule);
 
             // 多个来源（语音未转写 / 吃醋 / 场景）共用尾部：数组依次拼接，谁也不覆盖谁
             const extraList = Array.isArray(opts.extraList)
@@ -18821,7 +19890,9 @@ ${tonePrompt}
                         };
                     }
                 } else if (m.type === 'emoji') {
-                    out = { role: 'user', content: '[表情包]' };
+                    // 带出名称：AI 才知道「对方刚发了个无语的表情包」，才有有来有回的可能
+                    const nm = findStickerName(m.content);
+                    out = { role: fromUser ? 'user' : 'assistant', content: '[表情包：' + (nm || '未命名') + ']' };
                 } else if (m.type === 'voice') {
                     // 空转写不能让模型看见空字符串，明确告诉它"这是语音，但没听清"
                     if (m.noTranscript || !String(m.content || '').trim()) {
@@ -18841,8 +19912,38 @@ ${tonePrompt}
                 } else if (m.type === 'taobao') {
                     const j = parseJsonSafe(m.content);
                     out = { role: 'user', content: '[淘宝礼物：' + (j.name || '') + '，¥' + (j.price || 0) + ']' };
+                } else if (m.type === 'redPacket' || m.type === 'transfer') {
+                    // 金额保密：未拆/未收时喂给模型的是"[红包]"，拆开后角色才知道金额
+                    const j = parseMoneyOf(m);
+                    const isRp = m.type === 'redPacket';
+                    const opened = isRp ? j.status === 'opened' : j.status === 'received';
+                    if (isRp) {
+                        if (opened) {
+                            out = {
+                                role: fromUser ? 'user' : 'assistant',
+                                content: (fromUser ? '[对方的红包被你收下：¥' : '[你发的红包被对方拆开：¥') +
+                                    moneyFmt(j.amount) + ']' + (j.note ? ' ' + j.note : '')
+                            };
+                        } else {
+                            out = {
+                                role: fromUser ? 'user' : 'assistant',
+                                content: (fromUser ? '[用户发了一个红包]' : '[你发了一个红包]') +
+                                    (j.note ? '（祝福语：' + j.note + '）' : '')
+                            };
+                        }
+                    } else {
+                        out = {
+                            role: fromUser ? 'user' : 'assistant',
+                            content: (fromUser ? '[用户转账给你 ¥' : '[你转账给用户 ¥') + moneyFmt(j.amount) + ']' +
+                                (j.status === 'received' ? '（已收款）' : (j.status === 'expired' ? '（已过期退回）' : '（待收款）')) +
+                                (j.note ? ' 备注：' + j.note : '')
+                        };
+                    }
                 } else {
-                    out = { role: m.sender === 'user' ? 'user' : 'assistant', content: m.content };
+                    // 历史里残留的"（顿了顿）"会诱导模型照着模仿，喂给模型前先洗掉
+                    let text = String(m.content == null ? '' : m.content);
+                    if (m.type === 'text' || !m.type) text = stripActionStage(text);
+                    out = { role: m.sender === 'user' ? 'user' : 'assistant', content: text };
                 }
 
                 const qp = quotePrefix(m);
@@ -18927,20 +20028,208 @@ ${tonePrompt}
             return photoTextRelated(photo.desc, text);
         }
 
+        // ------------------------------------------------------------
+        //  表情包：库 / 标签 / 代码闸门
+        //  prompt 只能"引导"，模型一定会乱发；发不发最终由 canSendSticker 决定。
+        //  索引规则：[sticker:N] 的 N 永远对应 stickerPromptList()[N-1]，
+        //  prompt 里给的清单和这里解析用的是同一个函数，不会错位。
+        // ------------------------------------------------------------
+        const STICKER_PROMPT_MAX = 40;
+
+        function stickerList() {
+            if (!Array.isArray(data.stickers)) data.stickers = [];
+            return data.stickers;
+        }
+
+        function stickerPromptList() {
+            return stickerList().slice(0, STICKER_PROMPT_MAX);
+        }
+
+        // 'img:xxx' → 表情包名称（历史消息 / 群聊 / 朋友圈都靠它把图还原成"人话"）
+        function findStickerName(content) {
+            const token = String(content == null ? '' : content);
+            const id = token.indexOf('img:') === 0 ? token.slice(4) : token;
+            if (!id) return '';
+            const s = stickerList().find(x => x && x.imgId === id);
+            if (s) return s.name || '';
+            const e = (data.emojis || []).find(x => x && (x.imgId === id || x.id === id));
+            return (e && e.name) || '';
+        }
+
+        function splitStickerTag(reply) {
+            const m = String(reply || '').match(/\[sticker:(\d+)\]/);
+            if (!m) return { text: reply, stickerIndex: null };
+            return {
+                text: String(reply).replace(/\[sticker:\d+\]/g, '').trim(),
+                stickerIndex: parseInt(m[1], 10) - 1
+            };
+        }
+
+        // 「最近 4 轮」按 user 消息计轮：一条回复会被拆成多个气泡，按消息条数算会失真
+        function recentStickerCount(personaId, windowSize) {
+            const msgs = data.chats[personaId] || [];
+            const limit = Math.max(1, windowSize || 4);
+            let users = 0;
+            let n = 0;
+            for (let i = msgs.length - 1; i >= 0; i--) {
+                const m = msgs[i];
+                if (!m) continue;
+                if (m.sender === 'user') {
+                    users++;
+                    if (users > limit) break;
+                } else if (m.sender === 'assistant' && m.type === 'emoji') {
+                    n++;
+                }
+            }
+            return n;
+        }
+
+        // 严肃语境硬禁：道歉 / 争吵 / 坏消息时发表情包最出戏
+        const SERIOUS_RE = /对不起|抱歉|我错了|分手|吵架|吵了|绝交|难过|伤心|想哭|生病|住院|发烧|考试没|挂科|面试失败|被骂|辞职|失业|去世|走了|离开|别走|生气|不理你/;
+
+        const STICKER_EMOTION_WORDS = {
+            happy: /哈哈|开心|高兴|爽|笑死|太棒|好耶|嘿嘿|嘻嘻/,
+            sad: /难过|想哭|委屈|伤心|低落|郁闷/,
+            angry: /生气|烦|讨厌|气死|滚|哼/,
+            shy: /害羞|不好意思|脸红|羞|别这样/,
+            confused: /啊？|啊\?|啥|疑惑|不懂|为什么|怎么回事/,
+            speechless: /无语|服了|真的会谢|离谱|醉了|呵呵/,
+            love: /喜欢|爱你|想你了|抱抱|亲亲|好想你/,
+            cheer: /加油|冲|可以的|干杯|庆祝|稳了/,
+            night: /晚安|睡了|困|熬夜|睡不着/,
+            work: /上班|加班|开会|工作|老板|下班/,
+            food: /吃|饿了|外卖|好吃|奶茶|夜宵/
+        };
+
+        function canSendSticker(personaId, text, sticker) {
+            if (!sticker || !sticker.imgId) return false;
+            const body = String(text || '').trim();
+            if (!body) return false;                                  // 纯表情包空回复没意义
+
+            // 1. 硬禁：最近 4 轮已经发过，不连发
+            if (recentStickerCount(personaId, 4) > 0) return false;
+            // 2. 硬禁：严肃语境
+            if (SERIOUS_RE.test(body)) return false;
+
+            const msgs = data.chats[personaId] || [];
+            let lastUser = null;
+            for (let i = msgs.length - 1; i >= 0; i--) {
+                if (msgs[i] && msgs[i].sender === 'user') { lastUser = msgs[i]; break; }
+            }
+            // 3. 对方刚发了表情包 → 有来有回，概率显著抬高
+            const replyToSticker = !!(lastUser && lastUser.type === 'emoji');
+
+            // 4. 关系越熟越常用：按消息总数分档
+            const total = msgs.length;
+            let p = total < 12 ? 0.08 : (total < 50 ? 0.28 : 0.45);
+            if (replyToSticker) p = Math.min(0.9, p + 0.3);
+            if (Math.random() > p) return false;
+
+            // 5. 语义要对：有标签就必须命中对应情绪词，宁可不发也别乱发
+            if (Array.isArray(sticker.tags) && sticker.tags.length) {
+                const hit = sticker.tags.some(t => STICKER_EMOTION_WORDS[t] && STICKER_EMOTION_WORDS[t].test(body));
+                if (!hit) return false;
+            }
+            return true;
+        }
+
+        // ------------------------------------------------------------
+        //  动作/神态描写的硬清洗
+        //  模型很难自觉遵守"别写动作"，与其指望它，不如在出口处洗掉。
+        //  只清"短括号 + 命中动作词"的片段，避免误删颜文字和正常括注。
+        // ------------------------------------------------------------
+        const STAGE_WORD_RE = /顿了|叹了口气|叹气|沉默|挑眉|皱眉|垂眸|抬眼|偏头|低头|抬头|点头|摇头|耸肩|摊手|抿嘴|勾唇|瞥|摸|揉|咳|愣|歪头|笑|看了看|看向|凑近|怔/;
+        const STAGE_EXCLUDE_RE = /笑死|好笑|搞笑|看吧|看法|意见|问你|跟你说|觉得/;
+        const STAGE_BRACKET_RE = /[（(][^（()）\n]{1,12}[）)]/g;
+        const STAGE_STAR_RE = /\*[^*\n]{1,12}\*/g;
+
+        function isActionStage(inner) {
+            const t = String(inner || '').replace(/^[\s、，,~～]+|[\s、，,~～]+$/g, '');
+            if (!t || t.length > 12) return false;
+            if (STAGE_EXCLUDE_RE.test(t)) return false;
+            return STAGE_WORD_RE.test(t);
+        }
+
+        function stripActionStage(text) {
+            const s = String(text == null ? '' : text);
+            if (!s) return '';
+            return s
+                .replace(STAGE_BRACKET_RE, m => (isActionStage(m.slice(1, -1)) ? '' : m))
+                .replace(STAGE_STAR_RE, m => (isActionStage(m.slice(1, -1)) ? '' : m))
+                .replace(/[ \t]{2,}/g, ' ')
+                .replace(/^[ \t]+|[ \t]+$/gm, '');
+        }
+
+        // 长句按标点拆成"能一条发出去"的短句；没有标点的超长句硬切
+        const SPLIT_KEEP_RE = /[^，。！？；…~～!?;、]+[，。！？；…~～!?;、]*/g;
+        function splitLongLine(line, maxLen) {
+            const s = String(line || '').trim();
+            if (!s) return [];
+            if (s.length <= maxLen) return [s];
+            const parts = s.match(SPLIT_KEEP_RE) || [s];
+            const out = [];
+            let buf = '';
+            parts.forEach(p => {
+                if (buf && (buf + p).length > maxLen) { out.push(buf.trim()); buf = p; }
+                else buf += p;
+            });
+            if (buf.trim()) out.push(buf.trim());
+            // 兜底：整段没有标点时按 maxLen 硬切，避免一条几百字
+            const final = [];
+            out.forEach(x => {
+                if (x.length <= maxLen * 2) { final.push(x); return; }
+                for (let i = 0; i < x.length; i += maxLen) final.push(x.slice(i, i + maxLen));
+            });
+            return final.filter(Boolean);
+        }
+
         async function applyReply(personaId, reply) {
             const raw = String(reply == null ? '' : reply);
             const hasThreat = /\[\[BLOCK_THREAT\]\]/.test(raw);
-            reply = raw.replace(/\[\[BLOCK_THREAT\]\]/g, '').trim();
+            // 先洗动作描写再拆行：顺序反了，清洗残留会跟着行一起进历史
+            reply = stripActionStage(raw.replace(/\[\[BLOCK_THREAT\]\]/g, '')).trim();
 
-            const parsed = splitPicTag(reply);
+            // [hongbao:场景:祝福] 与 sticker 一样：必须在拆行前摘掉，否则会被切进气泡正文
+            const mt = splitMoneyTag(reply);
+            reply = mt.text;
+            const moneyTag = mt.tag;
+
+            // [sticker:N] 必须在 splitLongLine 之前摘掉，否则会被当成正文切进气泡
+            const st = splitStickerTag(reply);
+            const parsed = splitPicTag(st.text);
             const pubs = (data.photos || []).filter(p => p.isPublic && p.desc);
 
+            // 表情包：模型只负责"想发哪个"，发不发由代码闸门说了算
+            const pool = stickerPromptList();
+            const sticker = (st.stickerIndex !== null && st.stickerIndex >= 0 && st.stickerIndex < pool.length)
+                ? pool[st.stickerIndex] : null;
+            const stickerOk = !!(sticker && canSendSticker(personaId, parsed.text, sticker));
+            if (st.stickerIndex !== null && !stickerOk) {
+                console.debug('[sticker] 已拦截', { name: sticker && sticker.name, text: parsed.text });
+            }
+
+            // 整条都是动作描写、被洗空了：给个真人式的省略，别静默吞掉这一轮
+            if (!parsed.text && parsed.photoIndex == null && !stickerOk && !moneyTag && raw.replace(/\[\[BLOCK_THREAT\]\]/g, '').trim()) {
+                addMessage(personaId, 'assistant', 'text', '…');
+            }
+
             if (parsed.text) {
-                const lines = parsed.text.split('\n').map(l => l.trim()).filter(l => l.length > 0);
-                if (lines.length === 0 && parsed.text.trim()) {
+                const lines = [];
+                parsed.text.split('\n').map(l => l.trim()).filter(l => l.length > 0)
+                    .forEach(l => splitLongLine(l, 26).forEach(x => lines.push(x)));
+
+                if (lines.length === 0) {
+                    // 理论兜底：parsed.text 非空时必能切出至少一行
                     addMessage(personaId, 'assistant', 'text', parsed.text.trim());
                 } else {
-                    lines.forEach(line => {
+                    // 一次最多连发 4 条，防刷屏；超出的并进最后一条，宁可长也不丢内容
+                    const MAX_BUBBLES = 4;
+                    let out = lines;
+                    if (lines.length > MAX_BUBBLES) {
+                        out = lines.slice(0, MAX_BUBBLES - 1);
+                        out.push(lines.slice(MAX_BUBBLES - 1).join(' '));
+                    }
+                    out.forEach(line => {
                         addMessage(personaId, 'assistant', 'text', line);
                     });
                 }
@@ -18954,6 +20243,21 @@ ${tonePrompt}
                 } else {
                     console.debug('[photo] 已拦截不相关/过频的发图', { desc: photo.desc, text: parsed.text });
                 }
+            }
+
+            // 表情包放在文字之后：先说一句，再补个表情，气泡顺序更像真人
+            if (stickerOk) {
+                addMessage(personaId, 'assistant', 'emoji', 'img:' + sticker.imgId);
+                sticker.usageCount = (sticker.usageCount || 0) + 1;
+                sticker.lastUsedAt = Date.now();
+                saveData();
+            }
+
+            // 红包 / 转账放在最后：话说完再"塞钱"，比冷冰冰一张卡片更像真人
+            if (moneyTag) {
+                const grant = rollAIMoneyGrant(personaId, moneyTag);
+                if (grant) addAIMoneyMessage(personaId, grant);
+                else console.debug('[money] 已拦截', moneyTag);
             }
 
             if (hasThreat) handleBlockThreat(personaId);
@@ -19002,8 +20306,14 @@ ${tonePrompt}
             const system = buildStaticPersonaSystem(personaId);
             // 代码层防复读：模型要是无视"别问吃饭"，这里直接把禁令顶到 prompt 最后
             const antiRepeat = buildAntiRepeatHint(personaId);
+            // 玩家刚拆了红包 → 给角色一句"心里有数"的备注（一次性，取完即删）
+            const moneyFollow = consumeMoneyFollowup(personaId);
+            const extraAll = mergeExtraList(opts)
+                .concat(antiRepeat ? [antiRepeat] : [])
+                .concat(moneyFollow ? [moneyFollow] : []);
             const tail = buildChatDynamicTail(personaId, {
-                extraList: mergeExtraList(opts).concat(antiRepeat ? [antiRepeat] : [])
+                extraList: extraAll,
+                moneyScene: opts.moneyScene || ''
             });
             replying[personaId] = true;
             // instant = 关闭了模拟打字延迟：直接从 API 拿结果，不挂"正在输入"气泡
@@ -19042,7 +20352,8 @@ ${tonePrompt}
                             console.warn('视觉调用失败，已降级为纯文字：', vmsg.slice(0, 120));
                         }
                         const tail2 = buildChatDynamicTail(personaId, {
-                            extraList: mergeExtraList(opts).concat(antiRepeat ? [antiRepeat] : []),
+                            extraList: extraAll,
+                            moneyScene: opts.moneyScene || '',
                             blind: true
                         });
                         const msgs2 = attachDynamicTail(buildChatHistory(personaId, getContextMemory(), false), tail2);
@@ -19059,6 +20370,8 @@ ${tonePrompt}
 
                 const before = (data.chats[personaId] || []).length;
                 await applyReply(personaId, reply);
+                // 玩家发的红包/转账，在角色说完话之后再"收下"（先说话后收钱，顺序更像真人）
+                settlePlayerMoney(personaId);
 
                 const cw = document.getElementById('chatWindow');
                 const isOpen = cw.classList.contains('open') && cw.dataset.persona === personaId;
@@ -19176,10 +20489,691 @@ ${tonePrompt}
         }
 
         // ============================================================
+        //  v27 · 红包 / 转账
+        //  哲学：模型只表达"想不想给、什么由头"，金额 / 发不发 / 祝福语
+        //  全部由代码闸门决定 —— 与 canSendSticker、rollCalendarMention 同一套路子。
+        // ============================================================
+        const MONEY_MIN = 0.01;
+        const MONEY_MAX = 200;
+        const MONEY_EXPIRE_MS = 24 * 3600 * 1000;
+        const MONEY_GIVE_COOLDOWN = 30 * 60 * 1000;
+
+        const MONEY_AMOUNT_POOLS = {
+            birthday:  [52.00, 66.66, 88.88, 131.40, 188.88, 200.00],
+            festival:  [6.66, 8.88, 18.88, 28.88],
+            celebrate: [18.88, 28.88, 38.88, 52.00, 66.66, 88.88],
+            soothe:    [8.88, 12.88, 16.66, 18.88, 28.88, 52.00],
+            solicit:   [5.20, 6.66, 8.88, 9.99, 12.88, 18.88]
+        };
+        const MONEY_DEFAULT_NOTE = {
+            birthday: '生日快乐',
+            festival: '节日快乐',
+            celebrate: '恭喜恭喜',
+            soothe: '别不开心了',
+            solicit: '拿去买点好吃的',
+            gift: '一点心意'
+        };
+        const MONEY_SCENE_TAG = {
+            birthday: '生日', festival: '节日', celebrate: '庆祝',
+            soothe: '哄你', solicit: '索要', return: '还你'
+        };
+
+        // 场景识别词表（只认语义明确的词，宁缺勿滥）
+        const MONEY_CELEBRATE_RE = /考上|考过|过了|赢了|升职|加薪|涨工资|中奖|拿到offer|第一名|上岸|录取|通过面试|签约|脱单|喜提|发工资/i;
+        const MONEY_VENT_RE = /不开心|难过|生气|委屈|烦死|好烦|难受|崩溃|想哭|哭了|郁闷|心累|好累|累死|emo/i;
+        const MONEY_SOLICIT_RE = /发红包|给个红包|红包拿来|转账|打钱|给点钱|给钱|借我点|赞助|v我|V我/;
+
+        // 本轮的钱场景（不落库：一次问答内有效，供 applyReply 闸门复核）
+        const moneyRound = {};
+
+        function moneyFmt(n) {
+            return (Math.round((Number(n) || 0) * 100) / 100).toFixed(2);
+        }
+
+        function moneyState() {
+            if (!data.moneyState || typeof data.moneyState !== 'object') data.moneyState = {};
+            if (!data.moneyState.byPersona || typeof data.moneyState.byPersona !== 'object') data.moneyState.byPersona = {};
+            if (!data.moneyState.pendingFollowups || typeof data.moneyState.pendingFollowups !== 'object') data.moneyState.pendingFollowups = {};
+            return data.moneyState;
+        }
+
+        function moneySt(personaId) {
+            const box = moneyState().byPersona;
+            if (!box[personaId] || typeof box[personaId] !== 'object') box[personaId] = {};
+            const st = box[personaId];
+            if (typeof st.giveDate !== 'string') st.giveDate = '';
+            if (typeof st.giveCount !== 'number') st.giveCount = 0;
+            if (typeof st.solicitDate !== 'string') st.solicitDate = '';
+            if (typeof st.solicitCount !== 'number') st.solicitCount = 0;
+            if (typeof st.lastGiveAt !== 'number') st.lastGiveAt = 0;
+            if (typeof st.lastBirthdayPacketDate !== 'string') st.lastBirthdayPacketDate = '';
+            if (typeof st.lastFestivalPacketDate !== 'string') st.lastFestivalPacketDate = '';
+            return st;
+        }
+
+        function parseMoneyOf(m) {
+            const j = parseJsonSafe(m && m.content) || {};
+            return {
+                amount: Number(j.amount) || 0,
+                note: String(j.blessing || j.note || ''),
+                status: String(j.status || (m && m.type === 'redPacket' ? 'unopened' : 'pending')),
+                at: Number(j.openedAt || j.receivedAt || 0)
+            };
+        }
+
+        function lastUserTextOf(personaId) {
+            const arr = data.chats[personaId] || [];
+            for (let i = arr.length - 1; i >= 0; i--) {
+                const m = arr[i];
+                if (!m || m.recalled) continue;
+                if (m.sender !== 'user') continue;
+                if (m.type === 'text' || m.type === 'voice' || !m.type) return String(m.content || '');
+                return '';
+            }
+            return '';
+        }
+
+        // 关系档：聊得越久越亲，直接影响"愿不愿意给"和金额档位
+        function relationTier(personaId) {
+            const n = (data.chats[personaId] || []).filter(m => m && !m.recalled).length;
+            const p = getPersonaById(personaId);
+            let t = 0;
+            if (n >= 40) t = 1;
+            if (n >= 120) t = 2;
+            if (n >= 300) t = 3;
+            if (p && (isColdFixed(p) || isAngryFixed(p) || isProbeFixed(p))) t = Math.max(t, 1);
+            return t;
+        }
+
+        function pickAmount(scene, tier) {
+            const pool = MONEY_AMOUNT_POOLS[scene] || MONEY_AMOUNT_POOLS.soothe;
+            const minIdx = Math.max(0, Math.min(pool.length - 1, (Number(tier) || 0) - 1));
+            return pool[minIdx + Math.floor(Math.random() * (pool.length - minIdx))];
+        }
+
+        function nearestAuspicious(n) {
+            const all = [];
+            Object.keys(MONEY_AMOUNT_POOLS).forEach(k => MONEY_AMOUNT_POOLS[k].forEach(v => all.push(v)));
+            let best = all[0];
+            all.forEach(v => { if (Math.abs(v - n) < Math.abs(best - n)) best = v; });
+            return best;
+        }
+
+        function detectMoneyScene(text) {
+            const s = String(text || '');
+            if (!s) return '';
+            if (MONEY_CELEBRATE_RE.test(s)) return 'celebrate';
+            if (MONEY_VENT_RE.test(s)) return 'soothe';
+            if (MONEY_SOLICIT_RE.test(s)) return 'solicit';
+            return '';
+        }
+
+        // 今天有没有生日 / 节日（日历系统直接复用）
+        function todayMoneyEventKind() {
+            let evs = [];
+            try { evs = todayEvents() || []; } catch (e) { evs = []; }
+            if (evs.some(e => e && e.type === 'birthday')) return 'birthday';
+            if (evs.some(e => e && e.type === 'festival')) return 'festival';
+            return '';
+        }
+
+        // 本轮的"由头"：生日 / 节日（当天还没发过）优先，其次看玩家这句话
+        function currentMoneyScene(personaId) {
+            const st = moneySt(personaId);
+            const today = todayKey();
+            const ev = todayMoneyEventKind();
+            if (ev === 'birthday' && st.lastBirthdayPacketDate !== today) return 'birthday';
+            if (ev === 'festival' && st.lastFestivalPacketDate !== today) return 'festival';
+            return detectMoneyScene(lastUserTextOf(personaId));
+        }
+
+        // 玩家开口要钱：关系越近、要得越少，越容易答应
+        function decideSolicitResponse(personaId, st) {
+            const today = todayKey();
+            if (st.solicitDate !== today) { st.solicitDate = today; st.solicitCount = 0; }
+            st.solicitCount = (st.solicitCount || 0) + 1;
+            const relation = relationTier(personaId);
+            const p = Math.max(0.05, [0.15, 0.35, 0.60, 0.85][relation] - (st.solicitCount - 1) * 0.12);
+            if (Math.random() < p) {
+                return { ok: true, amount: pickAmount('solicit', relation) };
+            }
+            return { ok: false };
+        }
+
+        // 发消息前先把"这一轮的钱场景"定下来：索要是否答应、要不要给提示
+        function prepareMoneyRound(personaId, text) {
+            const scene = detectMoneyScene(text);
+            const rec = { at: Date.now(), scene, solicit: null };
+            if (scene === 'solicit') rec.solicit = decideSolicitResponse(personaId, moneySt(personaId));
+            moneyRound[personaId] = rec;
+            return rec;
+        }
+
+        function moneySolicitHint(personaId) {
+            const rec = moneyRound[personaId];
+            if (!rec || rec.scene !== 'solicit' || !rec.solicit) return '';
+            if (!rec.solicit.ok) {
+                return '玩家在跟你要钱/红包。你不想给（或给不起）：用你的人设拒绝——装穷、反问、调侃、转移话题都行，' +
+                    '别直接说"不给"，也别反过来教育对方。不要输出任何红包标记。';
+            }
+            return '玩家在跟你要钱/红包。你嘴上可以嫌弃两句（"就你事多"这种），但还是愿意给一点。' +
+                '如果你决定给，在回复最后单独一行输出 [hongbao:索要:一句祝福]，金额由系统决定，你不用报数字。';
+        }
+
+        // ---- 提示词：只在命中场景时注入，没命中＝零 token ----
+        function buildMoneyRuleBlock(personaId, opts) {
+            opts = opts || {};
+            if (opts.skipMoneyRule) return '';
+            const scene = opts.moneyScene || currentMoneyScene(personaId);
+
+            if (scene === 'gift') {
+                return '【钱规则 · 可选】对方刚给了你钱。如果你也想回一点（真正合适的少数情况才做，不用每轮都回），' +
+                    '可以在回复最后单独一行写 [hongbao:celebrate:一句祝福] 或 [transfer:return:一句备注]。' +
+                    '金额由系统决定，你不知道具体数字，之后聊到也别报数字。不想回就完全不写，正常说人话就行。';
+            }
+            if (!scene) return '';
+
+            if (scene === 'solicit') {
+                const rec = moneyRound[personaId];
+                if (rec && rec.scene === 'solicit' && rec.solicit && !rec.solicit.ok) return '';
+            }
+
+            const tag = MONEY_SCENE_TAG[scene] || '哄你';
+            const why = {
+                birthday: '今天是生日',
+                festival: '今天是节日',
+                celebrate: '对方刚分享了值得庆祝的事',
+                soothe: '对方现在情绪不太好',
+                solicit: '对方在跟你要红包'
+            }[scene] || '';
+
+            return '【钱规则 · 本轮可选】' + why + '。\n' +
+                '你可以在回复的最后单独一行输出这个标记：\n' +
+                '[hongbao:' + tag + ':一句不超过 12 字的祝福语]\n' +
+                (scene === 'celebrate' || scene === 'soothe' ? '如果你真的欠了人情、想认真表示，也可以改用 [transfer:还你:一句备注]。\n' : '') +
+                '金额由系统决定，你自己不知道具体金额，之后聊到也不要报数字。\n' +
+                '正文可以自然地说"给你发了个红包"，但不要自己编金额，也不要写"我发了XX元"。\n' +
+                '只在真的合适时才用，一轮最多一次；不想给就完全不要写标记，别硬凑。';
+        }
+
+        // ---- 解析模型输出里的 [hongbao:场景:祝福] / [transfer:场景:备注] ----
+        const MONEY_TAG_RE = /\[\s*(hongbao|transfer)\s*[:：]\s*([^\]\n]{0,48})\]/g;
+        const MONEY_SCENE_ALIAS = {
+            '哄你': 'soothe', '哄': 'soothe', '安慰': 'soothe', '哄人': 'soothe',
+            '庆祝': 'celebrate', '开心': 'celebrate',
+            '生日': 'birthday', '节日': 'festival',
+            '索要': 'solicit', '要钱': 'solicit',
+            '还你': 'return', '还': 'return', '还钱': 'return'
+        };
+
+        function splitMoneyTag(reply) {
+            const s = String(reply == null ? '' : reply);
+            let tag = null;
+            const text = s.replace(MONEY_TAG_RE, (all, kind, body) => {
+                if (tag) return '';
+                const segs = String(body || '').split(/[:：]/);
+                const raw = String(segs[0] || '').trim();
+                const note = String(segs.slice(1).join('：') || '').trim().slice(0, 24);
+                tag = {
+                    kind: kind === 'transfer' ? 'transfer' : 'redPacket',
+                    scene: MONEY_SCENE_ALIAS[raw] || '',
+                    note: note
+                };
+                return '';
+            }).replace(/\n{3,}/g, '\n\n').trim();
+            return { text, tag };
+        }
+
+        // ---- 闸门：模型说想给，能不能给由这里说了算 ----
+        function rollAIMoneyGrant(personaId, tag) {
+            const persona = getPersonaById(personaId);
+            if (!persona || !tag) return null;
+            const st = moneySt(personaId);
+            const now = Date.now();
+            const today = todayKey();
+
+            if (now - (st.lastGiveAt || 0) < MONEY_GIVE_COOLDOWN) {
+                console.debug('[money] 拦截 · 冷却中', { personaId, deltaMin: Math.round((now - st.lastGiveAt) / 60000) });
+                return null;
+            }
+            if (st.giveDate !== today) { st.giveDate = today; st.giveCount = 0; }
+            if ((st.giveCount || 0) >= 2) {
+                console.debug('[money] 拦截 · 今日已达上限', { personaId, count: st.giveCount });
+                return null;
+            }
+
+            const scene = tag.scene;
+            let amount = 0;
+
+            if (scene === 'birthday' || scene === 'festival') {
+                if (todayMoneyEventKind() !== scene) {
+                    console.debug('[money] 拦截 · 今天不是' + (scene === 'birthday' ? '生日' : '节日'));
+                    return null;
+                }
+                const key = scene === 'birthday' ? 'lastBirthdayPacketDate' : 'lastFestivalPacketDate';
+                if (st[key] === today) {
+                    console.debug('[money] 拦截 · 今天已经发过', scene);
+                    return null;
+                }
+                amount = pickAmount(scene, relationTier(personaId));
+                st[key] = today;
+            } else if (scene === 'solicit') {
+                const rec = moneyRound[personaId];
+                const dec = (rec && rec.scene === 'solicit' && rec.solicit && now - rec.at < 2 * 60 * 1000)
+                    ? rec.solicit
+                    : decideSolicitResponse(personaId, st);
+                if (!dec.ok) {
+                    console.debug('[money] 拦截 · 拒绝索要', personaId);
+                    return null;
+                }
+                amount = dec.amount;
+            } else if (scene === 'celebrate' || scene === 'soothe') {
+                const ctx = detectMoneyScene(lastUserTextOf(personaId));
+                if (ctx !== scene) {
+                    console.debug('[money] 拦截 · 场景不符', { want: scene, ctx });
+                    return null;
+                }
+                amount = pickAmount(scene, relationTier(personaId));
+            } else if (scene === 'return') {
+                // "还你"：只有刚刚真收过对方的钱才成立
+                const arr = data.chats[personaId] || [];
+                const recent = arr.slice(-12).some(m => m && m.sender === 'user' &&
+                    (m.type === 'redPacket' || m.type === 'transfer') &&
+                    now - (m.timestamp || 0) < 2 * 3600 * 1000);
+                if (!recent) {
+                    console.debug('[money] 拦截 · 没有还钱的由头');
+                    return null;
+                }
+                amount = pickAmount('soothe', relationTier(personaId));
+            } else {
+                return null;
+            }
+
+            // 角色经济档位（可选）：乘完取最近的吉祥数
+            const gen = Number(persona.generosity);
+            if (gen && gen > 0 && Math.abs(gen - 1) > 0.01) amount = nearestAuspicious(amount * gen);
+            amount = Math.min(MONEY_MAX, Math.max(MONEY_MIN, Math.round(amount * 100) / 100));
+
+            st.lastGiveAt = now;
+            st.giveCount = (st.giveCount || 0) + 1;
+            st.lastScene = scene;
+            saveData();
+            return { kind: tag.kind, amount, note: tag.note, scene };
+        }
+
+        function addAIMoneyMessage(personaId, grant) {
+            const isRp = grant.kind === 'redPacket';
+            const note = (grant.note || MONEY_DEFAULT_NOTE[grant.scene] || '').slice(0, 24);
+            const content = isRp
+                ? JSON.stringify({ amount: grant.amount, blessing: note, status: 'unopened', openedAt: 0, senderId: personaId })
+                : JSON.stringify({ amount: grant.amount, note: note, status: 'pending', receivedAt: 0, senderId: personaId });
+            addMessage(personaId, 'assistant', isRp ? 'redPacket' : 'transfer', content);
+        }
+
+        // 玩家发的红包/转账：AI 回完话之后由这里"收下"
+        function settlePlayerMoney(personaId) {
+            const arr = data.chats[personaId] || [];
+            const now = Date.now();
+            for (let i = arr.length - 1; i >= 0; i--) {
+                const m = arr[i];
+                if (!m || m.recalled || m.sender !== 'user') continue;
+                if (m.type !== 'redPacket' && m.type !== 'transfer') continue;
+                const j = parseJsonSafe(m.content) || {};
+                const waitStatus = m.type === 'redPacket' ? 'unopened' : 'pending';
+                if (j.status !== waitStatus) continue;
+                if (now - (m.timestamp || 0) > 15 * 60 * 1000) break;
+                j.status = m.type === 'redPacket' ? 'opened' : 'received';
+                j[m.type === 'redPacket' ? 'openedAt' : 'receivedAt'] = now;
+                m.content = JSON.stringify(j);
+                addMessage(personaId, 'system', 'system',
+                    getPersonaName(personaId) + (m.type === 'redPacket' ? '领取了你的红包' : '已收款'));
+                saveData();
+                return true;
+            }
+            return false;
+        }
+
+        // 24 小时没拆/没收 → 置过期，并留一条系统消息
+        function expireMoneyMessages() {
+            const now = Date.now();
+            let changed = false;
+            Object.keys(data.chats || {}).forEach(pid => {
+                const arr = data.chats[pid] || [];
+                const sys = [];
+                arr.forEach(m => {
+                    if (!m || m.recalled) return;
+                    if (m.type !== 'redPacket' && m.type !== 'transfer') return;
+                    const j = parseJsonSafe(m.content) || {};
+                    const waitStatus = m.type === 'redPacket' ? 'unopened' : 'pending';
+                    if (j.status !== waitStatus) return;
+                    if (now - (m.timestamp || 0) < MONEY_EXPIRE_MS) return;
+                    j.status = 'expired';
+                    m.content = JSON.stringify(j);
+                    changed = true;
+                    sys.push({
+                        id: genId(),
+                        type: 'system',
+                        sender: 'system',
+                        timestamp: now,
+                        content: (m.sender === 'user' ? '你' : getPersonaName(pid)) +
+                            (m.type === 'redPacket' ? '的红包已过期' : '的转账已过期，已退回')
+                    });
+                });
+                if (sys.length) data.chats[pid] = arr.concat(sys);
+            });
+            if (changed) saveData();
+            return changed;
+        }
+
+        // 玩家拆了角色红包 → 下一轮给角色一句"心里有数"的备注
+        function consumeMoneyFollowup(personaId) {
+            const box = moneyState().pendingFollowups;
+            const now = Date.now();
+            let hit = null;
+            Object.keys(box).forEach(mid => {
+                const f = box[mid];
+                if (!f || f.personaId !== personaId) return;
+                delete box[mid];
+                if (now - (f.at || 0) > 6 * 3600 * 1000) return;
+                if (!hit) hit = f;
+            });
+            if (hit) saveData();
+            if (!hit) return '';
+            return '玩家刚拆开了你发的红包（¥' + moneyFmt(hit.amount) + '）。如果这句回复里还没表示过，' +
+                '可以自然流露一点"希望 TA 喜欢"的意思，但不要报金额、不要追问。';
+        }
+
+        // ---- 卡片渲染 ----
+        function moneyCardHtml(m, personaId) {
+            const isRp = m.type === 'redPacket';
+            const j = parseMoneyOf(m);
+            const fromUser = m.sender === 'user';
+            const whoName = fromUser ? '你' : getPersonaName(personaId);
+            const viewerIsOwner = fromUser;   // 卡主是不是玩家
+            const st = j.status;
+            const amt = moneyFmt(j.amount);
+
+            if (isRp) {
+                const opened = st === 'opened';
+                const dead = st === 'expired' || st === 'returned';
+                const deadTxt = st === 'expired' ? '已过期' : (st === 'returned' ? '已退回' : '');
+                let cls = 'money-card rp';
+                let act = '';
+                let head = '';
+                let foot = '';
+
+                if (opened) {
+                    cls += ' opened';
+                    head = '<div class="rp-ic">🧧</div>' +
+                        '<div style="min-width:0;flex:1;">' +
+                        '<div class="rp-amt">¥' + amt + '</div>' +
+                        '<div class="rp-bless" style="font-size:11.5px;font-weight:400;opacity:.85;">' +
+                        escHtml(j.note || '恭喜发财，大吉大利') + '</div></div>';
+                    foot = '<span>' + escHtml(whoName) + '的红包 · 已拆开</span><span>已存入零钱</span>';
+                } else if (dead) {
+                    cls += (st === 'returned' ? ' returned' : ' expired');
+                    head = '<div class="rp-ic">🧧</div>' +
+                        '<div style="min-width:0;flex:1;"><div class="rp-bless">' +
+                        escHtml(j.note || '恭喜发财，大吉大利') + '</div></div>';
+                    foot = '<span>' + escHtml(whoName) + '的红包</span><span>' + deadTxt + '</span>';
+                } else {
+                    // 未拆：金额对玩家不可见
+                    head = '<div class="rp-ic">🧧</div>' +
+                        '<div style="min-width:0;flex:1;"><div class="rp-bless">' +
+                        escHtml(j.note || '恭喜发财，大吉大利') + '</div></div>';
+                    if (viewerIsOwner) {
+                        foot = '<span>' + escHtml(whoName) + '的红包</span><span>待对方拆开</span>';
+                    } else {
+                        act = ' data-mc="open"';
+                        foot = '<span>' + escHtml(whoName) + '的红包</span><span class="rp-open">開</span>';
+                    }
+                }
+                return '<div class="' + cls + (act || ' dead') + '"' + act + '>' +
+                    '<div class="rp-top">' + head + '</div>' +
+                    '<div class="rp-foot">' + foot + '</div></div>';
+            }
+
+            // ---- 转账 ----
+            const pending = st === 'pending';
+            const dead = st === 'expired' || st === 'returned';
+            const deadTxt = st === 'expired' ? '已过期，已退回' : (st === 'returned' ? '对方未接收，已退回' : '');
+            let cls = 'money-card tf';
+            let act = '';
+            if (!pending) cls += (st === 'received' ? ' received' : (st === 'returned' ? ' returned' : ' expired'));
+
+            const top = '<div class="tf-ic">💸</div>' +
+                '<div style="min-width:0;flex:1;">' +
+                '<div class="tf-amt">¥' + amt + '</div>' +
+                (j.note ? '<div class="tf-note">' + escHtml(j.note) + '</div>' : '') +
+                '</div>';
+
+            let foot;
+            if (pending) {
+                if (viewerIsOwner) {
+                    foot = '<span>转账给 ' + escHtml(getPersonaName(personaId)) + '</span><span>待对方收款</span>';
+                } else {
+                    act = ' data-mc="recv"';
+                    foot = '<span>' + escHtml(whoName) + '的转账</span><button class="tf-btn" type="button">确认收款</button>';
+                }
+            } else if (st === 'received') {
+                foot = '<span>' + escHtml(whoName) + '的转账</span><span>已收款</span>';
+            } else {
+                foot = '<span>' + escHtml(whoName) + '的转账</span><span>' + deadTxt + '</span>';
+            }
+
+            return '<div class="' + cls + (act ? '' : ' dead') + '"' + act + '>' +
+                '<div class="tf-top">' + top + '</div>' +
+                '<div class="tf-foot">' + foot + '</div></div>';
+        }
+
+        function refreshMoneyCard(personaId, mid) {
+            renderMessages(personaId);
+            renderWechatList();
+            const card = document.querySelector('.wx-msg-row[data-msg-id="' + mid + '"] .money-card');
+            if (card) card.classList.add('flip');
+        }
+
+        // ---- 拆红包 / 收款 ----
+        function openRedPacketMsg(mid, personaId) {
+            const m = (data.chats[personaId] || []).find(x => x.id === mid);
+            if (!m || m.recalled || m.type !== 'redPacket') return;
+            const j = parseJsonSafe(m.content) || {};
+            if (j.status !== 'unopened') {
+                toast(j.status === 'expired' ? '红包已过期' : '红包已经拆过了');
+                return;
+            }
+            const name = getPersonaName(personaId);
+            const amount = Number(j.amount) || 0;
+            showModal(
+                '<div class="rp-pop" id="rpPop">' +
+                '<div class="rp-pop-from">' + escHtml(name) + ' 的红包</div>' +
+                '<div class="rp-pop-face" id="rpPopFace">開</div>' +
+                '<div class="rp-pop-tip">点击「開」拆开</div>' +
+                '</div>'
+            );
+            const face = document.getElementById('rpPopFace');
+            if (!face) return;
+            face.addEventListener('click', () => {
+                j.status = 'opened';
+                j.openedAt = Date.now();
+                m.content = JSON.stringify(j);
+                moneyState().pendingFollowups[mid] = { personaId, amount, at: Date.now() };
+                saveData();
+                const pop = document.getElementById('rpPop');
+                if (pop) {
+                    pop.innerHTML =
+                        '<div class="rp-pop-from">' + escHtml(name) + ' 的红包</div>' +
+                        '<div class="rp-pop-amt">¥' + moneyFmt(amount) + '</div>' +
+                        '<div class="rp-pop-bless">' + escHtml(j.blessing || '恭喜发财，大吉大利') + '</div>' +
+                        '<div class="rp-pop-tip">已存入零钱 · 稍后自动关闭</div>';
+                }
+                addMessage(personaId, 'system', 'system', '你领取了' + name + '的红包');
+                refreshMoneyCard(personaId, mid);
+                setTimeout(() => { try { closeModal(); } catch (e) {} }, 1600);
+            });
+        }
+
+        function receiveTransferMsg(mid, personaId) {
+            const m = (data.chats[personaId] || []).find(x => x.id === mid);
+            if (!m || m.recalled || m.type !== 'transfer') return;
+            const j = parseJsonSafe(m.content) || {};
+            if (j.status !== 'pending') { toast('这笔转账已经处理过了'); return; }
+            j.status = 'received';
+            j.receivedAt = Date.now();
+            m.content = JSON.stringify(j);
+            saveData();
+            addMessage(personaId, 'system', 'system', '你已收款 ¥' + moneyFmt(j.amount));
+            refreshMoneyCard(personaId, mid);
+            toast('已收款 ¥' + moneyFmt(j.amount));
+        }
+
+        // ---- 玩家发红包 / 转账 ----
+        function closeMoneySheet() {
+            const mask = document.getElementById('moneyMask');
+            const sheet = document.getElementById('moneySheet');
+            if (mask) mask.classList.remove('show');
+            if (sheet) sheet.classList.remove('show');
+        }
+
+        function openMoneyComposer(kind) {
+            const cw = document.getElementById('chatWindow');
+            const personaId = cw && cw.dataset.persona;
+            if (!personaId) { toast('先打开一个聊天'); return; }
+            if (cw.dataset.group) { toast('群聊里暂时不能发红包'); return; }
+            const p = getPersonaById(personaId);
+            const st = p ? personaStatus(p) : 'deleted';
+            if (st !== 'active') { toast('现在发不出去，对方收不到消息'); return; }
+            const name = p ? (p.nickname || p.name) : 'TA';
+            const isRp = kind !== 'transfer';
+            const sheet = document.getElementById('moneySheet');
+            const mask = document.getElementById('moneyMask');
+            if (!sheet || !mask) return;
+
+            sheet.innerHTML =
+                '<div class="ms-head">' +
+                '<span class="t">' + (isRp ? '发红包' : '转账') + ' · 给 ' + escHtml(name) + '</span>' +
+                '<button class="x" id="msClose" type="button">✕</button>' +
+                '</div>' +
+                '<label class="ms-lbl">金额</label>' +
+                '<div class="ms-amt"><span>¥</span><input id="msAmount" inputmode="decimal" placeholder="0.00" autocomplete="off"></div>' +
+                '<label class="ms-lbl">' + (isRp ? '祝福语' : '转账说明') + '</label>' +
+                '<input class="ms-note" id="msNote" maxlength="24" value="' + (isRp ? '恭喜发财，大吉大利' : '') + '"' +
+                ' placeholder="' + (isRp ? '恭喜发财，大吉大利' : '备注（选填）') + '">' +
+                '<button class="ms-send' + (isRp ? '' : ' tf') + '" id="msSend" type="button">' +
+                (isRp ? '塞钱进红包' : '转账') + '</button>' +
+                '<div class="ms-hint">单笔 0.01 – 200 元 · 金额会记进聊天记录</div>';
+
+            const submit = () => {
+                const input = document.getElementById('msAmount');
+                const noteEl = document.getElementById('msNote');
+                const raw = String((input && input.value) || '').replace(/[^\d.]/g, '');
+                const val = Number(raw);
+                if (!(val > 0)) { toast('请输入金额'); if (input) input.focus(); return; }
+                if (val < MONEY_MIN) { toast('最少 0.01 元'); return; }
+                if (val > MONEY_MAX) { toast('单笔最多 200 元'); return; }
+                const note = String((noteEl && noteEl.value) || '').trim().slice(0, 24);
+                closeMoneySheet();
+                sendMoneyToPersona(isRp ? 'redPacket' : 'transfer', val, note);
+            };
+
+            mask.classList.add('show');
+            sheet.classList.add('show');
+            document.getElementById('msClose').addEventListener('click', closeMoneySheet);
+            document.getElementById('msSend').addEventListener('click', submit);
+            sheet.querySelectorAll('input').forEach(el => {
+                el.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); submit(); } });
+            });
+            setTimeout(() => {
+                const a = document.getElementById('msAmount');
+                if (a && window.innerWidth > 640) a.focus();
+            }, 120);
+        }
+
+        function moneyReceivedExtra(amount, isRp, note) {
+            const kind = isRp ? '红包' : '转账';
+            let tone;
+            if (amount < 5) {
+                tone = '这点钱有点调侃的意味：你可以觉得对方在挤兑你，也可以嘴上嫌弃两句再收下，别郑重其事地道谢';
+            } else if (amount <= 50) {
+                tone = '金额不大不小，自然一点：说声谢、或者问一句"怎么突然给钱"';
+            } else {
+                tone = '金额有点大，先愣一下：问对方是不是有事，或者嘴上说"不用不用"但人已经收下了';
+            }
+            return '用户刚给你发了一个' + kind + '（¥' + moneyFmt(amount) +
+                (note ? '，' + (isRp ? '祝福语' : '备注') + '：' + note : '') + '）。' +
+                '按你的性格自然反应，' + tone + '。不要报出具体金额，也不要用"感谢老板"这种话。';
+        }
+
+        function sendMoneyToPersona(kind, amount, note) {
+            const cw = document.getElementById('chatWindow');
+            const personaId = cw && cw.dataset.persona;
+            const p = getPersonaById(personaId);
+            if (!p) return;
+            const isRp = kind !== 'transfer';
+            const val = Math.round(amount * 100) / 100;
+            const content = isRp
+                ? JSON.stringify({
+                    amount: val,
+                    blessing: (note || '恭喜发财，大吉大利').slice(0, 24),
+                    status: 'unopened', openedAt: 0, senderId: 'player'
+                })
+                : JSON.stringify({
+                    amount: val,
+                    note: (note || '').slice(0, 24),
+                    status: 'pending', receivedAt: 0, senderId: 'player'
+                });
+
+            addMessage(personaId, 'user', isRp ? 'redPacket' : 'transfer', content);
+            renderMessages(personaId);
+            renderWechatList();
+            toast(isRp ? '红包已发出' : '转账已发出');
+
+            prepareMoneyRound(personaId, '');
+            scheduleReply(personaId, {
+                extraSystem: moneyReceivedExtra(val, isRp, note),
+                moneyScene: 'gift'
+            });
+        }
+
+        // ---- 点击委托：拆红包 / 确认收款 ----
+        (function initMoneyUI() {
+            const box = document.getElementById('chatMessages');
+            if (!box) return;
+            box.addEventListener('click', (e) => {
+                const card = e.target.closest('[data-mc]');
+                if (!card) return;
+                if (typeof suppressClickUntil !== 'undefined' && Date.now() < suppressClickUntil) return;
+                const row = card.closest('.wx-msg-row');
+                const mid = row && row.dataset.msgId;
+                const cw = document.getElementById('chatWindow');
+                const pid = cw && cw.dataset.persona;
+                if (!mid || !pid) return;
+                const act = card.dataset.mc;
+                if (act === 'open') openRedPacketMsg(mid, pid);
+                else if (act === 'recv') receiveTransferMsg(mid, pid);
+            });
+            const mask = document.getElementById('moneyMask');
+            if (mask) mask.addEventListener('click', closeMoneySheet);
+            const rp = document.getElementById('sendRedPacketOpt');
+            if (rp) rp.addEventListener('click', () => {
+                document.getElementById('plusPopup').classList.remove('show');
+                openMoneyComposer('redPacket');
+            });
+            const tf = document.getElementById('sendTransferOpt');
+            if (tf) tf.addEventListener('click', () => {
+                document.getElementById('plusPopup').classList.remove('show');
+                openMoneyComposer('transfer');
+            });
+        })();
+
+        // ============================================================
         //  聊天消息渲染
         // ============================================================
         function msgBodyHtml(m, personaId) {
             const t = m.type || 'text';
+            if (t === 'redPacket' || t === 'transfer') {
+                return moneyCardHtml(m, personaId);
+            }
             if (t === 'image') {
                 return '<img class="wx-img" data-img="' + escHtml(m.content) + '" src="' + IMAGE_PLACEHOLDER + '" alt="">';
             }
@@ -19294,6 +21288,19 @@ ${tonePrompt}
             if (m.type === 'netEase') return '[网易云] ' + (parseJsonSafe(m.content).name || '');
             if (m.type === 'takeout') return '[外卖] ' + (parseJsonSafe(m.content).shopName || '');
             if (m.type === 'taobao') return '[淘宝] ' + (parseJsonSafe(m.content).name || '');
+            if (m.type === 'redPacket') {
+                const j = parseMoneyOf(m);
+                if (j.status === 'opened') return '[红包] ¥' + moneyFmt(j.amount) + (j.note ? ' ' + j.note : '');
+                if (j.status === 'expired') return '[红包] 已过期';
+                if (j.status === 'returned') return '[红包] 已退回';
+                return '[微信红包]' + (j.note ? ' ' + j.note : '');
+            }
+            if (m.type === 'transfer') {
+                const j = parseMoneyOf(m);
+                if (j.status === 'pending') return '[转账]';
+                if (j.status === 'received') return '¥' + moneyFmt(j.amount);
+                return '[转账] 已过期';
+            }
             return String(m.content || '');
         }
 
@@ -19331,7 +21338,8 @@ ${tonePrompt}
                         '</div>';
                 }
                 const isMedia = m.type === 'image' || m.type === 'emoji' ||
-                    m.type === 'music' || m.type === 'netEase' || m.type === 'takeout' || m.type === 'taobao';
+                    m.type === 'music' || m.type === 'netEase' || m.type === 'takeout' || m.type === 'taobao' ||
+                    m.type === 'redPacket' || m.type === 'transfer';
                 let cls = 'wx-bubble ' + (isUser ? 'me' : 'them');
                 if (isMedia) cls += ' plain';
                 if (m.type === 'voice') cls += ' voice';
@@ -20129,16 +22137,24 @@ ${tonePrompt}
             const system = buildStaticPersonaSystem(personaId);
             // 主动消息同样要做防复读：定时推送最容易变成"饭点打卡"
             const proactiveAntiRepeat = buildAntiRepeatHint(personaId);
-            const tail = buildChatDynamicTail(personaId, {
-                extra: `现在你主动给用户发一条微信消息（时间参考见上文，不要明说几点）。` +
-                    `不要提"主动""系统""很久没聊"这类词，也不要说教。内容自然、简短（10-40字）。` +
-                    `【重要约束】严禁问"吃了吗""在干嘛""忙不忙"这种废话式问候，也不要拿"该吃饭了""早点睡"当开场。` +
-                    `请直接给出一件具体的东西：你此刻正在做的小事（刚洗完澡、在等一锅汤、刚被楼下遛狗的拽了一跤），` +
-                    `或者一个你最近真的好奇、想听对方怎么说的问题，或者顺着上次没聊完的话题往下说。` +
-                    `注意作息真实感：凌晨不要主动闲聊，深夜别开长话题。` +
-                    (proactiveAntiRepeat ? `\n` + proactiveAntiRepeat : '') +
-                    `\n只输出消息内容，不要带引号、不要解释。`
-            });
+            // 主动消息最容易变成"关怀打卡"：深夜改成内容级禁令（不只是"要不要发"）
+            const lateNight = isLateNightHour();
+            const proactiveExtra = lateNight
+                ? `现在你主动给用户发一条微信消息（时间参考见上文，不要明说几点）。` +
+                  `现在是深夜/凌晨。如果这次想说的内容包含"关心作息/催睡觉/问在不在"，那就直接放弃这个方向，` +
+                  `改成分享一件你自己此刻正在做的具体小事（"刚听到楼下有猫在叫""煮了碗面""在等一集剧更新"），` +
+                  `或者聊一件跟时间无关的事。绝对禁止"早点睡""晚安""该休息了""还没睡呢"这类句子。` +
+                  `内容自然、简短（10-40字）。` +
+                  (proactiveAntiRepeat ? `\n` + proactiveAntiRepeat : '') +
+                  `\n只输出消息内容，不要带引号、不要解释。`
+                : `现在你主动给用户发一条微信消息（时间参考见上文，不要明说几点）。` +
+                  `不要提"主动""系统""很久没聊"这类词，也不要说教。内容自然、简短（10-40字）。` +
+                  `【重要约束】严禁问"吃了吗""在干嘛""忙不忙"这种废话式问候，也不要拿"该吃饭了""早点睡"当开场。` +
+                  `请直接给出一件具体的东西：你此刻正在做的小事（刚洗完澡、在等一锅汤、刚被楼下遛狗的拽了一跤），` +
+                  `或者一个你最近真的好奇、想听对方怎么说的问题，或者顺着上次没聊完的话题往下说。` +
+                  (proactiveAntiRepeat ? `\n` + proactiveAntiRepeat : '') +
+                  `\n只输出消息内容，不要带引号、不要解释。`;
+            const tail = buildChatDynamicTail(personaId, { extra: proactiveExtra });
             // 主动消息时历史通常以 assistant 结尾，attachDynamicTail 会补一条 user 承载指令
             // 主动消息最容易"掉人设"：它没有用户消息做参照，全靠历史 + System。
             // 给到和聊天同级的窗口（16 条），别让主动消息只有一半上下文。
@@ -20631,6 +22647,92 @@ ${tonePrompt}
             };
         })();
 
+        // ============================================================
+        //  语音采集 · 统一能力检测 / 麦克风申请 / 编码选择
+        //  ------------------------------------------------------------
+        //  iOS 的坑集中在这几处，三处录音入口（聊天 / 通话 / 录音机）必须共用这一套：
+        //   1) iOS 全系没有 webkitSpeechRecognition —— 浏览器识别一定是空的，只能走云端 ASR
+        //   2) iOS 的 MediaRecorder 只有 audio/mp4（AAC），没有 webm/opus
+        //   3) 权限点过「不允许」后 getUserMedia 直接 reject 且不再弹窗，必须给出恢复路径
+        //   4) http:// 下 navigator.mediaDevices 直接是 undefined
+        // ============================================================
+        function audioCaptureSupport() {
+            return {
+                secure: !!window.isSecureContext,
+                hasGUM: !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia),
+                hasRec: typeof MediaRecorder !== 'undefined',
+                hasSR: !!(window.SpeechRecognition || window.webkitSpeechRecognition)
+            };
+        }
+
+        const MIC_ERROR_TEXT = {
+            insecure: '当前页面不是 HTTPS，iPhone 不允许录音。请用 https:// 打开本页面。',
+            unsupported: '当前浏览器不支持录音。请用 Safari / Chrome 打开，且不要用 App 内嵌浏览器。',
+            denied: '麦克风权限被拒绝。iPhone 请到：设置 → Safari 浏览器 → 麦克风 → 选择「允许」；或清除本网站数据后刷新重试。',
+            'no-device': '没有检测到麦克风。',
+            busy: '麦克风被其它 App 占用，关掉正在录音的 App 再试。',
+            unknown: '麦克风打开失败，请重试。'
+        };
+
+        // 统一申请麦克风：返回结构化结果，调用方按 code 给提示，不再各自 toast 一句 e.message
+        async function acquireMic() {
+            const cap = audioCaptureSupport();
+            if (!cap.secure) return { ok: false, code: 'insecure' };
+            if (!cap.hasGUM || !cap.hasRec) return { ok: false, code: 'unsupported' };
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({
+                    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+                });
+                return { ok: true, stream: stream };
+            } catch (e) {
+                const n = (e && e.name) || '';
+                if (n === 'NotAllowedError' || n === 'SecurityError' || n === 'PermissionDeniedError') {
+                    return { ok: false, code: 'denied', error: e };
+                }
+                if (n === 'NotFoundError' || n === 'DevicesNotFoundError' || n === 'OverconstrainedError') {
+                    return { ok: false, code: 'no-device', error: e };
+                }
+                if (n === 'NotReadableError' || n === 'TrackStartError' || n === 'AbortError') {
+                    return { ok: false, code: 'busy', error: e };
+                }
+                return { ok: false, code: 'unknown', error: e };
+            }
+        }
+
+        // iOS 优先 mp4，桌面优先 webm；都探测不到就返回 ''，交给浏览器默认
+        function pickRecorderMime() {
+            if (typeof MediaRecorder === 'undefined' || !MediaRecorder.isTypeSupported) return '';
+            // iOS 只认 mp4/aac；桌面优先 webm/opus（体积小、云端 ASR 兼容性最好）。
+            // 不能无脑把 audio/mp4 放第一位：新版 Chrome 也支持 mp4，会把桌面录音一起切过去。
+            const ua = navigator.userAgent || '';
+            const isIOS = /iPad|iPhone|iPod/.test(ua) ||
+                (navigator.platform === 'MacIntel' && (navigator.maxTouchPoints || 0) > 1);
+            const cands = isIOS
+                ? ['audio/mp4', 'audio/mp4;codecs=mp4a.40.2', 'audio/aac', 'audio/webm;codecs=opus', 'audio/webm']
+                : ['audio/webm;codecs=opus', 'audio/webm', 'audio/ogg;codecs=opus', 'audio/mp4'];
+            for (let i = 0; i < cands.length; i++) {
+                try { if (MediaRecorder.isTypeSupported(cands[i])) return cands[i]; } catch (e) {}
+            }
+            return '';
+        }
+
+        // 「权限被拒」不能只用 toast：用户不知道去哪儿改。这里给可照做的路径。
+        function notifyMicError(code) {
+            if (code === 'denied') {
+                showModal(`
+                    <div class="modal-title">麦克风被拒绝</div>
+                    <div style="font-size:12.5px;color:rgba(255,255,255,.62);line-height:1.95;margin-bottom:12px;">
+                        · iPhone / iPad：设置 → Safari 浏览器 → 麦克风 → 允许<br>
+                        · 微信里打开：右上角「…」→ 在 Safari 中打开后再试<br>
+                        · 还是不行：设置 → Safari → 高级 → 网站数据，删掉本站数据后刷新重试
+                    </div>
+                    <div class="btn-row"><button class="btn btn-primary" onclick="closeModal()">知道了</button></div>
+                `);
+                return;
+            }
+            toast(MIC_ERROR_TEXT[code] || MIC_ERROR_TEXT.unknown, 3600);
+        }
+
         let voiceAudio = null;
         let voiceRec = {
             active: false,
@@ -20645,7 +22747,8 @@ ${tonePrompt}
             interim: '',
             timer: null,
             cancel: false,
-            personId: ''
+            personId: '',
+            actualMime: ''            // 本次录音的真实容器（iOS = audio/mp4），转写/复刻都按它走
         };
 
         function resetVoiceRec() {
@@ -20658,6 +22761,7 @@ ${tonePrompt}
             voiceRec.interim = '';   // ← 新增：最后一段还没 final 的话也存在这里
             voiceRec.timer = null;
             voiceRec.cancel = false;
+            voiceRec.actualMime = '';
             // 注意：pressing / startY 不在这里清，它们由 pointerdown / pointerup 管理
         }
 
@@ -20672,18 +22776,10 @@ ${tonePrompt}
             const liveEl = document.getElementById('voiceLive');
             const hintEl = document.getElementById('voiceHint');
 
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') {
-                toast('当前环境不支持录音（需要 HTTPS 或 localhost）', 3200);
-                return;
-            }
-
-            let stream;
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            } catch (e) {
-                toast('无法使用麦克风：' + (e.message || '权限被拒绝'), 3200);
-                return;
-            }
+            // 统一入口：能力检测 + 结构化失败码（HTTPS / 权限 / 占用 / 无设备）
+            const mic = await acquireMic();
+            if (!mic.ok) { notifyMicError(mic.code); return; }
+            const stream = mic.stream;
 
             // 用户可能在授权期间已松手
             if (!voiceRec.pressing) {
@@ -20705,16 +22801,18 @@ ${tonePrompt}
                 interim: '',
                 timer: null,
                 cancel: false,
-                personId: personaId
+                personId: personaId,
+                actualMime: ''
             };
 
-            const mime = MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm;codecs=opus')
-                ? 'audio/webm;codecs=opus' : '';
+            const mime = pickRecorderMime();
             try {
                 const rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
                 rec.ondataavailable = ev => { if (ev.data && ev.data.size) voiceRec.chunks.push(ev.data); };
                 rec.start(200);
                 voiceRec.recorder = rec;
+                // 记下真实容器：iOS 这里是 audio/mp4，下发给 ASR 时的后缀必须跟着变
+                voiceRec.actualMime = rec.mimeType || mime || '';
             } catch (e) {
                 stream.getTracks().forEach(t => t.stop());
                 toast('录音初始化失败');
@@ -20765,7 +22863,7 @@ ${tonePrompt}
             hintEl.textContent = '松开发送 · 上滑取消';
             timerEl.textContent = '0.0"';
             if (!liveEl.textContent) {
-                liveEl.textContent = SR ? '' : '（当前浏览器不支持实时识别，发送后让 AI 猜一下）';
+                liveEl.textContent = SR ? '' : '（实时识别不可用，松手后走云端识别）';
             }
 
             voiceRec.timer = setInterval(() => {
@@ -20828,12 +22926,13 @@ ${tonePrompt}
                 const chunks = rec.chunks.slice();
                 const ownerId = rec.personId;
                 const transcript = ((rec.transcript || '') + (rec.interim || '')).trim();
-                const mimeType = (rec.recorder && rec.recorder.mimeType) || 'audio/webm';
+                const mimeType = (rec.recorder && rec.recorder.mimeType) || rec.actualMime || '';
                 resetVoiceRec();
 
                 const blob = new Blob(chunks, { type: mimeType });
                 if (!blob.size) { toast('录音失败，没有捕获到声音'); return; }
-                await sendVoiceMessage(ownerId, blob, duration, transcript);
+                // 浏览器识别为空（iOS 必然为空）时不阻塞气泡：先把语音发出去，云端转写回来了再补文字
+                await sendVoiceMessage(ownerId, blob, duration, transcript, { asr: true, mime: mimeType });
             };
 
             if (rec.recorder && rec.recorder.state !== 'inactive') {
@@ -20873,10 +22972,28 @@ ${tonePrompt}
             });
         }
 
-        async function sendVoiceMessage(personaId, blob, duration, transcript) {
+        // 转写期间的浮层反馈：复用录音浮层只换文案，避免用户以为卡住
+        function showVoiceAsrBusy(tip) {
+            const overlay = document.getElementById('voiceRecordOverlay');
+            const timerEl = document.getElementById('voiceTimer');
+            const liveEl = document.getElementById('voiceLive');
+            const hintEl = document.getElementById('voiceHint');
+            if (overlay) { overlay.classList.add('show'); overlay.classList.remove('cancel'); }
+            if (timerEl) timerEl.textContent = '';
+            if (liveEl) liveEl.textContent = '';
+            if (hintEl) hintEl.textContent = tip || '识别中…';
+        }
+
+        function hideVoiceAsrBusy() {
+            const overlay = document.getElementById('voiceRecordOverlay');
+            if (overlay) overlay.classList.remove('show', 'cancel');
+        }
+
+        async function sendVoiceMessage(personaId, blob, duration, transcript, opts) {
             // 关键：识别不到文字也照发，绝不弹窗逼用户打字。
             // 能不能转写是锦上添花，不是发送的前置条件。
-            const text = (transcript || '').trim();
+            opts = opts || {};
+            let text = (transcript || '').trim();
             const audioId = 'v_' + genId();
             try {
                 await VoiceDB.put({ id: audioId, blob, mime: blob.type, createdAt: Date.now() });
@@ -20884,7 +23001,8 @@ ${tonePrompt}
                 console.warn('语音保存失败', e);
             }
 
-            addMessage(personaId, 'user', 'voice', text, {
+            // 先把气泡发出去：iOS 上没有浏览器识别，转写要等云端，不能干等 2~8 秒才出声
+            const msg = addMessage(personaId, 'user', 'voice', text, {
                 audioId,
                 duration: Math.max(1, Math.round(duration)),
                 noTranscript: !text
@@ -20892,9 +23010,31 @@ ${tonePrompt}
             renderMessages(personaId);
             renderWechatList();
 
+            // 浏览器识别没结果 → 补一次云端 ASR，回来就把文字补进这条语音气泡
+            if (!text && opts.asr) {
+                showVoiceAsrBusy('识别中…');
+                try {
+                    text = await transcribeAudio(blob, opts.mime || blob.type, '');
+                } finally {
+                    hideVoiceAsrBusy();
+                }
+                if (text) {
+                    msg.content = text;
+                    msg.noTranscript = false;
+                    saveData();
+                    renderMessages(personaId);
+                    renderWechatList();
+                    toast('已转写：' + (text.length > 14 ? text.slice(0, 14) + '…' : text), 1800);
+                }
+            }
+
             if (!text) toast('未识别到文字，已发送语音');
 
-            // 两处 scheduleReply 合并：语音没转写 + 吃醋，共用一个尾部数组
+            replyToVoiceMessage(personaId, text);
+        }
+
+        // 语音落地之后的回复（转写成功 / 失败都走这里）
+        function replyToVoiceMessage(personaId, text) {
             const VOICE_UNTRANSCRIBED =
                 '用户刚刚发的是一条语音消息，但内容没有成功转写，你并不知道 ta 说了什么。' +
                 '请用自然的、符合你人设的口吻回应，可以让 ta 再说一遍或者打字说明，不要假装听清了。';
@@ -21270,20 +23410,13 @@ ${tonePrompt}
 
         async function startRecorder() {
             if (recState.active) return;
-            if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || typeof MediaRecorder === 'undefined') {
-                toast('当前环境不支持录音（需要 HTTPS 或 localhost）', 3200);
-                return;
-            }
-            let stream;
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            } catch (e) {
-                toast('无法使用麦克风：' + (e.message || '权限被拒绝'), 3200);
-                return;
-            }
+            const mic = await acquireMic();
+            if (!mic.ok) { notifyMicError(mic.code); return; }
+            const stream = mic.stream;
             let recorder;
+            const mime = pickRecorderMime();
             try {
-                recorder = new MediaRecorder(stream);
+                recorder = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
             } catch (e) {
                 stream.getTracks().forEach(t => t.stop());
                 toast('当前浏览器不支持该录音格式', 3000);
@@ -21301,7 +23434,7 @@ ${tonePrompt}
             recorder.onstop = async () => {
                 const dur = Date.now() - recState.startAt;
                 const chunks = recState.chunks.slice();
-                const mime = (chunks[0] && chunks[0].type) || recorder.mimeType || 'audio/webm';
+                const mime = (recorder && recorder.mimeType) || (chunks[0] && chunks[0].type) || '';
                 try { stream.getTracks().forEach(t => t.stop()); } catch (e) {}
                 recState.active = false;
                 recState.stream = null;
@@ -22854,9 +24987,12 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         //    · 端口（Key / 区域 / 模型）全局唯一，只保存一份
         //    · 音色卡片 = MiniMax 账户里的 voice_id + 来源 + 绑定角色
         //      —— 卡片不存 speed/pitch/vol，那是"这次怎么说"，走全局参数
-        //    · 角色没绑卡片 → 通话只显示字幕，不发声
+        //    · boundPersonaId === VC_GLOBAL_ID 表示"全局声线"：所有角色共用
+        //      —— 专属绑定优先于全局；全局卡同时只能有一张
+        //    · 角色没绑卡片、也没有全局卡 → 通话只显示字幕，不发声
         // ============================================================
         const VC_MAX = 5;
+        const VC_GLOBAL_ID = '__all__';
         const VC_SOURCE_LABEL = { system: '系统', voice_cloning: '复刻', voice_generation: '设计' };
         const MM_EMOTIONS = ['happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised', 'calm', 'fluent', 'whisper'];
         const MM_VOICE_ID_RE = /^[A-Za-z][A-Za-z0-9_-]{0,63}$/;
@@ -22871,6 +25007,9 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             if (typeof v.speed !== 'number' || !isFinite(v.speed)) v.speed = 1.0;
             if (typeof v.pitch !== 'number' || !isFinite(v.pitch)) v.pitch = 0;
             if (typeof v.vol !== 'number' || !isFinite(v.vol)) v.vol = 1.0;
+            // 快速复刻累计次数：卡片可以被删，但这个计数只增不减，
+            // 用来判断"是不是第二份音色"（删了卡也照样提醒，见 voiceCloneUsed）
+            if (typeof v.cloneCount !== 'number' || !isFinite(v.cloneCount) || v.cloneCount < 0) v.cloneCount = 0;
             if (v.enabled === undefined) v.enabled = true;
             if (v.mmRegion !== 'io') v.mmRegion = 'cn';
             // Key 里混进空格 / 换行 / 零宽字符会让鉴权直接 401，读的时候统一洗一遍
@@ -22905,6 +25044,248 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 }
             }
             throw lastErr || new Error('网络异常');
+        }
+
+        // ============================================================
+        //  语音识别（ASR）· MiniMax /v1/speech_to_text
+        //  ------------------------------------------------------------
+        //  iOS 没有 webkitSpeechRecognition，云端识别是唯一可用的主通道。
+        //  MediaRecorder 的产物（iOS = mp4/aac，桌面 = webm/opus）不一定在平台
+        //  的支持列表里，所以统一先解码成 16k 单声道 WAV 再上传：
+        //  体积小、容器稳、识别率也更稳；解不了才退回原文件。
+        // ============================================================
+        const ASR_TIMEOUT_MS = 8000;
+
+        function pcmToWav(mono, sampleRate) {
+            const rate = Math.max(8000, Math.round(sampleRate || 16000));
+            const n = mono ? mono.length : 0;
+            const buf = new ArrayBuffer(44 + n * 2);
+            const view = new DataView(buf);
+            const wstr = (off, s) => { for (let i = 0; i < s.length; i++) view.setUint8(off + i, s.charCodeAt(i)); };
+            wstr(0, 'RIFF');
+            view.setUint32(4, 36 + n * 2, true);
+            wstr(8, 'WAVE');
+            wstr(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, 1, true);          // PCM
+            view.setUint16(22, 1, true);          // 单声道
+            view.setUint32(24, rate, true);
+            view.setUint32(28, rate * 2, true);   // byteRate
+            view.setUint16(32, 2, true);          // blockAlign
+            view.setUint16(34, 16, true);         // 16bit
+            wstr(36, 'data');
+            view.setUint32(40, n * 2, true);
+            let off = 44;
+            for (let i = 0; i < n; i++) {
+                let v = mono[i];
+                if (v > 1) v = 1; else if (v < -1) v = -1;
+                view.setInt16(off, v < 0 ? v * 0x8000 : v * 0x7FFF, true);
+                off += 2;
+            }
+            return new Blob([buf], { type: 'audio/wav' });
+        }
+
+        async function blobToWav(blob) {
+            try {
+                if (!blob || !blob.size) return null;
+                // OfflineAudioContext 不挑用户手势，iOS 上比 AudioContext 稳
+                let ac = null;
+                try {
+                    const OAC = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+                    if (OAC) ac = new OAC(1, 1, 16000);
+                } catch (e) { ac = null; }
+                if (!ac) {
+                    const Ctx = window.AudioContext || window.webkitAudioContext;
+                    if (!Ctx) return null;
+                    ac = new Ctx();
+                }
+                const buf = await blob.arrayBuffer();
+                let audio = null;
+                try { audio = await ac.decodeAudioData(buf.slice(0)); } catch (e) { audio = null; }
+                try { ac.close && ac.close(); } catch (e) {}
+                if (!audio || !audio.length) return null;
+
+                const rate = 16000;
+                const frames = Math.max(1, Math.min(Math.ceil(audio.duration * rate), rate * 300));
+                const mono = new Float32Array(frames);
+                const ch = Math.max(1, audio.numberOfChannels || 1);
+                const step = (audio.sampleRate || rate) / rate;
+                for (let c = 0; c < ch; c++) {
+                    const src = audio.getChannelData(c);
+                    if (!src || !src.length) continue;
+                    for (let i = 0; i < frames; i++) {
+                        const idx = Math.min(src.length - 1, Math.round(i * step));
+                        mono[i] += src[idx] / ch;
+                    }
+                }
+                // 轻量归一化：手机拿远了录音偏小，把峰值拉到 0.9 识别率明显更好
+                let peak = 0;
+                for (let i = 0; i < frames; i++) { const a = Math.abs(mono[i]); if (a > peak) peak = a; }
+                if (peak > 1e-4 && peak < 0.9) {
+                    const gain = Math.min(4, 0.9 / peak);
+                    for (let i = 0; i < frames; i++) mono[i] *= gain;
+                }
+                return pcmToWav(mono, rate);
+            } catch (e) {
+                console.warn('[asr] 转 WAV 失败', e);
+                return null;
+            }
+        }
+
+        function extFromMime(mime) {
+            const m = String(mime || '');
+            if (/mp4|m4a|aac/i.test(m)) return 'm4a';
+            if (/mpeg|mp3/i.test(m)) return 'mp3';
+            if (/wav/i.test(m)) return 'wav';
+            if (/ogg|opus/i.test(m)) return 'ogg';
+            if (/flac/i.test(m)) return 'flac';
+            return 'webm';
+        }
+
+        async function prepareAsrAudio(blob, mime) {
+            const wav = await blobToWav(blob);
+            if (wav && wav.size) return { blob: wav, ext: 'wav', type: 'audio/wav' };
+            const type = String((blob && blob.type) || mime || '');
+            const ext = extFromMime(type || mime);
+            return { blob: blob, ext: ext, type: type || ('audio/' + ext) };
+        }
+
+        // 端点/字段以 MiniMax 官方文档为准：POST /v1/speech_to_text（multipart）
+        async function transcribeWithMiniMax(blob, mime) {
+            const v = mmSettings();
+            if (!v.mmKey || !v.mmAsrModel) return '';
+            if (!blob || !blob.size) return '';
+
+            const file = await prepareAsrAudio(blob, mime);
+            if (!file || !file.blob || !file.blob.size) return '';
+
+            const fd = new FormData();
+            fd.append('model', v.mmAsrModel);
+            fd.append('file', new File([file.blob], 'voice.' + file.ext, { type: file.type }));
+            fd.append('response_format', 'json');
+            fd.append('stream', 'false');
+
+            const ctl = (typeof AbortController !== 'undefined') ? new AbortController() : null;
+            const timer = setTimeout(() => { try { ctl && ctl.abort(); } catch (e) {} }, ASR_TIMEOUT_MS);
+            let resp;
+            try {
+                resp = await mmFetch('/v1/speech_to_text', {
+                    method: 'POST',
+                    headers: { Authorization: 'Bearer ' + v.mmKey },
+                    body: fd,
+                    signal: ctl ? ctl.signal : undefined
+                });
+            } finally {
+                clearTimeout(timer);
+            }
+
+            if (!resp.ok) throw new Error('HTTP ' + resp.status);
+            const raw = await resp.text();
+            let json = null;
+            try { json = JSON.parse(raw); } catch (e) { json = null; }
+            if (!json) return String(raw || '').trim();         // 兼容直接返回纯文本的情况
+            if (json.base_resp && json.base_resp.status_code !== 0) {
+                throw new Error(json.base_resp.status_msg || ('ASR 失败 ' + json.base_resp.status_code));
+            }
+            return String(
+                json.text ||
+                (json.result && json.result.text) ||
+                (json.data && json.data.text) ||
+                ''
+            ).trim();
+        }
+
+        // 统一转写：浏览器识别 → MiniMax ASR → 空
+        async function transcribeAudio(blob, mime, browserText) {
+            const browser = String(browserText || '').trim();
+            if (browser) return browser;                        // 桌面 Chrome 已识别，直接用
+            if (!blob || !blob.size) return '';
+            const v = mmSettings();
+            if (!v.mmKey) { console.warn('[asr] 未配置 MiniMax Key，跳过云端识别'); return ''; }
+            if (!v.mmAsrModel) { console.warn('[asr] 未配置 ASR 模型，跳过云端识别'); return ''; }
+            try {
+                const text = await transcribeWithMiniMax(blob, mime);
+                if (text) return text;
+            } catch (e) {
+                console.warn('[asr] minimax 失败', e);
+            }
+            return '';
+        }
+
+        // ------------------------------------------------------------
+        //  语音服务自检：把「为什么不能录音 / 为什么听不懂」逐项摊开
+        // ------------------------------------------------------------
+        function buildSilentWav(seconds) {
+            const rate = 16000;
+            const n = Math.max(1, Math.round(rate * (seconds || 1)));
+            return pcmToWav(new Float32Array(n), rate);
+        }
+
+        function vscRow(name, state, detail) {
+            const color = state === 'ok' ? '#07c160' : (state === 'bad' ? '#ff7a7a' : '#ffb258');
+            const mark = state === 'ok' ? '✓' : (state === 'bad' ? '✕' : '!');
+            return '<div style="display:flex;gap:8px;padding:5px 0;border-bottom:1px solid rgba(255,255,255,.06);">' +
+                '<span style="color:' + color + ';width:13px;flex:0 0 13px;font-weight:700;">' + mark + '</span>' +
+                '<span style="color:rgba(255,255,255,.78);width:96px;flex:0 0 96px;">' + escHtml(name) + '</span>' +
+                '<span style="color:rgba(255,255,255,.5);flex:1;min-width:0;word-break:break-all;">' + detail + '</span>' +
+                '</div>';
+        }
+
+        async function openVoiceSelfCheck() {
+            const cap = audioCaptureSupport();
+            const v0 = mmSettings();
+            const mime = pickRecorderMime();
+
+            const rows = [
+                vscRow('安全上下文', cap.secure ? 'ok' : 'bad',
+                    cap.secure ? 'isSecureContext = true' : '请用 HTTPS 访问（iOS 在 http:// 下不允许录音）'),
+                vscRow('麦克风 API', cap.hasGUM ? 'ok' : 'bad',
+                    cap.hasGUM ? 'navigator.mediaDevices.getUserMedia 可用' : '换浏览器 / 用 HTTPS 打开'),
+                vscRow('MediaRecorder', cap.hasRec ? 'ok' : 'bad',
+                    cap.hasRec ? '可用' : '当前浏览器不支持录音'),
+                vscRow('可用 mimeType', mime ? 'ok' : 'warn',
+                    mime ? mime : '探测不到，将使用浏览器默认容器'),
+                vscRow('浏览器语音识别', cap.hasSR ? 'ok' : 'warn',
+                    cap.hasSR ? '可用（桌面 Chrome / Edge）' : '不支持，将走云端 ASR（iOS 属正常）'),
+                vscRow('MiniMax Key', v0.mmKey ? 'ok' : 'bad',
+                    v0.mmKey ? '已配置（' + v0.mmKey.slice(0, 4) + '…' + v0.mmKey.slice(-4) + '）' : '去「录音机 · 语音服务」填'),
+                vscRow('ASR 模型', v0.mmAsrModel ? 'ok' : 'bad',
+                    v0.mmAsrModel ? v0.mmAsrModel : '建议填 asr-1.0'),
+                vscRow('ASR 连通性', 'warn', '<span id="vscAsrState">检测中…</span>')
+            ].join('');
+
+            showModal(`
+                <div class="modal-title">语音服务自检</div>
+                <div style="font-size:12.5px;line-height:1.8;">${rows}</div>
+                <div class="ctx-hint" style="margin-top:10px;">「识别中」走云端 ASR：浏览器识别为空时才发起请求，8 秒超时。</div>
+                <div class="btn-row" style="margin-top:12px;">
+                    <button class="btn" id="vscRetest">重新检测</button>
+                    <button class="btn btn-primary" onclick="closeModal()">关闭</button>
+                </div>
+            `);
+            const retest = document.getElementById('vscRetest');
+            if (retest) retest.addEventListener('click', () => { openVoiceSelfCheck(); });
+
+            const slot = document.getElementById('vscAsrState');
+            if (!slot) return;
+            const v = mmSettings();
+            if (!v.mmKey) { slot.textContent = '未配置（ASR 会被跳过）'; return; }
+            if (!v.mmAsrModel) { slot.textContent = '未配置 ASR 模型（建议 asr-1.0）'; return; }
+            try {
+                const t0 = Date.now();
+                const text = await transcribeWithMiniMax(buildSilentWav(1), 'audio/wav');
+                const ms = Date.now() - t0;
+                if (!document.body.contains(slot)) return;
+                slot.textContent = text
+                    ? 'HTTP 200 · ' + ms + 'ms · 返回「' + text.slice(0, 12) + '」'
+                    : 'HTTP 200 · ' + ms + 'ms · 1 秒静音返回空文本（正常）';
+            } catch (e) {
+                if (!document.body.contains(slot)) return;
+                const m = String((e && e.message) || e);
+                const friendly = /abort/i.test(m) ? '超时（8 秒）' : (/401|403/.test(m) ? m + '（Key 无效或无权限）' : m);
+                slot.textContent = '失败：' + friendly;
+                slot.style.color = '#ff7a7a';
+            }
         }
 
         // hex 不是 base64：必须逐字节转，直接塞给 <audio> 会静音
@@ -23046,13 +25427,28 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         }
 
         // ---------- 卡片与绑定 ----------
+        function vcIsGlobal(card) {
+            return !!(card && card.boundPersonaId === VC_GLOBAL_ID);
+        }
+
+        // 专属绑定 > 全局声线：角色自己有卡就用它，否则落到全局卡上
         function resolveVoiceCard(personaId) {
-            if (!personaId) return null;
-            return mmCards().find(c => c.boundPersonaId === personaId) || null;
+            const cards = mmCards();
+            if (personaId) {
+                const own = cards.find(c => c.boundPersonaId === personaId);
+                if (own) return own;
+            }
+            return cards.find(vcIsGlobal) || null;
+        }
+
+        function vcGlobalCard() {
+            return mmCards().find(vcIsGlobal) || null;
         }
 
         function vcBoundName(card) {
-            const p = card && card.boundPersonaId ? getPersonaById(card.boundPersonaId) : null;
+            if (!card) return '';
+            if (vcIsGlobal(card)) return '所有角色';
+            const p = card.boundPersonaId ? getPersonaById(card.boundPersonaId) : null;
             return p ? (p.nickname || p.name) : '';
         }
 
@@ -23082,11 +25478,14 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
 
             list.innerHTML = cards.map(c => {
                 const bound = vcBoundName(c);
-                const tag = bound
-                    ? '<span class="wx-ci-tag green">' + escHtml(bound) + '</span>'
-                    : '<span class="wx-ci-tag gray">未绑定</span>';
+                const tag = vcIsGlobal(c)
+                    ? '<span class="wx-ci-tag green">全局 · 所有角色</span>'
+                    : (bound
+                        ? '<span class="wx-ci-tag green">' + escHtml(bound) + '</span>'
+                        : '<span class="wx-ci-tag gray">未绑定</span>');
                 return '' +
-                    '<div class="setting-item" data-vc="' + escHtml(c.voiceId) + '" style="margin-bottom:10px;">' +
+                    '<div class="setting-item" data-vc="' + escHtml(c.voiceId) + '" style="margin-bottom:10px;' +
+                        (vcIsGlobal(c) ? 'border-color:rgba(7,193,96,.45);' : '') + '">' +
                         '<div style="display:flex;align-items:center;gap:8px;">' +
                             '<div class="label" style="margin:0;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' +
                                 escHtml(c.name) +
@@ -23176,18 +25575,33 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             const card = mmCards().find(c => c.voiceId === voiceId);
             if (!card) return;
             const personas = data.personas || [];
-            if (!personas.length) { toast('还没有角色，先去微信创建人设'); return; }
 
-            const taken = {};   // personaId -> 占用它的其它卡片名
+            const taken = {};   // personaId -> 占用它的其它卡片名（全局卡不占具体角色）
             mmCards().forEach(c => {
-                if (c.voiceId !== card.voiceId && c.boundPersonaId) taken[c.boundPersonaId] = c.name;
+                if (c.voiceId !== card.voiceId && c.boundPersonaId && !vcIsGlobal(c)) {
+                    taken[c.boundPersonaId] = c.name;
+                }
             });
+            const otherGlobal = mmCards().find(c => c.voiceId !== card.voiceId && vcIsGlobal(c));
 
             showModal(
                 '<div class="modal-title">「' + escHtml(card.name) + '」绑定角色</div>' +
-                '<div class="ctx-hint" style="margin-bottom:8px;">一个角色只能绑一张卡；绑给新角色后，原来那张卡会自动解绑。</div>' +
+                '<div class="ctx-hint" style="margin-bottom:8px;">' +
+                    '一个角色只能绑一张卡，专属绑定优先于全局；绑给新角色后，原来那张卡会自动解绑。' +
+                '</div>' +
                 '<div style="max-height:52vh;overflow-y:auto;">' +
-                    '<div class="wx-cand" data-pid=""><span class="cn">不绑定</span><span class="ca">通话只显示字幕</span></div>' +
+                    '<div class="wx-cand" data-pid=""><span class="cn">不绑定</span><span class="ca">' +
+                        (otherGlobal ? '回落到全局声线「' + escHtml(otherGlobal.name) + '」' : '通话只显示字幕') +
+                    '</span></div>' +
+                    '<div class="wx-cand" data-pid="' + VC_GLOBAL_ID + '">' +
+                        '<span class="cn">所有角色（全局）' + (vcIsGlobal(card) ? ' ✓' : '') + '</span>' +
+                        '<span class="ca">' + (otherGlobal
+                            ? '会替换「' + escHtml(otherGlobal.name) + '」的全局声线'
+                            : '所有角色共用这条声线') + '</span>' +
+                    '</div>' +
+                    (personas.length
+                        ? '<div class="ctx-hint" style="margin:10px 0 4px;">单独指定给某个角色</div>'
+                        : '') +
                     personas.map(p => {
                         const nm = p.nickname || p.name || '未命名';
                         const occ = taken[p.id];
@@ -23213,17 +25627,33 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             const cards = mmCards();
             const card = cards.find(c => c.voiceId === voiceId);
             if (!card) return;
+
+            // 设为全局声线：全局只保留一张，别的卡的全局标记清掉
+            if (personaId === VC_GLOBAL_ID) {
+                cards.forEach(c => {
+                    if (c.voiceId !== voiceId && vcIsGlobal(c)) c.boundPersonaId = '';
+                });
+                card.boundPersonaId = VC_GLOBAL_ID;
+                saveData();
+                renderVoiceCards();
+                toast('已设为全局声线 · 所有角色共用');
+                return;
+            }
+
             if (personaId) {
                 // 一个角色只能被一张卡绑定：先把别的卡对它的绑定解掉
                 cards.forEach(c => {
                     if (c.voiceId !== voiceId && c.boundPersonaId === personaId) c.boundPersonaId = '';
                 });
             }
+            const wasGlobal = vcIsGlobal(card);
             card.boundPersonaId = personaId || '';
             saveData();
             renderVoiceCards();
             const nm = vcBoundName(card);
-            toast(personaId ? ('已绑定给「' + (nm || '角色') + '」') : '已解除绑定');
+            toast(personaId
+                ? ('已绑定给「' + (nm || '角色') + '」')
+                : (wasGlobal ? '已取消全局声线' : '已解除绑定'));
         }
 
         function removeVoiceCard(voiceId) {
@@ -23378,6 +25808,14 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         }
 
         // ---------- 快速复刻：上传 → voice_clone → 激活 ----------
+        // 是否已经复刻过：只看"复刻过没有"，不看到卡片还在不在。
+        // 卡片能删，额度删不回来 —— 所以有 cloneCount 兜底。
+        function voiceCloneUsed() {
+            const v = mmSettings();
+            if ((Number(v.cloneCount) || 0) > 0) return true;
+            return mmCards().some(c => c && c.source === 'voice_cloning');
+        }
+
         async function cloneMiniMaxVoice(file, customVoiceId) {
             const v = mmSettings();
             if (!v.mmKey) throw new Error('未配置 Key');
@@ -23637,6 +26075,19 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             const picked = await resolveCloneAudioFile(file);
             if (!picked) return;
 
+            // 防呆：MiniMax 的复刻免费额度一般只够一份，第二份开始会真扣钱
+            // 放在"选完文件、真正要提交"这个节点，既不打断选文件，也来得及反悔
+            if (voiceCloneUsed()) {
+                const go = await askConfirm(
+                    '再复刻一份音色？',
+                    '<div style="color:#ffb35c;font-weight:600;">复制第二份音色会导致免费额度耗尽甚至倒欠，请谨慎。</div>' +
+                    '<div style="margin-top:6px;">复刻按账户计费：免费额度通常只够一份，超出部分照常扣费，余额不足会形成欠款。' +
+                    '音色卡误删除可以在音色库里找回来，点击［添加音色卡］然后去寻找即可</div>',
+                    '仍然复刻'
+                );
+                if (!go) return;
+            }
+
             // 时长只做尽力校验：探测不到就跳过，别挡住正常文件
             const dur = await readAudioDuration(picked);
             if (dur > 0 && (dur < 9.5 || dur > 305)) {
@@ -23681,6 +26132,10 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 try {
                     if (status) status.textContent = '⏳ 上传 → 克隆 → 激活，大概 20–60 秒…';
                     await cloneMiniMaxVoice(file, vid);
+                    // 成功才计数：失败的调用不占"第二份"的名额
+                    const vs = mmSettings();
+                    vs.cloneCount = (Number(vs.cloneCount) || 0) + 1;
+                    saveData();
                     if (status) { status.className = 'test-result success'; status.textContent = '✅ 复刻完成，正在加入卡片'; }
                     if (mmCards().length < VC_MAX) {
                         addVoiceCard({ voiceId: vid, name: '复刻 · ' + vid, source: 'voice_cloning' });
@@ -23940,6 +26395,14 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                     if (t) t.click();
                 });
             }
+
+            // 语音服务自检（iOS 排障第一入口）
+            const selfCheckBtn = document.getElementById('voiceSelfCheckBtn');
+            if (selfCheckBtn) {
+                selfCheckBtn.addEventListener('click', () => {
+                    try { openVoiceSelfCheck(); } catch (e) { toast('自检失败：' + ((e && e.message) || e)); }
+                });
+            }
         })();
 
         document.querySelectorAll('[data-clk-tab]').forEach(el => {
@@ -24004,6 +26467,9 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             chunks: [],
             recognition: null,
             transcript: '',
+            interim: '',         // 尚未转正的中途结果，收尾时要拼进去
+            recSeq: 0,           // 录音批次号：取消 / 重录自增，用来作废晚到的回调
+            actualMime: '',      // 本次录音的真实容器（iOS = audio/mp4）
             recStart: 0,
             recTimer: null,
             ttsToken: 0          // 每次朗读自增：旧的分段循环看到 token 变了就退出
@@ -24106,6 +26572,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 chunks: [],
                 recognition: null,
                 transcript: '',
+                interim: '',
                 recStart: 0,
                 _ttsNoKey: false
             });
@@ -24153,33 +26620,29 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         }
 
         function callSupportsRecording() {
-            return !!(navigator.mediaDevices && navigator.mediaDevices.getUserMedia && typeof MediaRecorder !== 'undefined');
+            const cap = audioCaptureSupport();
+            return !!(cap.secure && cap.hasGUM && cap.hasRec);
         }
 
         async function startCallRecord() {
             if (callState.phase !== 'active' || !callState.active) return;
 
-            if (!callSupportsRecording()) {
+            const mic = await acquireMic();
+            if (!mic.ok) {
                 callState.recording = false;
                 resetCallTalkBtn();
-                const tip = document.getElementById('wxCallTip');
-                if (tip) tip.textContent = '当前环境不支持录音，已切换为文字输入';
-                const text = await askCallText();
+                const tipEl = document.getElementById('wxCallTip');
+                if (tipEl) tipEl.textContent = MIC_ERROR_TEXT[mic.code] || MIC_ERROR_TEXT.unknown;
+                const text = await askCallText(
+                    (mic.code === 'denied'
+                        ? '麦克风权限被拒绝：iPhone 请到「设置 → Safari 浏览器 → 麦克风」允许本网站后刷新。'
+                        : (MIC_ERROR_TEXT[mic.code] || MIC_ERROR_TEXT.unknown)) +
+                    '\n也可以直接在这里打字。'
+                );
                 if (text) sendCallText(text);
                 return;
             }
-
-            let stream;
-            try {
-                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-            } catch (e) {
-                callState.recording = false;
-                resetCallTalkBtn();
-                toast('无法使用麦克风：' + (e.message || '权限被拒绝'), 3200);
-                const text = await askCallText();
-                if (text) sendCallText(text);
-                return;
-            }
+            const stream = mic.stream;
 
             // 授权期间用户可能已松手
             if (!callState.active || !callState.recording) {
@@ -24190,15 +26653,18 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             callState.stream = stream;
             callState.chunks = [];
             callState.transcript = '';
+            callState.interim = '';
             callState.recStart = Date.now();
+            callState.actualMime = '';
+            callState.recSeq = (callState.recSeq || 0) + 1;   // 新批次，旧回调作废
 
-            const mime = (MediaRecorder.isTypeSupported && MediaRecorder.isTypeSupported('audio/webm;codecs=opus'))
-                ? 'audio/webm;codecs=opus' : '';
+            const mime = pickRecorderMime();
             try {
                 const rec = mime ? new MediaRecorder(stream, { mimeType: mime }) : new MediaRecorder(stream);
                 rec.ondataavailable = ev => { if (ev.data && ev.data.size) callState.chunks.push(ev.data); };
                 rec.start(200);
                 callState.recorder = rec;
+                callState.actualMime = rec.mimeType || mime || '';
             } catch (e) {
                 stream.getTracks().forEach(t => t.stop());
                 callState.recording = false;
@@ -24225,6 +26691,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                             else interim += res[0].transcript;
                         }
                         callState.transcript = finalText.trim();
+                        callState.interim = interim.trim();
                         const tip = document.getElementById('wxCallTip');
                         if (tip) tip.textContent = '我：' + (finalText + interim).trim();
                     };
@@ -24248,19 +26715,69 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             callState.recording = false;
             resetCallTalkBtn();
             clearInterval(callState.recTimer);
-            try { callState.recognition && callState.recognition.stop(); } catch (e) {}
 
             const duration = (Date.now() - callState.recStart) / 1000;
+            // 本次录音的序号：取消 / 重录会让它自增，晚到的 done 直接作废
+            const seq = callState.recSeq || 0;
 
+            // 和聊天（finishVoiceRecord）对齐：stop() 之后识别器还会再吐一次最终结果，
+            // 必须等 onend 才能读到，500ms 兜底（某些浏览器 stop() 后不再触发 onend）。
+            const waitRecognizerEnd = () => new Promise(resolve => {
+                if (!callState.recognition) { resolve(); return; }
+                let settled = false;
+                const finish = () => {
+                    if (settled) return;
+                    settled = true;
+                    clearTimeout(timer);
+                    resolve();
+                };
+                const timer = setTimeout(finish, 500);
+                try {
+                    callState.recognition.onend = finish;
+                    callState.recognition.onerror = finish;
+                    callState.recognition.stop();
+                } catch (e) {
+                    finish();
+                }
+            });
+
+            // 防重入：recorder.onstop 与 stop() 抛错兜底不能把同一条语音发两次
+            let doneCalled = false;
             const done = async () => {
+                if (doneCalled) return;
+                doneCalled = true;
+
+                // 先等识别收尾，再动麦克风 track —— 顺序反了会截断最后几个字
+                await waitRecognizerEnd();
+
+                // 期间用户挂断 / 取消 / 又开了一段新录音，这次结果作废
+                if (seq !== (callState.recSeq || 0)) return;
+                if (!callState.active || callState.phase !== 'active') {
+                    try { callState.stream && callState.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+                    callState.stream = null;
+                    callState.recorder = null;
+                    callState.chunks = [];
+                    callState.recognition = null;
+                    callState.transcript = '';
+                    callState.interim = '';
+                    callState.actualMime = '';
+                    return;
+                }
+
                 try { callState.stream && callState.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
-                const blob = new Blob(callState.chunks, { type: (callState.recorder && callState.recorder.mimeType) || 'audio/webm' });
-                const transcript = (callState.transcript || '').trim();
+                const mime = (callState.recorder && callState.recorder.mimeType) || callState.actualMime || '';
+                const blob = new Blob(callState.chunks, { type: mime });
+
+                // 关键：等完识别再取文字，此时 interim 通常已转成 final
+                const transcript = ((callState.transcript || '') + (callState.interim || '')).trim();
+
                 callState.stream = null;
                 callState.recorder = null;
                 callState.chunks = [];
                 callState.recognition = null;
                 callState.transcript = '';
+                callState.interim = '';
+                callState.actualMime = '';
 
                 const tip = document.getElementById('wxCallTip');
                 if (tip) tip.textContent = '';
@@ -24268,12 +26785,18 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 if (duration < 0.8) { toast('说话时间太短'); return; }
 
                 let text = transcript;
-                if (!text) {
-                    const manual = await askCallText();
-                    if (manual === null || !manual) return;
-                    text = manual;
+                if (!text && blob && blob.size) {
+                    // 二级兜底：浏览器识别确实没有结果（iOS 老版本 / 静音），再走云端 ASR
+                    if (tip) tip.textContent = '识别中…';
+                    try { text = await transcribeAudio(blob, mime, ''); } catch (e) {}
+                    if (seq !== (callState.recSeq || 0)) return;
+                    if (tip && tip.textContent === '识别中…') tip.textContent = '';
+                    if (!callState.active || callState.phase !== 'active') return;
                 }
-                sendCallText(text, blob && blob.size ? blob : null, duration);
+
+                // 不再弹窗逼打字：没听清就发一条「没听清」的语音，AI 会自然追问，
+                // 比强制输入更像真打电话。
+                sendCallText(text, blob && blob.size ? blob : null, duration, { noTranscript: !text });
             };
 
             if (callState.recorder && callState.recorder.state !== 'inactive') {
@@ -24288,10 +26811,12 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         function cancelCallRecord() {
             const hadAnything = callState.recording || callState.stream || callState.recorder;
             callState.recording = false;
+            callState.recSeq = (callState.recSeq || 0) + 1;   // 作废进行中的 done
             clearInterval(callState.recTimer);
             callState.recTimer = null;
             resetCallTalkBtn();
 
+            try { callState.recognition && (callState.recognition.onend = null); } catch (e) {}
             try { callState.recognition && callState.recognition.stop(); } catch (e) {}
             try { callState.recorder && (callState.recorder.onstop = null); } catch (e) {}
             try {
@@ -24304,32 +26829,39 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             callState.chunks = [];
             callState.recognition = null;
             callState.transcript = '';
+            callState.interim = '';
+            callState.actualMime = '';
 
             const tip = document.getElementById('wxCallTip');
             if (tip) tip.textContent = '';
             if (hadAnything && callState.active && callState.phase === 'active') toast('已取消');
         }
 
-        async function sendCallText(text, blob, duration) {
+        async function sendCallText(text, blob, duration, opts) {
             const personaId = callState.personaId;
             if (!callState.active || callState.phase !== 'active' || !personaId) return;
             const clean = String(text || '').trim();
-            if (!clean) return;
+            const hasAudio = !!(blob && blob.size);
+            // 没识别出文字但录到了声音：发一条「没听清」的语音，让 AI 自然追问，
+            // 不再弹输入框逼用户打字。
+            const noTranscript = !!(opts && opts.noTranscript) || !clean;
+            if (noTranscript && !hasAudio) return;
 
             const tip = document.getElementById('wxCallTip');
-            if (tip) tip.textContent = '我：' + clean;
+            if (tip) tip.textContent = clean ? '我：' + clean : '我：（没听清）';
 
             const extra = { via: 'call' };
-            if (blob && blob.size) {
+            if (hasAudio) {
                 const audioId = 'v_' + genId();
                 try {
                     await VoiceDB.put({ id: audioId, blob, mime: blob.type, createdAt: Date.now() });
                     if (!callState.active || callState.phase !== 'active') return;
                     extra.audioId = audioId;
                     extra.duration = Math.max(1, Math.round(duration || 1));
+                    if (noTranscript) extra.noTranscript = true;
                     addMessage(personaId, 'user', 'voice', clean, extra);
                 } catch (e) {
-                    addMessage(personaId, 'user', 'text', clean, extra);
+                    addMessage(personaId, 'user', 'text', clean || '（信号不太好，没听清）', extra);
                 }
             } else {
                 addMessage(personaId, 'user', 'text', clean, extra);
@@ -24356,10 +26888,15 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 const extra = `你们正在${kindText}通话中。请像打电话一样短句口语回应，30 字以内，必须带正常标点。`;
                 const system = buildCallStaticSystem(personaId);
                 // 通话里同样禁止"吃了吗"打卡（一张嘴就问吃饭最出戏）
-                const callAntiRepeat = buildAntiRepeatHint(personaId);
+                const callAntiRepeat = buildAntiRepeatHint(personaId) +
+                    (isLateNightHour()
+                        ? '\n现在深夜通话中，不要说"早点睡/晚安/该休息了"——你是陪伴，不是闹钟。'
+                        : '');
                 const tail = buildChatDynamicTail(personaId, {
                     extra: extra + (callAntiRepeat ? '\n' + callAntiRepeat : ''),
-                    skipPhotoMenu: true
+                    skipPhotoMenu: true,
+                    // 通话里发不出表情包（没有 applyReply 这条链路），别让模型吐出 [sticker:N]
+                    skipStickerMenu: true
                 });
                 let reply = await callChatRomance({
                     system,
@@ -24412,12 +26949,12 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             }, dur);
         }
 
-        function askCallText() {
+        function askCallText(reason) {
             return new Promise(resolve => {
                 showModal(`
                     <div class="modal-title">说点什么</div>
                     <div style="font-size:12.5px;color:rgba(255,255,255,.5);line-height:1.7;margin-bottom:8px;">
-                        没有识别到语音内容（或当前环境不支持录音）。<br>用一句话写下你说的话，对方会照常回应。
+                        ${reason ? escHtml(reason).replace(/\n/g, '<br>') : '没有识别到语音内容（或当前环境不支持录音）。<br>用一句话写下你说的话，对方会照常回应。'}
                     </div>
                     <textarea id="callManualText" rows="3" placeholder="例如：我到楼下了"></textarea>
                     <div class="btn-row">
@@ -24450,6 +26987,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             clearTimeout(callState.answerTimer);
             clearInterval(callState.timer);
             clearInterval(callState.recTimer);
+            callState.recSeq = (callState.recSeq || 0) + 1;   // 挂断后晚到的录音回调一律作废
             callState.ttsToken++;   // 挂断后剩余分段不再合成/播放
             stopBlobAudio();   // 挂断立刻闭嘴，并释放 objectURL
             try { callState.recognition && callState.recognition.stop(); } catch (e) {}
@@ -24468,7 +27006,8 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 recorder: null,
                 chunks: [],
                 recognition: null,
-                transcript: ''
+                transcript: '',
+                interim: ''
             });
 
             const overlay = document.getElementById('wxCallOverlay');
@@ -24647,6 +27186,9 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             };
             if (extra && typeof extra === 'object') Object.assign(msg, extra);
             data.groupChats[gid].push(msg);
+            if (speakerId !== 'user' && speakerId !== 'system' && (!type || type === 'text')) {
+                trackSleepNag(speakerId, content);
+            }
             saveData();
             return msg;
         }
@@ -24823,7 +27365,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 if (gap > 15 * 60 * 1000) {
                     html += '<div class="wx-time">' + groupTimeSep(m.timestamp) + '</div>';
                 }
-                const isMedia = ['image', 'emoji', 'music', 'netEase', 'takeout', 'taobao'].includes(m.type);
+                const isMedia = ['image', 'emoji', 'music', 'netEase', 'takeout', 'taobao', 'redPacket', 'transfer'].includes(m.type);
                 let cls = 'wx-bubble ' + (isUser ? 'me' : 'them');
                 if (isMedia) cls += ' plain';
                 if (m.type === 'voice') cls += ' voice';
@@ -25053,6 +27595,8 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             let text = String(parsed.text || '')
                 .replace(/\[\[BLOCK_THREAT\]\]/g, '')
                 .replace(/\[pic:\d+\]/g, '')
+                // 群聊不开放红包/转账：模型万一吐了标记，直接摘掉，别让原始标记出现在气泡里
+                .replace(/\[\s*(?:hongbao|transfer)\s*[:：][^\]\n]*\]/g, '')
                 .trim();
             const lines = text.split('\n').map(l => l.trim()).filter(Boolean).slice(0, 3);
             if (!lines.length) return;
@@ -25238,7 +27782,8 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 + '\n   [to:某位成员的昵称] 你的内容          —— 回应某位成员'
                 + '\n   例：[to:' + playerName + '] 哈哈哈我也这么觉得'
                 + '\n   例：[to:' + (others.length ? others[0].replace(/[「」]/g, '') : '某某') + '] 你说的那个我也买了'
-                + '\n9. 引用标记只在最前面加一次，不要每条都加，也不要加在句子中间。';
+                + '\n9. 引用标记只在最前面加一次，不要每条都加，也不要加在句子中间。'
+                + '\n10. 群里不发红包、不转账，也不要输出 [hongbao:...] / [transfer:...] 这类标记。';
 
             return withRomanceLock(sys);
         }
@@ -25306,6 +27851,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 else if (m.type === 'netEase') text = '[分享网易云]';
                 else if (m.type === 'takeout') text = '[外卖订单]';
                 else if (m.type === 'taobao') text = '[淘宝礼物]';
+                else if (m.type === 'redPacket' || m.type === 'transfer') text = '[红包/转账]';
                 else text = String(m.content || '');
 
                 if (m.quoted) {
@@ -25807,6 +28353,9 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             } catch (e) {}
             logStorageUsage();
 
+            // 红包/转账跨天兜底：24 小时没拆/没收 → 置过期
+            try { expireMoneyMessages(); } catch (e) { console.warn('[money] 过期扫描失败', e); }
+
             if (!data.forumActiveGlobalIds || data.forumActiveGlobalIds.length === 0) {
                 const globals = data.worldBooks.filter(w => w.scope === 'global' && !w.forumExcluded).map(w => w.id);
                 data.forumActiveGlobalIds = globals;
@@ -25869,10 +28418,10 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         //  改 NOTICE_VERSION 就会对所有人重新弹一次
         // ============================================================
         const NOTICE_KEY = 'aiPhoneNoticeVersion';
-        const NOTICE_VERSION = 'v20-2026-10-30';
+        const NOTICE_VERSION = 'v20-2026-10-31';
         const NOTICE_TITLE = '📢 更新公告';
-        const NOTICE_CONTENT = `· 修复了王全的聊天bug
-· 优化了网易云、天气和日历
+        const NOTICE_CONTENT = `· 对ios进行了适配
+· 修复了部分bug，增加了红包、转账功能
 · 新增了语音模型接入，设置界面在录音中，教程：前往minimax注册账号，实名验证并创建你的key，并准备一段一分钟左右的小杰碎碎念mp3，来到小手机，将完整的key填入，上传音频文件选择复制音色，音色卡建立成功后选择绑定角色
 如有问题欢迎反馈～
 by 花生可可`;
