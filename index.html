@@ -4097,10 +4097,21 @@
             cursor: pointer;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
             touch-action: none;
-            transition: background .15s, color .15s;
+            position: relative;
+            overflow: hidden;
+            padding: 0;
+            transition: background .15s, color .15s, transform .12s;
         }
-        .wx-hold-btn.active { background: #3a3a3a; color: #fff; }
+        .wx-hold-btn span {
+            pointer-events: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .wx-hold-btn.active { background: #3a3a3a; color: #fff; transform: scale(1.01); }
+        .wx-hold-btn.canceling { background: #5c2626; color: #ffd7d7; }
         .wx-hold-btn.show { display: flex; }
 
         .wx-send-btn {
@@ -4233,6 +4244,11 @@
             color: #fff;
             padding: 24px;
             text-align: center;
+            /* 纯展示层：绝不能吃掉 pointer 事件，否则按住过程中浮层一出现就断触 */
+            pointer-events: none;
+            -webkit-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
         }
         .wx-voice-overlay.show { display: flex; }
         .wx-vo-mic {
@@ -5666,6 +5682,18 @@
             background: #0a0a0c;
             color: #fff;
             overflow: hidden;
+            /* 通话界面内的长按不能被系统当成「选文字 / 弹 callout」 */
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        /* 录音时锁死手势，避免滚动/下拉刷新抢走 pointer */
+        .wx-call-overlay.recording,
+        .wx-call-overlay.speaking {
+            touch-action: none;
+            overscroll-behavior: contain;
         }
         .wx-call-overlay.show { display: flex; }
         .wx-call-bg {
@@ -5877,9 +5905,30 @@
             cursor: pointer;
             user-select: none;
             -webkit-user-select: none;
+            -webkit-touch-callout: none;
+            -webkit-tap-highlight-color: transparent;
             touch-action: none;
+            position: relative;
+            overflow: hidden;
+            padding: 0;
+            line-height: 1;
+            transition: background .15s, border-color .15s, transform .12s;
         }
-        .wx-call-hold.active { background: rgba(7, 193, 96, .88); border-color: transparent; }
+        /* 文字包在 span 里，事件与选中都不落在文本节点上 */
+        .wx-call-hold span {
+            pointer-events: none;
+            -webkit-user-select: none;
+            user-select: none;
+        }
+        .wx-call-hold.active {
+            background: rgba(7, 193, 96, .88);
+            border-color: transparent;
+            transform: scale(1.02);
+        }
+        .wx-call-hold.canceling {
+            background: rgba(224, 68, 68, .9);
+            border-color: transparent;
+        }
         .wx-call-overlay.calling .wx-call-holdwrap,
         .wx-call-overlay.ended .wx-call-holdwrap { visibility: hidden; }
         .wx-call-actions {
@@ -7070,7 +7119,7 @@
                                 <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>
                             </button>
                             <button class="wx-send-btn" id="sendMsgBtn">发送</button>
-                            <button class="wx-hold-btn" id="holdTalkBtn">按住 说话</button>
+                            <button class="wx-hold-btn" id="holdTalkBtn"><span>按住 说话</span></button>
 
                             <div class="plus-popup" id="plusPopup">
                                 <button class="opt" id="emojiOpt"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M8.5 14s1.2 2 3.5 2 3.5-2 3.5-2"/><circle cx="9" cy="9.5" r=".9" fill="currentColor" stroke="none"/><circle cx="15" cy="9.5" r=".9" fill="currentColor" stroke="none"/></svg> 表情包</button>
@@ -7773,7 +7822,7 @@
             <div class="wx-call-subs" id="wxCallSubs"></div>
             <div class="wx-call-tip" id="wxCallTip"></div>
             <div class="wx-call-holdwrap" id="wxCallHoldWrap">
-                <button class="wx-call-hold" id="wxCallTalkBtn">按住 说话</button>
+                <button class="wx-call-hold" id="wxCallTalkBtn"><span>按住 说话</span></button>
             </div>
             <div class="wx-call-actions">
                 <button class="wx-call-act" id="wxCallMute"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M8.4 6.4a5 5 0 0 0 7.2 7.2"/><path d="M5.5 11a6.5 6.5 0 0 0 10.2 5.4"/><path d="M12 17.5V21"/><path d="M4 4l16 16"/></svg></span><span class="lb">静音</span></button>
@@ -20798,6 +20847,179 @@ ${tonePrompt}
             }
         }
 
+        // ---------------------------------------------------------------
+        //  v20 · 通用「按住说话」绑定
+        //  核心原则：
+        //   1) 不监听 pointerleave —— 移动端它太容易被 1~2px 抖动触发，
+        //      而且 setPointerCapture 之后 iOS / 部分 WebView 仍会误发；
+        //      只信任 pointerup / pointercancel。
+        //   2) move/up/cancel 挂在 document 上 —— 即使 capture 失效、手指滑出按钮，
+        //      也一定能收到「松手」，不会出现一直挂着的录音。
+        //   3) 100ms 最小长按时长 —— 「点一下」不申请麦克风。
+        //   4) 严格校验 pointerId —— 只认按下的那根手指。
+        // ---------------------------------------------------------------
+        const HOLD_MIN_MS = 100;      // 低于此时长视为点击，不启动录音
+        const HOLD_SLIDE_PX = 40;     // 上滑取消的位移阈值
+
+        const holdBindings = [];      // 已绑定实例，切后台时统一中止
+
+        function setHoldLabel(btn, text) {
+            if (!btn) return;
+            const span = btn.querySelector('span');
+            if (span) span.textContent = text;
+            else btn.textContent = text;
+        }
+
+        function cancelAllHolds(reason) {
+            for (let i = 0; i < holdBindings.length; i++) {
+                try { holdBindings[i].cancel(reason); } catch (e) {}
+            }
+        }
+
+        /**
+         * @param {HTMLElement} btnEl
+         * @param {Object} handlers
+         *   canStart()            —— 不满足条件（如通话未接通）直接不拦事件
+         *   onStart()             —— 长按成立，开始录音
+         *   onEnd()               —— 正常松手
+         *   onCancel(reason)      —— 被打断（上滑取消 / pointercancel / 切后台 / 启动失败）
+         *   onSlideCancel(bool)   —— 上滑越过阈值 / 退回阈值内
+         *   onMove(e, state)      —— 手指移动
+         *   allowSlideCancel      —— 是否允许上滑取消（聊天窗口 true，通话 false）
+         */
+        function bindHoldToTalk(btnEl, handlers) {
+            handlers = handlers || {};
+            if (!btnEl) return { abort: function () {}, element: null };
+            if (btnEl.dataset.holdBound === '1') return { abort: function () {}, element: btnEl };
+            btnEl.dataset.holdBound = '1';
+
+            const IDLE_LABEL = handlers.idleLabel || '按住 说话';
+            const HOLD_LABEL = handlers.holdLabel || '松开 结束';
+
+            let state = null;
+
+            const resetVisual = () => {
+                btnEl.classList.remove('active', 'canceling');
+                setHoldLabel(btnEl, IDLE_LABEL);
+            };
+
+            // 强制中止：不关心手指是否还按着（切后台 / 外部打断 / 启动失败）
+            const abort = (reason) => {
+                const st = state;
+                if (!st) return;
+                state = null;
+                clearTimeout(st.timer);
+                resetVisual();
+                if (st.active) {
+                    try { handlers.onCancel && handlers.onCancel(reason || 'abort'); } catch (e) {}
+                }
+            };
+
+            const onPointerDown = (e) => {
+                if (state) {
+                    // 极端情况下残留的脏状态，10s 后自动复位，避免按钮被永久锁死
+                    if (Date.now() - state.startAt > 10000) { state = null; resetVisual(); }
+                    else return;
+                }
+                if (e.button !== undefined && e.button !== 0) return;   // 只认左键 / 单指
+                if (e.isPrimary === false) return;                      // 多指：只认第一根
+                if (handlers.canStart && !handlers.canStart()) return;
+
+                e.preventDefault();
+                e.stopPropagation();
+
+                state = {
+                    pointerId: e.pointerId,
+                    startX: e.clientX,
+                    startY: e.clientY,
+                    startAt: Date.now(),
+                    active: false,
+                    slideCanceled: false,
+                    timer: null
+                };
+
+                // 尽力捕获：捕获成功后即使手指移出按钮，事件仍回到这里
+                try { btnEl.setPointerCapture(e.pointerId); } catch (err) {}
+
+                state.timer = setTimeout(() => {
+                    if (!state || state.pointerId !== e.pointerId) return;
+                    state.timer = null;
+                    state.active = true;
+                    btnEl.classList.add('active');
+                    setHoldLabel(btnEl, HOLD_LABEL);
+                    try { handlers.onStart && handlers.onStart(); } catch (err) {
+                        console.warn('[hold] onStart error', err);
+                    }
+                }, HOLD_MIN_MS);
+            };
+
+            const onPointerMove = (e) => {
+                if (!state || e.pointerId !== state.pointerId) return;
+
+                if (handlers.allowSlideCancel && state.active) {
+                    const dy = state.startY - e.clientY;   // 向上为正
+                    const shouldCancel = dy > HOLD_SLIDE_PX;
+                    if (shouldCancel !== state.slideCanceled) {
+                        state.slideCanceled = shouldCancel;
+                        btnEl.classList.toggle('canceling', shouldCancel);
+                        try { handlers.onSlideCancel && handlers.onSlideCancel(shouldCancel); } catch (err) {}
+                    }
+                }
+                try { handlers.onMove && handlers.onMove(e, state); } catch (err) {}
+            };
+
+            const onPointerUp = (e) => {
+                if (!state || e.pointerId !== state.pointerId) return;
+                const st = state;
+                state = null;
+                clearTimeout(st.timer);
+                resetVisual();
+                try { btnEl.releasePointerCapture(e.pointerId); } catch (err) {}
+
+                if (!st.active) return;   // 不到 100ms：按「点击」处理，什么都不做
+
+                try {
+                    if (st.slideCanceled) {
+                        handlers.onCancel && handlers.onCancel('slide');
+                    } else {
+                        handlers.onEnd && handlers.onEnd();
+                    }
+                } catch (err) {
+                    console.warn('[hold] pointerup handler error', err);
+                }
+            };
+
+            const onPointerCancel = (e) => {
+                if (!state || e.pointerId !== state.pointerId) return;
+                const st = state;
+                state = null;
+                clearTimeout(st.timer);
+                resetVisual();
+                if (st.active) {
+                    try { handlers.onCancel && handlers.onCancel('pointercancel'); } catch (err) {}
+                }
+            };
+
+            btnEl.addEventListener('pointerdown', onPointerDown);
+            document.addEventListener('pointermove', onPointerMove, { passive: true });
+            document.addEventListener('pointerup', onPointerUp, { passive: true });
+            document.addEventListener('pointercancel', onPointerCancel, { passive: true });
+
+            // 彻底压住浏览器的「长按 → 选择 / callout / 拖拽」
+            const stopNative = (e) => { e.preventDefault(); e.stopPropagation(); };
+            btnEl.addEventListener('contextmenu', stopNative);
+            btnEl.addEventListener('selectstart', stopNative);
+            btnEl.addEventListener('dragstart', stopNative);
+            // iOS 的 callout / 放大镜在 pointercancel 之前由 touchstart 决定，必须非 passive 才能拦
+            btnEl.addEventListener('touchstart', stopNative, { passive: false });
+            btnEl.addEventListener('touchmove', stopNative, { passive: false });
+
+            const entry = { el: btnEl, cancel: abort };
+            holdBindings.push(entry);
+
+            return { abort: abort, element: btnEl };
+        }
+
         // ---- 按住说话交互 ----
         const holdTalkBtn = document.getElementById('holdTalkBtn');
         const voiceToggleBtn = document.getElementById('voiceToggleBtn');
@@ -20812,47 +21034,42 @@ ${tonePrompt}
             }
         });
 
-        holdTalkBtn.addEventListener('contextmenu', e => e.preventDefault());
-
-        holdTalkBtn.addEventListener('pointerdown', async (e) => {
-            e.preventDefault();
-            if (holdTalkBtn.dataset.recording === '1') return;
-            holdTalkBtn.dataset.recording = '1';
-            holdTalkBtn.classList.add('active');
-            holdTalkBtn.textContent = '松开 结束';
-            voiceRec.pressing = true;
-            voiceRec.startY = e.clientY;
-            try { holdTalkBtn.setPointerCapture(e.pointerId); } catch (err) {}
-            await startVoiceRecord();
-        });
-
-        holdTalkBtn.addEventListener('pointermove', (e) => {
-            if (!voiceRec.active) return;
-            const dy = voiceRec.startY - e.clientY;
-            const overlay = document.getElementById('voiceRecordOverlay');
-            const hint = document.getElementById('voiceHint');
-            if (dy > 60) {
-                voiceRec.cancel = true;
-                overlay.classList.add('cancel');
-                hint.textContent = '松开取消发送';
-            } else {
+        // 聊天窗口：允许上滑取消
+        const chatHoldCtl = bindHoldToTalk(holdTalkBtn, {
+            allowSlideCancel: true,
+            canStart: () => {
+                const cw = document.getElementById('chatWindow');
+                return !!(cw && cw.dataset.persona) && !voiceRec.active;
+            },
+            onStart: () => {
+                voiceRec.pressing = true;
                 voiceRec.cancel = false;
-                overlay.classList.remove('cancel');
-                hint.textContent = '松开发送 · 上滑取消';
+                Promise.resolve(startVoiceRecord()).then(() => {
+                    // 麦克风被拒 / 环境不支持：立刻回到待按态，别让按钮卡在「松开 结束」
+                    if (!voiceRec.active) chatHoldCtl.abort('start-failed');
+                });
+            },
+            onEnd: () => {
+                voiceRec.pressing = false;
+                finishVoiceRecord();
+            },
+            onCancel: () => {
+                voiceRec.pressing = false;
+                if (voiceRec.active) {
+                    voiceRec.cancel = true;
+                    finishVoiceRecord();
+                } else {
+                    voiceRec.cancel = false;   // 授权过程中被打断，什么都没录到
+                }
+            },
+            onSlideCancel: (willCancel) => {
+                const overlay = document.getElementById('voiceRecordOverlay');
+                const hint = document.getElementById('voiceHint');
+                if (overlay) overlay.classList.toggle('cancel', willCancel);
+                if (hint) hint.textContent = willCancel ? '松开取消发送' : '松开发送 · 上滑取消';
+                // 记录到 voiceRec，保证 finishVoiceRecord 走的是「取消」分支
+                if (voiceRec.active) voiceRec.cancel = !!willCancel;
             }
-        });
-
-        const endHold = () => {
-            holdTalkBtn.dataset.recording = '0';
-            holdTalkBtn.classList.remove('active');
-            holdTalkBtn.textContent = '按住 说话';
-            voiceRec.pressing = false;
-            finishVoiceRecord();
-        };
-        holdTalkBtn.addEventListener('pointerup', endHold);
-        holdTalkBtn.addEventListener('pointercancel', endHold);
-        holdTalkBtn.addEventListener('pointerleave', (e) => {
-            if (voiceRec.active && e.buttons === 0) endHold();
         });
 
         // ============================================================
@@ -23531,8 +23748,10 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         function resetCallTalkBtn() {
             const btn = document.getElementById('wxCallTalkBtn');
             if (!btn) return;
-            btn.classList.remove('active');
-            btn.textContent = '按住 说话';
+            btn.classList.remove('active', 'canceling');
+            setHoldLabel(btn, '按住 说话');
+            const overlay = document.getElementById('wxCallOverlay');
+            if (overlay) overlay.classList.remove('recording');
         }
 
         function applyCallVisual() {
@@ -23765,6 +23984,32 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             }
         }
 
+        // 被打断（上滑 / pointercancel / 切后台 / 挂断）：直接丢弃，不弹补字弹窗
+        function cancelCallRecord() {
+            const hadAnything = callState.recording || callState.stream || callState.recorder;
+            callState.recording = false;
+            clearInterval(callState.recTimer);
+            callState.recTimer = null;
+            resetCallTalkBtn();
+
+            try { callState.recognition && callState.recognition.stop(); } catch (e) {}
+            try { callState.recorder && (callState.recorder.onstop = null); } catch (e) {}
+            try {
+                if (callState.recorder && callState.recorder.state !== 'inactive') callState.recorder.stop();
+            } catch (e) {}
+            try { callState.stream && callState.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+
+            callState.stream = null;
+            callState.recorder = null;
+            callState.chunks = [];
+            callState.recognition = null;
+            callState.transcript = '';
+
+            const tip = document.getElementById('wxCallTip');
+            if (tip) tip.textContent = '';
+            if (hadAnything && callState.active && callState.phase === 'active') toast('已取消');
+        }
+
         async function sendCallText(text, blob, duration) {
             const personaId = callState.personaId;
             if (!callState.active || callState.phase !== 'active' || !personaId) return;
@@ -23970,24 +24215,50 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
 
             const talk = document.getElementById('wxCallTalkBtn');
             if (!talk) return;
-            talk.addEventListener('contextmenu', e => e.preventDefault());
-            talk.addEventListener('pointerdown', async (e) => {
-                e.preventDefault();
-                if (callState.phase !== 'active' || callState.recording) return;
-                callState.ttsToken++;   // 让正在排队的后续分段立刻作废
-                stopBlobAudio();        // 插话：先打断对方正在播的语音
-                callState.recording = true;
-                talk.classList.add('active');
-                talk.textContent = '松开 结束';
-                try { talk.setPointerCapture(e.pointerId); } catch (err) {}
-                await startCallRecord();
+
+            // 通话界面：不允许上滑取消（通话里的「按住说话」就是临时插话，语义越简单越稳）
+            const callHoldCtl = bindHoldToTalk(talk, {
+                allowSlideCancel: false,
+                canStart: () => callState.active && callState.phase === 'active' && !callState.recording,
+                onStart: () => {
+                    if (callState.phase !== 'active') return;
+                    callState.ttsToken++;   // 让正在排队的后续分段立刻作废
+                    stopBlobAudio();        // 插话：先打断对方正在播的语音
+                    callState.recording = true;
+                    const overlay = document.getElementById('wxCallOverlay');
+                    if (overlay) overlay.classList.add('recording');
+                    Promise.resolve(startCallRecord()).then(() => {
+                        // 环境不支持 / 授权失败：startCallRecord 已经把 recording 置回 false
+                        if (!callState.recording) callHoldCtl.abort('start-failed');
+                    });
+                },
+                onEnd: () => {
+                    if (callState.recording) finishCallRecord();
+                    else resetCallTalkBtn();
+                },
+                onCancel: () => {
+                    cancelCallRecord();
+                }
             });
-            const endHold = () => {
-                if (callState.recording) finishCallRecord();
-            };
-            talk.addEventListener('pointerup', endHold);
-            talk.addEventListener('pointercancel', endHold);
         })();
+
+        // ---- 全局兜底：切后台 / 页面隐藏 → 正在进行的录音立即中止 ----
+        // 先按掉「按住」状态（顺带把 voiceRec.pressing 置 false，
+        // 让仍在等 getUserMedia 的那次启动在拿到流之后自己放弃），再兜底清理残留录音。
+        function abortAllAudio() {
+            cancelAllHolds('page-hidden');
+            if (voiceRec.active) {
+                voiceRec.pressing = false;
+                voiceRec.cancel = true;
+                finishVoiceRecord();
+            }
+            if (callState.recording) cancelCallRecord();
+        }
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'visible') return;
+            abortAllAudio();
+        });
+        window.addEventListener('pagehide', abortAllAudio);
 
         // ============================================================
         //  v18 · 群聊
