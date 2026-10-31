@@ -7,6 +7,9 @@
     <style>
         /* ===== Design Tokens ===== */
         :root {
+            /* 锁定深色渲染：否则 iOS 浅色模式下会强行把表单控件刷成白底 */
+            color-scheme: dark;
+
             --glass-bg-light: rgba(255, 255, 255, 0.20);
             --glass-bg-dark:  rgba(20, 20, 30, 0.55);
             --glass-border:   rgba(255, 255, 255, 0.13);
@@ -454,11 +457,23 @@
             border-radius: 12px;
             font-size: 14px;
             background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(4px);
+            /* 关键：iOS 上 backdrop-filter 会让输入框的触摸事件穿透，点不进去，必须去掉 */
             color: #fff;
             transition: var(--transition);
             outline: none;
             margin-top: 6px;
+            -webkit-appearance: none;   /* 关键：干掉 iOS 原生白底皮肤 */
+            appearance: none;
+            line-height: 1.5;
+            color-scheme: dark;
+        }
+        /* 去掉 appearance 后 select 的原生下拉箭头也没了，这里用 SVG 补回来 */
+        .setting-item select {
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.6)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            padding-right: 32px;
         }
         .setting-item input:focus,
         .setting-item select:focus {
@@ -976,11 +991,14 @@
             border-radius: 24px;
             font-size: 14px;
             background: rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(4px);
+            /* 同上：backdrop-filter 会让输入框变成"点不动的白块" */
             color: #fff;
             outline: none;
             min-width: 60px;
             transition: var(--transition);
+            -webkit-appearance: none;
+            appearance: none;
+            line-height: 1.5;
         }
         .chat-window .input-area input:focus {
             border-color: var(--glass-accent);
@@ -1294,11 +1312,22 @@
             border-radius: 12px;
             font-size: 14px;
             background: rgba(255, 255, 255, 0.06);
-            backdrop-filter: blur(4px);
+            /* 弹窗里的输入框同样不能留 backdrop-filter */
             color: #fff;
             outline: none;
             margin-top: 4px;
             transition: var(--transition);
+            -webkit-appearance: none;
+            appearance: none;
+            line-height: 1.5;
+            color-scheme: dark;
+        }
+        .modal select {
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.6)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            padding-right: 32px;
         }
         .modal input:focus,
         .modal select:focus,
@@ -4193,6 +4222,9 @@
             font-size: 14.5px;
             outline: none;
             transition: background .16s;
+            -webkit-appearance: none;   /* iOS 上不加会套一层原生白底内阴影 */
+            appearance: none;
+            color-scheme: dark;
         }
         .wx-input-bar input#chatInput:focus { background: #333; }
         .wx-input-bar input#chatInput::placeholder { color: rgba(255,255,255,.28); }
@@ -7170,6 +7202,40 @@
             margin-bottom: 10px;
         }
         .mem-src .who { color: rgba(255, 255, 255, .4); font-size: 11px; }
+
+        /* ============================================================
+           iOS 表单兼容兜底层
+           ------------------------------------------------------------
+           上面是逐个修，这里兜住所有漏网的表单控件：
+           · appearance:none 干掉 iOS 强制套上的原生白底皮肤
+           · color-scheme:dark 让光标/选中高亮也走深色
+           · 输入类控件一律不改 background，交给各自组件的规则
+           ============================================================ */
+        .phone input:not([type="range"]):not([type="checkbox"]):not([type="radio"]):not([type="file"]),
+        .phone textarea {
+            -webkit-appearance: none;
+            appearance: none;
+            color-scheme: dark;
+            caret-color: #fff;
+        }
+        .phone select {
+            -webkit-appearance: none;
+            appearance: none;
+            color-scheme: dark;
+            background-image: url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='rgba(255,255,255,0.6)' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 12px center;
+            background-size: 16px;
+            padding-right: 32px;
+        }
+        /* 兜底 background 被系统刷白的极端情况（只在 iOS 浅色模式残留时生效） */
+        .phone input:-webkit-autofill,
+        .phone input:-webkit-autofill:hover,
+        .phone input:-webkit-autofill:focus {
+            -webkit-text-fill-color: #fff;
+            -webkit-box-shadow: 0 0 0 1000px rgba(40, 40, 55, 1) inset;
+            transition: background-color 99999s ease-in-out 0s;
+        }
     </style>
 </head>
 <body>
@@ -7862,6 +7928,8 @@
                         <div class="btn-group">
                             <button class="btn btn-warning" id="clearMomentsBtn">清除朋友圈</button>
                             <button class="btn btn-warning" id="clearChatsBtn">清除聊天记录</button>
+                            <button class="btn btn-success" id="exportDataBtn">导出存档（防丢）</button>
+                            <button class="btn btn-success" id="importDataBtn">导入存档恢复</button>
                             <button class="btn btn-danger" id="resetAllDataBtn">重置所有数据（保留API）</button>
                         </div>
                     </div>
@@ -8459,6 +8527,165 @@
         //  DATA LAYER
         // ============================================================
         const STORAGE_KEY = 'aiPhoneData';
+
+        // ============================================================
+        //  存档防丢双备份模块（IndexedDB）
+        //  ------------------------------------------------------------
+        //  localStorage 在 iOS Safari 上会被 ITP 定期清掉（7 天未访问），
+        //  安卓 WebView 在内存压力下也可能把写了一半的数据丢掉。
+        //  这里把完整存档再往 IndexedDB 里存一份，容量大、不会被 ITP 清算。
+        // ============================================================
+        const BackupDB = (function () {
+            const DB_NAME = 'aiPhoneBackup';
+            const STORE = 'data';
+            const KEY = 'latest';
+            const WRITE_DELAY = 800;      // 写备份节流：saveData 调用非常频繁
+            let dbp = null;
+            let timer = null;
+            let pendingStr = null;
+
+            function open() {
+                if (dbp) return dbp;
+                dbp = new Promise((resolve, reject) => {
+                    let req;
+                    try { req = indexedDB.open(DB_NAME, 1); } catch (e) { reject(e); return; }
+                    req.onupgradeneeded = () => {
+                        const db = req.result;
+                        if (!db.objectStoreNames.contains(STORE)) db.createObjectStore(STORE);
+                    };
+                    req.onsuccess = () => resolve(req.result);
+                    req.onerror = () => reject(req.error);
+                });
+                // 打开失败（隐私模式 / 存储被拒绝）后允许下次重试，别把失败状态缓存一辈子
+                dbp.catch(() => { dbp = null; });
+                return dbp;
+            }
+
+            function write(str) {
+                return open().then(db => new Promise((resolve, reject) => {
+                    let tx;
+                    try { tx = db.transaction(STORE, 'readwrite'); } catch (e) { reject(e); return; }
+                    tx.objectStore(STORE).put(str, KEY);
+                    tx.oncomplete = () => resolve(true);
+                    tx.onerror = () => reject(tx.error);
+                    tx.onabort = () => reject(tx.error);
+                })).catch(() => false);
+            }
+
+            return {
+                // 节流写：连续 saveData 只落最后一次；页面隐藏/卸载时会被 flush 掉
+                save(str) {
+                    pendingStr = str;
+                    if (timer) clearTimeout(timer);
+                    timer = setTimeout(() => {
+                        timer = null;
+                        const s = pendingStr;
+                        pendingStr = null;
+                        if (s != null) write(s);
+                    }, WRITE_DELAY);
+                },
+                // 立即写（导入存档、页面隐藏、进程可能被杀之前）
+                flush() {
+                    if (timer) { clearTimeout(timer); timer = null; }
+                    if (pendingStr != null) {
+                        const s = pendingStr;
+                        pendingStr = null;
+                        return write(s);
+                    }
+                    return Promise.resolve(true);
+                },
+                load() {
+                    return open().then(db => new Promise((resolve, reject) => {
+                        let tx;
+                        try { tx = db.transaction(STORE, 'readonly'); } catch (e) { reject(e); return; }
+                        const req = tx.objectStore(STORE).get(KEY);
+                        tx.oncomplete = () => resolve(req.result || null);
+                        tx.onerror = () => reject(tx.error);
+                        tx.onabort = () => reject(tx.error);
+                    })).catch(() => null);
+                },
+                clear() {
+                    pendingStr = null;
+                    if (timer) { clearTimeout(timer); timer = null; }
+                    return open().then(db => new Promise((resolve, reject) => {
+                        let tx;
+                        try { tx = db.transaction(STORE, 'readwrite'); } catch (e) { reject(e); return; }
+                        tx.objectStore(STORE).delete(KEY);
+                        tx.oncomplete = () => resolve(true);
+                        tx.onerror = () => reject(tx.error);
+                    })).catch(() => false);
+                }
+            };
+        })();
+
+        // ============================================================
+        //  启动期"存档抢救闸门"
+        //  ------------------------------------------------------------
+        //  为什么需要这层闸门：脚本一加载就会先执行 initLifeModules() 等初始化，
+        //  其中会调用 saveData()。如果此时 localStorage 正好被清空，data 是默认数据，
+        //  saveData() 会拿默认数据把 localStorage 和 IDB 备份一起覆盖 —— 备份就白做了。
+        //  所以：检测到 localStorage 空 → 先锁住所有写盘，等 IDB 备份读出来再放行。
+        // ============================================================
+        const ArchiveGuard = (function () {
+            const state = {
+                needRecover: false,   // 启动时 localStorage 是否为空
+                blockWrites: false,   // 是否冻结写盘
+                recovered: false,     // 是否成功从备份恢复
+                done: Promise.resolve(false)
+            };
+            let rawLocal = null;
+            try { rawLocal = localStorage.getItem(STORAGE_KEY); } catch (e) { return state; }
+
+            if (rawLocal && rawLocal !== '{}' && rawLocal !== 'null') return state;
+
+            state.needRecover = true;
+            state.blockWrites = true;
+
+            state.done = BackupDB.load().then(backup => {
+                if (!backup || backup.length < 20) return false;
+                try { JSON.parse(backup); } catch (e) { return false; }
+                try { localStorage.setItem(STORAGE_KEY, backup); } catch (e) {
+                    console.warn('[archive] 备份回写 localStorage 失败：', e);
+                    return false;
+                }
+                state.recovered = true;
+                return true;
+            }).catch(() => false).then(r => {
+                // 就算没恢复成功也要放行，否则整个 App 的保存会被永久冻结
+                if (!state.recovered) state.blockWrites = false;
+                return r;
+            });
+
+            // 极端兜底：IndexedDB 被 block（如无痕模式弹权限）时 4 秒后强行放行
+            setTimeout(() => { if (!state.recovered) state.blockWrites = false; }, 4000);
+
+            return state;
+        })();
+
+        // ============================================================
+        //  多标签页互写保护
+        //  ------------------------------------------------------------
+        //  同时开两个页面时，旧标签页的 saveData 会把新标签页的进度整段覆盖。
+        //  这里只做提示，不自动刷新（玩家可能正在输入）。
+        // ============================================================
+        (function watchOtherTabs() {
+            let lastWarn = 0;
+            window.addEventListener('storage', (e) => {
+                if (e.key !== STORAGE_KEY || !e.newValue) return;
+                if (Date.now() - lastWarn < 8000) return;
+                lastWarn = Date.now();
+                try {
+                    toast('⚠️ 存档已在其他标签页更新，请刷新页面以免覆盖', 4000);
+                } catch (err) { console.warn(err); }
+            });
+        })();
+
+        // iOS 上切换到后台就可能被系统杀掉，写备份要在页面隐藏时立刻落盘
+        document.addEventListener('visibilitychange', () => {
+            if (document.visibilityState === 'hidden') BackupDB.flush();
+        });
+        window.addEventListener('pagehide', () => { BackupDB.flush(); });
+
 
         // ============================================================
         //  违禁词表（玩家侧硬性拦截）
@@ -10236,7 +10463,14 @@
                     _base64Warned = true;
                     console.warn('⚠️ 检测到仍有 base64 图片残留在待保存数据里，请检查是否有新代码直接写了 dataUrl');
                 }
+                // 存档抢救尚未完成时先不落盘，避免用默认数据把备份覆盖掉
+                if (ArchiveGuard.blockWrites) return true;
                 localStorage.setItem(STORAGE_KEY, json);
+
+                // --- 双写：IndexedDB 备份（节流 800ms，页面隐藏时强制 flush）---
+                BackupDB.save(json);
+                // -----------------------------------------------------------------
+
                 return true;
             } catch (e) {
                 console.warn('保存失败：', e);
@@ -11463,10 +11697,171 @@ ${tonePrompt}
             }
         }
 
+        // ============================================================
+        //  手动导出 / 导入存档（终极后路）
+        //  ------------------------------------------------------------
+        //  自动双备份挡不住「换手机 / 换浏览器 / 主动清空网站数据」，
+        //  所以再给玩家一条自己能带走的存档：复制成文本，或直接存成 .json 文件。
+        // ============================================================
+        function readArchiveText() {
+            let raw = null;
+            try { raw = localStorage.getItem(STORAGE_KEY); } catch (e) {}
+            if (!raw) { try { raw = JSON.stringify(data); } catch (e) {} }
+            return raw || '';
+        }
+
+        // 复制：优先 Clipboard API（iOS 需要用户手势，点击事件里调用才生效），失败退回 execCommand
+        function copyText(text) {
+            const legacyCopy = () => {
+                const ta = document.createElement('textarea');
+                ta.value = text;
+                ta.setAttribute('readonly', '');
+                ta.style.cssText = 'position:fixed;top:0;left:0;width:1px;height:1px;opacity:0;';
+                document.body.appendChild(ta);
+                let ok = false;
+                try {
+                    ta.select();
+                    ta.setSelectionRange(0, text.length);
+                    ok = document.execCommand('copy');
+                } catch (e) { ok = false; }
+                ta.remove();
+                return ok;
+            };
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                navigator.clipboard.writeText(text).then(() => {
+                    toast('✅ 已复制到剪贴板，请立刻存到备忘录里', 3000);
+                }).catch(() => {
+                    if (legacyCopy()) toast('✅ 已复制到剪贴板', 3000);
+                    else alert('复制失败，请手动长按文本框全选复制');
+                });
+                return;
+            }
+            if (legacyCopy()) toast('✅ 已复制到剪贴板', 3000);
+            else alert('复制失败，请手动长按文本框全选复制');
+        }
+
+        function exportArchive() {
+            const jsonStr = readArchiveText();
+            if (!jsonStr || jsonStr.length < 20) { alert('没有可导出的数据'); return; }
+
+            const sizeKB = (jsonStr.length / 1024).toFixed(0);
+            showModal(`
+                <div class="modal-title">导出存档</div>
+                <div style="font-size:12.5px;color:rgba(255,255,255,.6);margin-bottom:8px;line-height:1.7;">
+                    当前存档约 <b style="color:#fff;">${sizeKB} KB</b>。请任选一种方式保存：<br>
+                    ① 点「存成文件」下载一个 .json 文件（推荐，最不容易出错）；<br>
+                    ② 点「一键复制」，粘贴到备忘录或微信文件传输助手里。
+                </div>
+                <textarea id="exportDataArea" readonly wrap="soft" style="width:100%;height:180px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#fff;border-radius:8px;padding:8px;font-size:12px;font-family:monospace;-webkit-user-select:text;user-select:text;">${escHtml(jsonStr)}</textarea>
+                <div style="font-size:11.5px;color:#ffb454;margin-top:8px;line-height:1.6;">
+                    重要提示：恢复时把这段内容完整粘贴回「导入存档恢复」即可，不要手动改动任何一个字符。
+                </div>
+                <div class="btn-row" style="margin-top:12px;">
+                    <button class="btn btn-success" id="downloadExportBtn">存成文件</button>
+                    <button class="btn btn-primary" id="copyExportBtn">一键复制</button>
+                    <button class="btn" onclick="closeModal()">关闭</button>
+                </div>
+            `);
+
+            document.getElementById('downloadExportBtn').addEventListener('click', () => {
+                try {
+                    const blob = new Blob([jsonStr], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const d = new Date();
+                    const pad = n => String(n).padStart(2, '0');
+                    const name = 'aiPhone存档_' + d.getFullYear() + pad(d.getMonth() + 1) + pad(d.getDate()) +
+                        '_' + pad(d.getHours()) + pad(d.getMinutes()) + '.json';
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = name;
+                    a.style.display = 'none';
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => { a.remove(); URL.revokeObjectURL(url); }, 1500);
+                    toast('已生成存档文件，请在「下载」里查看', 3000);
+                } catch (e) {
+                    console.warn(e);
+                    alert('下载失败，请改用「一键复制」');
+                }
+            });
+
+            document.getElementById('copyExportBtn').addEventListener('click', () => {
+                const el = document.getElementById('exportDataArea');
+                try {
+                    el.focus();
+                    el.select();
+                    el.setSelectionRange(0, 999999);
+                } catch (e) {}
+                copyText(jsonStr);
+            });
+        }
+
+        function importArchive() {
+            showModal(`
+                <div class="modal-title">导入存档</div>
+                <div style="font-size:12.5px;color:#ff7a7a;margin-bottom:8px;font-weight:bold;">
+                    警告：导入会覆盖当前所有数据，且不可撤销！
+                </div>
+                <div style="font-size:12.5px;color:rgba(255,255,255,.6);margin-bottom:8px;line-height:1.7;">
+                    请粘贴之前导出的存档文本（以 <code style="color:#9fb6ff;">{</code> 开头、<code style="color:#9fb6ff;">}</code> 结尾）：
+                </div>
+                <textarea id="importDataArea" wrap="soft" placeholder="粘贴存档文本…" style="width:100%;height:180px;background:rgba(0,0,0,0.3);border:1px solid rgba(255,255,255,0.1);color:#fff;border-radius:8px;padding:8px;font-size:12px;font-family:monospace;-webkit-user-select:text;user-select:text;"></textarea>
+                <div class="btn-row" style="margin-top:12px;">
+                    <button class="btn btn-primary" id="doImportBtn">确认导入并刷新</button>
+                    <button class="btn" onclick="closeModal()">取消</button>
+                </div>
+            `);
+
+            document.getElementById('doImportBtn').addEventListener('click', () => {
+                const str = (document.getElementById('importDataArea').value || '').trim();
+                if (!str || str.length < 20) { alert('请粘贴有效的存档内容'); return; }
+
+                let parsed = null;
+                try { parsed = JSON.parse(str); } catch (e) { parsed = null; }
+                if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+                    alert('存档格式错误，请确认复制了完整的内容（首尾不能少字符）');
+                    return;
+                }
+                // 认一下是不是本应用的存档，防止把别的 JSON 贴进来把数据洗掉
+                const looksLikeOurs = ['profile', 'personas', 'apis', 'chatData', 'worldBooks', 'memos']
+                    .some(k => Object.prototype.hasOwnProperty.call(parsed, k));
+                if (!looksLikeOurs) {
+                    if (!confirm('这段内容不太像本应用的存档，继续导入可能清空现有数据。仍要继续吗？')) return;
+                }
+
+                if (!confirm('确认覆盖当前所有数据并恢复吗？此操作不可撤销！')) return;
+
+                try {
+                    // 先冻结写盘：否则刷新前的定时器（消息调度、自动保存）会拿内存里的旧 data
+                    // 再 saveData 一次，把刚导入的存档盖回去。
+                    ArchiveGuard.blockWrites = true;
+                    localStorage.setItem(STORAGE_KEY, JSON.stringify(parsed));
+                } catch (e) {
+                    ArchiveGuard.blockWrites = false;
+                    console.warn(e);
+                    alert('写入失败，可能是存档过大或浏览器存储被禁用：\n' + (e && e.message ? e.message : e));
+                    return;
+                }
+                // 万一 reload 没成功，别把整个 App 的保存永久锁死
+                setTimeout(() => { ArchiveGuard.blockWrites = false; }, 5000);
+                // 备份同步覆盖，否则下次启动会被旧备份"抢救"回去。
+                // 先等 IDB 写完再刷新，否则 reload 会打断异步写入。
+                BackupDB.save(localStorage.getItem(STORAGE_KEY) || '');
+                const flushed = Promise.resolve(BackupDB.flush()).catch(() => {});
+                const timeout = new Promise(r => setTimeout(r, 1500));
+                Promise.race([flushed, timeout]).then(() => {
+                    alert('导入成功！页面即将刷新。');
+                    location.reload();
+                });
+            });
+        }
+
         document.addEventListener('DOMContentLoaded', function() {
             document.getElementById('clearMomentsBtn').addEventListener('click', clearMoments);
             document.getElementById('clearChatsBtn').addEventListener('click', clearChats);
             document.getElementById('resetAllDataBtn').addEventListener('click', resetAllData);
+            document.getElementById('exportDataBtn').addEventListener('click', exportArchive);
+            document.getElementById('importDataBtn').addEventListener('click', importArchive);
         });
 
         document.getElementById('clearForumBtn').addEventListener('click', () => {
@@ -30817,6 +31212,33 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         //  再渲染首屏，避免"先渲染出老图、再被洗掉"的闪烁。
         // ============================================================
         (async function boot() {
+            // ============================================================
+            //  存档抢救：localStorage 被 iOS 清空时，从 IndexedDB 备份拉回来
+            //  ------------------------------------------------------------
+            //  必须放在所有渲染 / 迁移之前：此时 data 还是默认数据，
+            //  一旦让默认数据先跑完再恢复，界面和存档就会对不上。
+            // ============================================================
+            let _restored = false;
+            try { _restored = await ArchiveGuard.done; } catch (e) { console.warn('[archive] 恢复检测异常', e); }
+
+            if (_restored) {
+                data = loadData();             // 用刚回写的存档重新覆盖内存数据
+                ArchiveGuard.blockWrites = false;
+                saveData();                    // 立刻把恢复结果双写回去（localStorage + IDB）
+
+                let _reloaded = false;
+                try { _reloaded = sessionStorage.getItem('aiPhoneArchiveRestored') === '1'; } catch (e) {}
+
+                if (!_reloaded) {
+                    try { sessionStorage.setItem('aiPhoneArchiveRestored', '1'); } catch (e) {}
+                    try {
+                        alert('⚠️ 检测到本地存档意外丢失，系统已自动从本地备份中恢复。\n点击「确定」后页面会刷新一次，用于完整载入恢复后的存档。');
+                    } catch (e) {}
+                    location.reload();
+                    // 刻意不 return：万一某些 WebView 拒绝 reload，下面的渲染仍会按恢复后的数据走
+                }
+            }
+
             // 首次升级要把历史 base64 搬进 IndexedDB，可能要一两秒，先盖一层提示，别看着像卡死
             let bootVeil = null;
             try {
@@ -30892,6 +31314,14 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             }
 
             showPage('home');
+
+            // 恢复标记只用于防止 reload 死循环；正常走完一次就清掉，下次真丢了还能再救
+            if (!_restored) {
+                try { sessionStorage.removeItem('aiPhoneArchiveRestored'); } catch (e) {}
+            }
+            // 首屏把备份落一次盘，保证即使立刻被杀进程也有可恢复的副本
+            BackupDB.flush();
+
             console.log('📱 AI 小手机 · v18：群聊（建群 / 群设置 / @ 提醒 / 引用回复）');
             console.log('数据:', data);
 
