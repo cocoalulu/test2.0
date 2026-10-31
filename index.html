@@ -428,6 +428,24 @@
             font-size: 12px;
             color: rgba(255, 255, 255, 0.6);
         }
+        /* API Key 获取提示 */
+        .key-hint {
+            font-size: 11.5px;
+            line-height: 1.6;
+            color: rgba(255, 255, 255, .42);
+            margin-top: 6px;
+        }
+        .key-hint a {
+            color: var(--accent, #7c9cff);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        .key-hint a:hover {
+            text-decoration: underline;
+        }
+        .key-hint a:active {
+            opacity: .7;
+        }
         .setting-item input,
         .setting-item select {
             width: 100%;
@@ -7946,6 +7964,7 @@
 
                             <label>API Key</label>
                             <input id="mmKey" type="password" placeholder="Bearer token" autocomplete="off" />
+                            <div class="key-hint">没有 Key？<a href="https://platform.minimax.cn/console/home" target="_blank" rel="noopener noreferrer">去 MiniMax 获取 →</a></div>
 
                             <div style="display:flex;gap:10px;">
                                 <div style="flex:1;">
@@ -8002,6 +8021,7 @@
                             <div class="desc">上传 10 秒 – 5 分钟的清晰人声（mp3 / m4a / wav，≤20MB），复刻完自动加入卡片。iPhone 上没后缀的录音也能自动识别。</div>
                             <button class="btn btn-sm mt-8" id="vcCloneBtn" type="button" style="width:100%;">🎙 上传音频复刻</button>
                             <input type="file" id="vcCloneFile" accept="audio/*,.mp3,.m4a,.mp4,.wav,.aac,.flac,.ogg,.opus,.amr,.caf,application/octet-stream" style="display:none;" />
+                            <div class="key-hint" style="margin:8px 0 6px;">不确定音频效果？<br><a href="https://solutions.minimaxi.com" target="_blank" rel="noopener noreferrer">去声音调试台-音色管理-音色复制试听看看 →</a></div>
                             <div class="ctx-hint">复刻后会立刻合成一次完成「激活」，否则 get_voice 查不到。</div>
                             <div class="ctx-hint" style="color:#ffb35c;">⚠️ 免费额度通常只够复刻一份，第二份起会照常计费，余额不足会欠费。</div>
                         </div>
@@ -11417,6 +11437,9 @@ ${tonePrompt}
                 <input id="apiUrl" value="${api.url || DEFAULT_API.url}" placeholder="https://api.deepseek.com/chat/completions" />
                 <label>Key</label>
                 <input id="apiKey" value="${api.key || ''}" placeholder="sk-..." type="password" />
+                ${(api.url || DEFAULT_API.url || '').indexOf('deepseek') >= 0
+                    ? '<div class="key-hint">没有 Key？<a href="https://platform.deepseek.com/usage" target="_blank" rel="noopener noreferrer">去 DeepSeek 获取 →</a></div>'
+                    : ''}
                 <div style="display:flex;gap:8px;margin-top:6px;">
                     <button class="btn btn-sm btn-test" id="testConnBtn">🔗 测试连接</button>
                     <div id="testResultArea" style="flex:1;font-size:13px;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,0.05);"></div>
@@ -11531,6 +11554,7 @@ ${tonePrompt}
                 <input id="newApiUrl" value="${DEFAULT_API.url}" placeholder="https://api.deepseek.com/chat/completions" />
                 <label>Key</label>
                 <input id="newApiKey" placeholder="sk-..." type="password" />
+                <div class="key-hint">没有 Key？<a href="https://platform.deepseek.com/usage" target="_blank" rel="noopener noreferrer">去 DeepSeek 获取 →</a></div>
                 <div style="display:flex;gap:8px;margin-top:6px;">
                     <button class="btn btn-sm btn-test" id="testConnNewBtn">🔗 测试连接</button>
                     <div id="testResultNew" style="flex:1;font-size:13px;padding:4px 8px;border-radius:8px;background:rgba(255,255,255,0.05);"></div>
@@ -20168,24 +20192,53 @@ ${tonePrompt}
                 .replace(/^[ \t]+|[ \t]+$/gm, '');
         }
 
-        // 长句按标点拆成"能一条发出去"的短句；没有标点的超长句硬切
+        // 长句智能切分：结合标点符号和长度，让对话像真人打字
         const SPLIT_KEEP_RE = /[^，。！？；…~～!?;、]+[，。！？；…~～!?;、]*/g;
         function splitLongLine(line, maxLen) {
             const s = String(line || '').trim();
             if (!s) return [];
-            if (s.length <= maxLen) return [s];
-            const parts = s.match(SPLIT_KEEP_RE) || [s];
+
+            // 先按标点切分成小块（保留标点）
+            // 前导标点（如开头的“……”）单独摘出来，否则会被 SPLIT_KEEP_RE 吞掉，犹豫语气就丢了
+            const leadMatch = s.match(/^[，。！？；…~～!?;、]+/);
+            const lead = leadMatch ? leadMatch[0] : '';
+            const body = lead ? s.slice(lead.length) : s;
+            const parts = body.match(SPLIT_KEEP_RE) || (body ? [body] : []);
+            if (lead) {
+                if (parts.length) parts[0] = lead + parts[0];
+                else parts.push(lead);
+            }
             const out = [];
             let buf = '';
-            parts.forEach(p => {
-                if (buf && (buf + p).length > maxLen) { out.push(buf.trim()); buf = p; }
-                else buf += p;
-            });
+
+            for (let i = 0; i < parts.length; i++) {
+                const p = parts[i];
+                buf += p;
+
+                // 判断结尾的标点类型
+                const endsWithStrong = /[。！？!?～~…]$/.test(p); // 句号、问号、叹号、省略号
+                const endsWithWeak = /[，,；;：:]$/.test(p); // 逗号、分号、冒号
+
+                // 智能切断触发条件：
+                // 1. 长度达到或超过 maxLen (26)
+                // 2. 遇到强断句符，且累积长度 >= 4 (避免把“嗯。”拆成独立气泡)
+                // 3. 遇到弱断句符，且累积长度 >= 12 (句子长了遇到逗号就断)
+                // 4. 已经是最后一块
+                if (buf.length >= maxLen ||
+                    (endsWithStrong && buf.length >= 4) ||
+                    (endsWithWeak && buf.length >= 12) ||
+                    i === parts.length - 1) {
+                    out.push(buf.trim());
+                    buf = '';
+                }
+            }
+
             if (buf.trim()) out.push(buf.trim());
-            // 兜底：整段没有标点时按 maxLen 硬切，避免一条几百字
+
+            // 兜底硬切：如果某一小块还是超长（比如没有任何标点）
             const final = [];
             out.forEach(x => {
-                if (x.length <= maxLen * 2) { final.push(x); return; }
+                if (x.length <= maxLen * 1.5) { final.push(x); return; }
                 for (let i = 0; i < x.length; i += maxLen) final.push(x.slice(i, i + maxLen));
             });
             return final.filter(Boolean);
@@ -20248,13 +20301,11 @@ ${tonePrompt}
                     // 理论兜底：parsed.text 非空时必能切出至少一行
                     addMessage(personaId, 'assistant', 'text', parsed.text.trim());
                 } else {
-                    // 一次最多连发 4 条，防刷屏；超出的并进最后一条，宁可长也不丢内容
-                    const MAX_BUBBLES = 4;
+                    // 一次最多连发 15 条，防过度刷屏；超出的直接截断，绝不拼成一条
+                    const MAX_BUBBLES = 15;
                     let out = lines;
                     if (lines.length > MAX_BUBBLES) {
-                        out = lines.slice(0, MAX_BUBBLES - 1);
-                        // 用换行而不是空格拼接：气泡是 pre-wrap，换行还能读，空格又糊成一坨
-                        out.push(lines.slice(MAX_BUBBLES - 1).join('\n'));
+                        out = lines.slice(0, MAX_BUBBLES);
                     }
                     out.forEach(line => {
                         addMessage(personaId, 'assistant', 'text', line);
@@ -27625,12 +27676,22 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 // 群聊不开放红包/转账：模型万一吐了标记，直接摘掉，别让原始标记出现在气泡里
                 .replace(/\[\s*(?:hongbao|transfer)\s*[:：][^\]\n]*\]/g, '')
                 .trim();
-            // [FIX] 同 applyReply：群里模型也会用空格代替换行，先还原再拆
-            const lines = normalizeSpaceBreaks(text).split('\n').map(l => l.trim()).filter(Boolean).slice(0, 3);
+            // 群聊同样使用智能切分
+            const lines = [];
+            normalizeSpaceBreaks(text).split('\n').map(l => l.trim()).filter(l => l.length > 0)
+                .forEach(l => splitLongLine(l, 26).forEach(x => lines.push(x)));
+
             if (!lines.length) return;
 
+            // 群里最多连发 10 条
+            const MAX_GROUP_BUBBLES = 10;
+            let outLines = lines;
+            if (lines.length > MAX_GROUP_BUBBLES) {
+                outLines = lines.slice(0, MAX_GROUP_BUBBLES);
+            }
+
             let quote = parsed.quote;
-            lines.forEach(line => {
+            outLines.forEach(line => {
                 addGroupMessage(gid, personaId, 'text', line, quote ? { quoted: quote } : undefined);
                 quote = null;   // 只在第一条带引用
             });
