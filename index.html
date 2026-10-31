@@ -8450,6 +8450,7 @@
 【绝对禁止动作描写】你在用手机打字，不是在写小说。绝对禁止出现“（顿了顿）”“（轻笑）”“（沉默）”“*叹气*”这种括号/星号里的动作、神态、心理旁白。直接打字！
 ③模拟现实聊天语气，贴合现实真人的心理活动和回复方式，适当的断句。你是一个真人，有自己的生活和自己的情绪！不是陪聊！有自己想要分享的东西！！一句话超过20个字，必须用换行拆成两三条短句发出去，别糊成一大段。严禁用空格代替换行来分隔短句，必须直接使用换行符（Enter）进行断句！
 ④禁止文绉绉的用语，禁止长篇大论，可以参杂碎碎念
+【严禁复读】同一件事、同一个细节、同一种抱怨，整场聊天只准说一次，说过了就翻篇。人设里最显眼的那条（工作/上下班、做题/考试、一个人住这类）只是你的背景，不是你唯一的话题：连续两轮围着它转，就是复读。这一轮想分享，就换一件新的、具体的小事；实在没得说，就只接对方的话、追问一句，"不主动开话题"也算正常。
 【禁止爹味说教】不要像家长或客服一样整天叮嘱对方“早点睡”“注意身体”“明天还得靠你”“记得吃饭”。过度关心会显得很假、很烦人。你只需要像同龄朋友一样分享自己的生活或情绪即可。
 ##【强制执行检查表】每次回复前必须过
 □这条回复里有没有“我自己的输出”?
@@ -8602,6 +8603,12 @@
         // 因为上面的 FORMAT_MARK 在老存档里早就存在，改那份文案对老用户不生效。
         const CHAT_RULES_SPACE_MARK = '严禁用空格代替换行';
         const CHAT_RULES_SPACE_PATCH = '\n【严禁空格断句】严禁用空格代替换行来分隔短句，必须直接使用换行符（Enter）进行断句：每敲一次回车才算一条新消息，一条消息里只放一句话。';
+        // v29 · 严禁复读：老存档的「聊天细则」同样不会自动更新，按标记追加一次。
+        // 人设里最显眼的标签（王全的"下班"、付彬言的"做题"）就是从这里开始被反复消费的。
+        const CHAT_RULES_REPEAT_MARK = '【严禁复读】';
+        const CHAT_RULES_REPEAT_PATCH = '\n【严禁复读】同一件事、同一个细节、同一种抱怨，整场聊天只准说一次，说过了就翻篇。' +
+            '人设里最显眼的那条（工作/上下班、做题/考试、一个人住这类）只是你的背景，不是你唯一的话题：连续两轮围着它转，就是复读。' +
+            '这一轮想分享，就换一件新的、具体的小事；实在没得说，就只接对方的话、追问一句，"不主动开话题"也算正常。';
 
         // 老存档的世界书是 v21 版文案，不会自动更新；这里只做"追加缺失段落"，
         // 不覆盖用户自己改过的内容（已有标记就跳过）。
@@ -8633,6 +8640,10 @@
                 }
                 if (isChatRules && String(w.content || '').indexOf(CHAT_RULES_SPACE_MARK) === -1) {
                     w.content = String(w.content || '') + CHAT_RULES_SPACE_PATCH;
+                    touched = true;
+                }
+                if (isChatRules && String(w.content || '').indexOf(CHAT_RULES_REPEAT_MARK) === -1) {
+                    w.content = String(w.content || '') + CHAT_RULES_REPEAT_PATCH;
                     touched = true;
                 }
             });
@@ -19527,7 +19538,10 @@ ${tonePrompt}
             }
 
             return '【事实清单 · 你的硬设定，任何时候都不能忘、不能改、不能编】\n' +
-                facts.map((f, i) => (i + 1) + '. ' + f).join('\n');
+                facts.map((f, i) => (i + 1) + '. ' + f).join('\n') +
+                // v29 · 锚点本身就是"下班/做题"这些标签最集中的地方，放在高注意力区却不加限制，
+                // 模型会把清单当成话题清单，一轮轮地复述。补一句"只当背景"。
+                '\n以上是背景，不是话题清单：同一条设定整场聊天最多当一次话题，讲过了就换别的；不要每轮都从这几条里翻东西来说。';
         }
 
         // 静态人设：事实清单 + 人设 + 世界书 + 用户设定 + 输出风格 + 固定标记规则 + 情感锁。
@@ -19683,52 +19697,239 @@ ${tonePrompt}
             return turns.slice(-Math.max(1, maxTurns));
         }
 
-        // 返回 '' 表示本轮不需要干预
-        function buildAntiRepeatHint(personaId) {
-            // 玩家自己就在聊这些：顺着说很正常，别硬禁
+        // ------------------------------------------------------------
+        //  v29 · 话题级防复读
+        //  ------------------------------------------------------------
+        //  旧版只拦"吃/睡"两族词，可模型真正复读的是人设里最显眼的那条标签：
+        //  王全＝下班/前台/空房子，付彬言＝做题/奥数/竞赛。标签词不在禁词表里，
+        //  于是每轮都被当成"我自己的事"再讲一遍。
+        //  这里补三层：
+        //    ① 角色标签词（人工维护，精度高）：连续出现就硬禁；
+        //    ② 通用重复短语（自动统计）：最近几轮反复出现的二字词，覆盖自建角色；
+        //    ③ 换台方向池：只说"别说了"模型没东西可讲，还会绕回去，必须给具体去处。
+        const PERSONA_TOPIC_TAGS = {
+            wq: [
+                { id: 'commute', label: '上下班·前台·公司', re: /下班|上班|前台|公司|打卡|加班|通勤|工位|坐班/ },
+                { id: 'emptyhome', label: '空房子·一个人住', re: /空荡荡|空房子|屋里(没人|很空)|一个人(住|待|在)|回(到)?家(也|就)?(没人|很空|空)/ }
+            ],
+            fby: [
+                { id: 'study', label: '做题·奥数·竞赛·考试', re: /做题|刷题|试卷|试题|题目|奥数|竞赛|考试|月考|成绩|排名|作业|解题/ },
+                { id: 'union', label: '学生会·班务', re: /学生会|副主席|值日|班务|开会/ }
+            ],
+            wlj: [
+                { id: 'draw', label: '画画·oc·盲盒', re: /画画|画了|画完|在画|oc|咴|盲盒|小马宝莉/ }
+            ]
+        };
+
+        // 换台方向池：只写"人设允许、但不常被模型想起"的生活侧面。
+        // 注意：付彬言的心脏病/篮球是【秘密】，永远不要放进池子里当建议话题。
+        const PERSONA_TOPIC_POOL = {
+            wq: [
+                '楼下便利店里那只总趴在收银台边睡觉的猫',
+                '耳机里循环了一整天的那首歌',
+                '做失败的一锅甜品（别报菜名，只说失败在哪）',
+                '窗台上那盆快被养死的绿植',
+                '小区楼下突然开始的装修声',
+                '手机里存了很久、一直没点开的那部电影'
+            ],
+            fby: [
+                '教室里刚发生的、有点好笑的一件小事',
+                '母亲今天做的一道菜（只说味道，别说教）',
+                '琴房里听到的一段旋律',
+                '被同学缠着讲题时的一句吐槽',
+                '便利店新出的一款甜食',
+                '走廊上撞见的一幕'
+            ],
+            wlj: [
+                '新买的盲盒拆出来的东西',
+                '画到一半卡住的那张画',
+                '弟弟又干了什么蠢事',
+                '练琴时突然走神想到的事'
+            ]
+        };
+
+        // 二字词停用表：这些词反复出现是口语习惯，不算"在聊同一个话题"。
+        // 误判会让模型被无谓禁话题，反而更容易说车轱辘话。
+        const REPEAT_STOP_BIGRAMS = new Set([
+            '今天', '明天', '昨天', '现在', '刚刚', '刚才', '其实', '就是', '然后', '所以', '但是', '不过', '而且',
+            '我们', '你们', '他们', '她们', '自己', '这个', '那个', '什么', '怎么', '这样', '那样', '一下', '一点',
+            '真的', '有点', '还是', '已经', '可能', '觉得', '知道', '时候', '东西', '事情', '感觉', '好像', '不是',
+            '没有', '可以', '过来', '起来', '出来', '回来', '上去', '下去', '的话', '是吧', '对啊', '哈哈', '呵呵',
+            '也是', '都是', '我在', '你在', '他是', '她说', '说了', '一个', '两个', '这么', '那么', '只是', '要是',
+            '如果', '因为', '虽然', '当然', '反正', '居然', '竟然', '直接', '突然', '一直', '总是', '非常', '特别',
+            '比较', '应该', '需要', '喜欢', '不会', '不能', '不要', '不用', '记得', '晚安', '早点', '睡吧', '好的',
+            '好吧', '行吧', '嗯嗯', '哦哦', '在吗', '在的', '人呢', '你看', '你说', '我跟', '跟你', '和你'
+        ]);
+        // 含虚词的二字组一律跳过（"班了""天都"这类切词碎片）
+        const REPEAT_STOP_CHARS = /[的了是在我你他她它们不没也都就还很太么呢吧啊呀哦嘛这那个上下来去有和与又要会能可对说着过把被给让从到再才更最]/;
+
+        function personaTopicKey(personaId) {
+            const p = (data.personas || []).find(x => x && x.id === personaId);
+            return p ? (p.presetKey || p.fixedKey || '') : '';
+        }
+
+        // 最后一条玩家发言：玩家自己就在聊这个话题时，顺着聊是正常的，不能硬禁
+        function lastUserTextContent(personaId) {
             const all = data.chats[personaId] || [];
             for (let i = all.length - 1; i >= 0; i--) {
                 const m = all[i];
                 if (!m || m.recalled) continue;
                 if (m.sender !== 'user') continue;
-                if (m.type !== 'text' && m.type !== 'voice') break;
-                const uc = String(m.content || '');
-                if (FOOD_WORD_RE.test(uc) || SLEEP_WORD_RE.test(uc)) return '';
-                break;
-            }
-
-            // 日级累积：当天已经催过 2 次以上，无论窗口里有没有，都强制禁止。
-            // （玩家自己说"我要睡了"时，上面那段已经放行，这里不会误伤一次性的道晚安）
-            const today = todayKey();
-            const nag = (data.sleepNagState || {})[personaId];
-            if (nag && nag.date === today && (nag.count || 0) >= 2) {
-                return '【强制禁令】你今天已经两次提到"睡觉/休息"相关话题了，对方显然不买账。' +
-                    '这一轮绝对禁止再提睡觉、晚安、休息、熬夜——一个字都不要沾。' +
-                    '直接顺着对方的话接下去，或者聊一件你自己此刻正在做的具体小事。';
-            }
-
-            // 窗口 3 → 5：压住"4 轮前刚催过、窗口一过立刻重犯"的空档
-            const turns = recentAssistantTurns(personaId, 5);
-            if (!turns.length) return '';
-
-            const foodTurns = turns.filter(t => FOOD_WORD_RE.test(t.text)).length;
-            const sleepTurns = turns.filter(t => SLEEP_ASK_RE.test(t.text)).length;
-
-            const lastIsMealAsk = MEAL_ASK_RE.test(turns[turns.length - 1].text);
-            const lastIsSleepAsk = SLEEP_ASK_RE.test(turns[turns.length - 1].text);
-
-            // 连续说教（吃饭 / 睡觉）→ 顶到 prompt 最后强行换台
-            if (lastIsMealAsk || lastIsSleepAsk || foodTurns >= 2 || sleepTurns >= 2) {
-                return '【最高优先级·禁止复读】你最近几轮的回复里，一直在重复问"吃了吗""早点睡""注意身体""明天还要…"这类爹味说教和车轱辘话。' +
-                    '对方已经觉得你像复读机或者老妈子了！' +
-                    '这一轮彻底换台：不准再提吃饭和睡觉，不准再说教，不准叮嘱对方注意身体。' +
-                    '直接顺着对方说的话往下聊，或者分享一件你自己现在正在做的、具体的生活小事' +
-                    '（比如刚洗完澡、在听某首歌、被窗外的声音吵到），不要当打卡机器人。';
-            }
-            if (foodTurns === 1 || sleepTurns === 1) {
-                return '（提醒：你上一轮已经提过吃饭或睡觉的话题，这一轮别再绕回去，接着聊点别的具体事情。）';
+                if (m.type !== 'text' && m.type !== 'voice') return '';
+                return String(m.content || '');
             }
             return '';
+        }
+
+        // 角色标签命中统计：最近 5 轮里提过几次、末尾是否连着提
+        function detectPersonaTagHits(personaId) {
+            const tags = PERSONA_TOPIC_TAGS[personaTopicKey(personaId)] || [];
+            if (!tags.length) return [];
+            const turns = recentAssistantTurns(personaId, 5);
+            if (!turns.length) return [];
+            const userText = lastUserTextContent(personaId);
+            const out = [];
+            tags.forEach(tag => {
+                const flags = turns.map(t => tag.re.test(t.text));
+                const hits = flags.filter(Boolean).length;
+                if (!hits) return;
+                let streak = 0;
+                for (let i = flags.length - 1; i >= 0; i--) {
+                    if (!flags[i]) break;
+                    streak++;
+                }
+                out.push({
+                    id: tag.id,
+                    label: tag.label,
+                    re: tag.re,
+                    hits: hits,
+                    streak: streak,
+                    userOnTopic: !!userText && tag.re.test(userText)
+                });
+            });
+            return out;
+        }
+
+        // 通用重复短语：最近 5 轮里至少 3 轮出现、且不是口语停用词的二字词。
+        // 没有标签表的自建角色，靠这一层兜。
+        function detectRepeatedPhrases(personaId) {
+            const turns = recentAssistantTurns(personaId, 5).map(t => String(t.text || ''));
+            if (turns.length < 3) return [];
+            const persona = (data.personas || []).find(x => x && x.id === personaId) || {};
+            const nameBlob = String(persona.name || '') + String(persona.nickname || '');
+            const stat = new Map();
+            turns.forEach(txt => {
+                const segs = txt.replace(/[^\u4e00-\u9fa5]+/g, ' ').split(/\s+/).filter(Boolean);
+                const seen = new Set();
+                segs.forEach(seg => {
+                    for (let i = 0; i + 2 <= seg.length; i++) {
+                        const bg = seg.slice(i, i + 2);
+                        if (REPEAT_STOP_BIGRAMS.has(bg)) continue;
+                        if (REPEAT_STOP_CHARS.test(bg)) continue;
+                        if (nameBlob.indexOf(bg) !== -1) continue;
+                        const rec = stat.get(bg) || { turns: 0, total: 0 };
+                        rec.total++;
+                        if (!seen.has(bg)) { seen.add(bg); rec.turns++; }
+                        stat.set(bg, rec);
+                    }
+                });
+            });
+            const list = [];
+            stat.forEach((rec, bg) => {
+                if (rec.turns >= 3 && rec.total >= 3) list.push({ phrase: bg, turns: rec.turns, total: rec.total });
+            });
+            list.sort((a, b) => b.turns - a.turns || b.total - a.total);
+            return list.slice(0, 3);
+        }
+
+        // 换台建议：每轮轮换着给，别让"换个话题"的建议本身又被复读
+        function pickFreshDirections(personaId, count) {
+            const pool = (PERSONA_TOPIC_POOL[personaTopicKey(personaId)] || []).slice();
+            if (!pool.length) {
+                pool.push('你此刻正在做的一件具体小事（不要是最近说过的）');
+                pool.push('一个你最近真的好奇、想听对方怎么说的问题');
+            }
+            const seed = Math.floor((data.chats[personaId] || []).length / 3) + new Date().getHours();
+            const out = [];
+            for (let i = 0; i < count && i < pool.length; i++) {
+                out.push(pool[(seed + i * 2) % pool.length]);
+            }
+            return out;
+        }
+
+        // 返回 '' 表示本轮不需要干预
+        function buildAntiRepeatHint(personaId) {
+            const turns = recentAssistantTurns(personaId, 5);
+            const userText = lastUserTextContent(personaId);
+            const banned = [];
+            const notes = [];
+            const addBan = (label) => {
+                if (label && !banned.some(b => b.label === label)) banned.push({ label: label });
+            };
+
+            // ① 催睡：日级累积（当天已被说教 ≥2 次）→ 硬禁。玩家自己在聊睡觉时放行。
+            const today = todayKey();
+            const nag = (data.sleepNagState || {})[personaId];
+            const nagHard = !!(nag && nag.date === today && (nag.count || 0) >= 2);
+            const userOnSleep = !!userText && SLEEP_WORD_RE.test(userText);
+            const userOnFood = !!userText && FOOD_WORD_RE.test(userText);
+            if (nagHard && !userOnSleep) addBan('睡觉·晚安·休息');
+
+            // ② 吃饭 / 催睡：窗口判定（沿用旧逻辑，只把"玩家在聊就整体放行"收窄到本族）
+            if (turns.length) {
+                const lastTurnText = turns[turns.length - 1].text;
+                const foodTurns = turns.filter(t => FOOD_WORD_RE.test(t.text)).length;
+                const sleepTurns = turns.filter(t => SLEEP_ASK_RE.test(t.text)).length;
+                if (!userOnFood && (MEAL_ASK_RE.test(lastTurnText) || foodTurns >= 2)) addBan('吃饭·外卖·三餐');
+                if (!userOnSleep && (SLEEP_ASK_RE.test(lastTurnText) || sleepTurns >= 2)) addBan('睡觉·熬夜·注意身体');
+                if (!banned.length && !userOnFood && !userOnSleep && (foodTurns === 1 || sleepTurns === 1)) {
+                    notes.push('你上一轮已经提过吃饭或睡觉');
+                }
+            }
+
+            // ③ 角色标签话题（新增）：连着 2 轮，或 5 轮里 3 轮都在讲 → 硬禁
+            detectPersonaTagHits(personaId).forEach(h => {
+                if (h.userOnTopic) return;
+                if (h.streak >= 2 || h.hits >= 3) addBan(h.label);
+                else if (h.hits === 2) notes.push('你已经两次提到' + h.label.split('·')[0]);
+            });
+
+            // ④ 通用重复短语：4 轮以上 → 硬禁；3 轮 → 提醒
+            detectRepeatedPhrases(personaId).forEach(p => {
+                if (p.turns >= 4) addBan('反复出现的「' + p.phrase + '」');
+                else notes.push('你最近几轮反复出现「' + p.phrase + '」');
+            });
+
+            if (banned.length) {
+                const dirs = pickFreshDirections(personaId, 2);
+                return '【本轮强禁令 · 换台】你最近几轮一直在重复同一件事：' + banned.map(b => b.label).join('、') + '。' +
+                    '对方已经觉得你在复读了。' +
+                    '这一轮一个字都不准再碰这些内容，也不准换个说法讲同一件事（"今天又坐了一整天""刚打卡出来"这类都算）。' +
+                    '换一个完全不同的方向，从下面只挑一条，或者干脆只接对方的话、追问一句：\n' +
+                    dirs.map(d => '· ' + d).join('\n') +
+                    '\n不要解释、不要提这条规则、不要道歉，直接打字。';
+            }
+            if (notes.length) {
+                return '（提醒：' + notes.join('；') + '。这一轮换个别的具体的事说，别绕回去。）';
+            }
+            return '';
+        }
+
+        // 生成后兜底：提示词没拦住时，重写一次把这一轮拉回来。
+        // 只在"硬命中"时才触发，避免每轮都多花一次 API 调用。
+        function buildTopicRetryDirective(personaId, replyText) {
+            const txt = String(replyText || '');
+            if (!txt) return null;
+            const tags = detectPersonaTagHits(personaId).filter(h => !h.userOnTopic && (h.streak >= 2 || h.hits >= 3));
+            if (!tags.length) return null;
+            const hit = tags.filter(h => h.re.test(txt));
+            if (!hit.length) return null;
+            const dirs = pickFreshDirections(personaId, 2);
+            return '【重写 · 刚才那版作废】你上一版又写了「' + hit.map(h => h.label).join('、') + '」那一套，' +
+                '这正是对方嫌你复读的原因。把刚才那版整个丢掉，重写一条 10-40 字的消息：' +
+                '不许出现这些内容，也不许换说法讲同一件事。只从下面挑一条，或者只回应对方刚才说的话：\n' +
+                dirs.map(d => '· ' + d).join('\n') +
+                '\n只输出新消息，不要解释。';
         }
 
         // 动态尾部：每轮可能变化的内容，全部拼到"最新一条 user 消息"的末尾
@@ -20450,6 +20651,26 @@ ${tonePrompt}
                         );
                     } else {
                         throw e;
+                    }
+                }
+                // v29 · 生成后兜底：提示词没拦住"下班/做题"这类标签复读时，强制重写一次。
+                // 只在硬命中（连着 2 轮 / 5 轮里 3 轮）时触发，平时不额外花调用。
+                const topicRetry = buildTopicRetryDirective(personaId, reply);
+                if (topicRetry) {
+                    try {
+                        const retryTail = buildChatDynamicTail(personaId, {
+                            extraList: extraAll.concat([topicRetry]),
+                            moneyScene: opts.moneyScene || ''
+                        });
+                        const retryReply = await callChatRomance({
+                            system: system,
+                            messages: attachDynamicTail(buildChatHistory(personaId, getContextMemory(), false), retryTail),
+                            api: api,
+                            vision: false
+                        }, opts.jealousyFallback || undefined);
+                        if (retryReply && String(retryReply).trim()) reply = retryReply;
+                    } catch (e2) {
+                        console.warn('复读重写失败，保留原回复：', e2 && e2.message);
                     }
                 }
                 if (typing) typing.remove();
@@ -22248,10 +22469,34 @@ ${tonePrompt}
             const history = attachDynamicTail(buildChatHistory(personaId, 16, false), tail);
 
             try {
-                const reply = await callChatRomance({ system, messages: history, api });
+                let reply = await callChatRomance({ system, messages: history, api });
                 if (!reply) return false;
-                const content = String(reply).trim().replace(/^["“」『]|["”「』]$/g, '');
+                let content = String(reply).trim().replace(/^["“」『]|["”「』]$/g, '');
                 if (!content) return false;
+
+                // v29 · 主动消息是复读重灾区：没有用户发言做参照，模型最容易把
+                // "下班/做题"标签再刷一遍。生成后仍硬命中 → 重写一次；再命中就这一轮不发。
+                // 宁可少发一条，也别把"又来了"推给用户。
+                if (buildTopicRetryDirective(personaId, content)) {
+                    let retried = '';
+                    try {
+                        const retryTail = buildChatDynamicTail(personaId, { extra: proactiveExtra + '\n' + buildTopicRetryDirective(personaId, content) });
+                        const retryMsgs = attachDynamicTail(buildChatHistory(personaId, 16, false), retryTail);
+                        retried = String(await callChatRomance({ system, messages: retryMsgs, api }) || '')
+                            .trim().replace(/^["“」『]|["”「』]$/g, '');
+                    } catch (e) {
+                        retried = '';
+                    }
+                    if (!retried) {
+                        console.warn('[proactive] 复读重写失败，本轮跳过');
+                        return false;
+                    }
+                    content = retried;
+                    if (buildTopicRetryDirective(personaId, content)) {
+                        console.warn('[proactive] 重写后仍在复读，本轮跳过');
+                        return false;
+                    }
+                }
 
                 // 主动消息也会一次吐好几行：和聊天回复走同一套拆行，别整段塞进一个气泡
                 const bubbles = splitReplyLines(content);
