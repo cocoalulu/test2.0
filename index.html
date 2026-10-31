@@ -4108,6 +4108,15 @@
             50%      { height: 14px; }
         }
         .wx-vdur { font-size: 12.5px; opacity: .9; }
+        /* AI 主动发的语音没播过 → 右侧红点（和微信一致），播一次就没了 */
+        .wx-vdot {
+            width: 8px; height: 8px;
+            border-radius: 50%;
+            background: #fa5151;
+            flex: 0 0 auto;
+            margin-left: 2px;
+        }
+        .wx-msg-row.me .wx-vdot { margin-left: 0; margin-right: 2px; }
         .wx-voice-trans {
             font-size: 12.5px;
             line-height: 1.4;
@@ -6033,6 +6042,16 @@
         .wx-call-hold.canceling {
             background: rgba(224, 68, 68, .9);
             border-color: transparent;
+        }
+        /* 闭麦后：长按录音没有意义，按钮改成「点一下打字」 */
+        .wx-call-hold.typing {
+            width: auto;
+            min-width: 168px;
+            padding: 0 22px;
+            font-size: 14px;
+            background: rgba(255, 255, 255, .2);
+            border-color: rgba(255, 255, 255, .36);
+            touch-action: manipulation;
         }
         .wx-call-overlay.calling .wx-call-holdwrap,
         .wx-call-overlay.ended .wx-call-holdwrap { visibility: hidden; }
@@ -8177,6 +8196,14 @@
                                 <span class="v" id="gVolVal">1.0</span>
                             </div>
                         </div>
+
+                        <!-- 聊天里的 AI 语音消息（第四条通道） -->
+                        <div class="setting-item" style="margin-top:14px;">
+                            <div class="label">聊天语音消息</div>
+                            <div class="desc">角色在单聊里有概率把某句话「用语音说出来」，表现为一条独立语音气泡（带波形、时长、转写）。只有绑了音色卡的角色才有声音。</div>
+                            <div class="ms-row"><span>允许角色发语音</span><button class="ms-switch" id="vcProactiveVoice" type="button"></button></div>
+                            <div class="ctx-hint">关掉后：聊天里不再出现语音，也不会再向模型注入语音规则（省 token）。群聊、通话不受影响。</div>
+                        </div>
                     </div>
                 </div>
             </div>
@@ -9320,6 +9347,7 @@
                 // v25 · MiniMax 语音：端口只留一份；卡片 = 云端 voice_id + 绑定关系
                 voiceSettings: {
                     enabled: true,
+                    proactiveVoice: true,         // 聊天里允许角色发语音消息（单聊）
                     mmKey: '',
                     mmRegion: 'cn',               // cn | io
                     mmModel: 'speech-02-turbo',
@@ -9960,6 +9988,7 @@
                     if (!d.voiceSettings || typeof d.voiceSettings !== 'object') d.voiceSettings = {};
                     d.voiceSettings = Object.assign({
                         enabled: true,
+                        proactiveVoice: true,
                         mmKey: '',
                         mmRegion: 'cn',
                         mmModel: 'speech-02-turbo',
@@ -13616,6 +13645,16 @@ ${tonePrompt}
             if (cal) extraList.push(buildCalendarPrompt(cal));
             if (wxExtra) extraList.push(wxExtra);
 
+            // 玩家明确要语音（"发条语音听听"）：这一轮打强请求标记
+            // 没绑卡/没开服务就不打 —— 打了也发不出来，只会让模型白写一条 [voice]
+            const wantsVoice = detectVoiceRequest(text) &&
+                !!resolveVoiceCard(personaId) &&
+                mmSettings().enabled && !!mmSettings().mmKey &&
+                mmSettings().proactiveVoice !== false;
+            if (wantsVoice) {
+                extraList.push('对方这轮明确要你发一条语音：用 [voice] 标记说一句完整的人话（40 字内），不要只用文字敷衍过去。');
+            }
+
             // 红包/转账：先把这一轮的"钱场景"定下来（索要是否答应，在这里摇一次骰子）
             prepareMoneyRound(personaId, text);
             const moneyHint = moneySolicitHint(personaId);
@@ -13625,6 +13664,7 @@ ${tonePrompt}
             renderWechatList();
 
             const replyOpts = {};
+            if (wantsVoice) replyOpts.forceVoice = true;
             if (j) {
                 replyOpts.jealousyPrompt = buildJealousyPrompt(j);
                 replyOpts.jealousyFallback = JEALOUSY_FALLBACK[j.level] || JEALOUSY_FALLBACK[1];
@@ -16875,7 +16915,7 @@ ${tonePrompt}
             if (m.recalled) return m.sender === 'user' ? '你撤回了一条消息' : '对方撤回了一条消息';
             if (m.type === 'image') return '[图片]';
             if (m.type === 'emoji') return '[表情包]';
-            if (m.type === 'voice') return m.content || '[语音]';
+            if (m.type === 'voice') return m.content ? '🎤 ' + m.content : '[语音]';
             if (m.type === 'music') return '[音乐] ' + (parseJsonSafe(m.content).name || '');
             if (m.type === 'netEase') return '[网易云] ' + (parseJsonSafe(m.content).name || '');
             if (m.type === 'takeout') return '[外卖] ' + (parseJsonSafe(m.content).shopName || '');
@@ -17128,7 +17168,8 @@ ${tonePrompt}
             { id: 'happy', label: '开心' }, { id: 'sad', label: '难过' }, { id: 'angry', label: '生气' },
             { id: 'shy', label: '害羞' }, { id: 'confused', label: '疑惑' }, { id: 'speechless', label: '无语' },
             { id: 'love', label: '喜欢' }, { id: 'cheer', label: '加油' }, { id: 'night', label: '深夜' },
-            { id: 'work', label: '工作' }, { id: 'food', label: '吃喝' }
+            { id: 'work', label: '工作' }, { id: 'food', label: '吃喝' },
+            { id: 'cute', label: '卖萌' }, { id: 'meme', label: '抽象' }
         ];
 
         function createStickerFromFile(file, opts) {
@@ -21022,13 +21063,37 @@ ${tonePrompt}
                     '你手边有一个表情包库（序号. 名称 [标签]）：\n' + stickerLines + '\n' +
                     '【表情包使用规则，必须严格遵守】\n' +
                     '- 表情包不是每轮都发。绝大多数回复不带表情包。\n' +
-                    '- 只有当情绪强烈（开心、无语、撒娇、心疼、生气），且表情包标签与当前情绪匹配时才发。\n' +
+                    '- 只有当情绪强烈（开心、无语、撒娇、卖萌、心疼、生气、想玩抽象）且表情包标签与当前情绪匹配时才发。\n' +
                     '- 道歉、安慰、争吵、坏消息、严肃话题时绝对不发。\n' +
                     '- 连续两条消息不要都带表情包；最近 4 轮你发过表情包，这轮就不发。\n' +
                     '- 一条消息最多 1 个表情包。\n' +
                     '- 发的时候在回复最后单独一行写 [sticker:序号]。\n' +
                     '- 如果不发，就正常输出文字，不要输出任何 sticker 标记。'
                 );
+            }
+
+            // ---- 语音消息：只有绑了音色卡才挂这条规则，没卡的角色零 token ----
+            // 通话里跑的是同一套尾部，但通话本身就是实时语音，不能再吐 [voice]（skipVoiceRule）
+            if (!opts.skipVoiceRule) {
+                const voiceCard = resolveVoiceCard(personaId);
+                const vs = mmSettings();
+                if (voiceCard && vs.enabled && vs.mmKey && vs.proactiveVoice !== false) {
+                    parts.push(
+                        '你有一条声音（可以发语音消息），当前声线是「' + (voiceCard.name || '默认音色') + '」。\n' +
+                        '【语音使用规则】\n' +
+                        '- 默认不发语音，绝大多数回复都是纯文字，这是常态。\n' +
+                        '- 只有在撒娇、哄人、调情、情绪强烈，或者对方明确要你发语音时，才考虑发。\n' +
+                        '- 一条回复最多 1 条语音；语音内容不超过 40 字，必须是完整的一句人话。\n' +
+                        '- 语音内容不能和你的文字重复：文字说过的，语音里就换一种说法，或者干脆只发语音不发文字。\n' +
+                        '- 道歉、吵架、坏消息、严肃话题时不要发语音。\n' +
+                        '- 发的时候，在回复的最后单独一行写：\n' +
+                        '  [voice] 要说的话\n' +
+                        '  （可选情绪：[voice:happy] / [voice:shy] / [voice:soothe] / [voice:love]，不写则用默认语气）'
+                    );
+                    if (opts.forceVoice) {
+                        parts.push('【本轮必须发语音】对方明确要求你发语音，这一轮你必须输出且只输出一条 [voice] 消息作为回应，可以配一句极短的文字（如"喏"），但语音必须有。');
+                    }
+                }
             }
 
             // ---- 红包 / 转账：只有命中场景（生日/节日/庆祝/哄人/索要）才挂，平时零 token ----
@@ -21142,10 +21207,18 @@ ${tonePrompt}
                     out = { role: fromUser ? 'user' : 'assistant', content: '[表情包：' + (nm || '未命名') + ']' };
                 } else if (m.type === 'voice') {
                     // 空转写不能让模型看见空字符串，明确告诉它"这是语音，但没听清"
+                    // AI 自己发的语音必须落在 assistant 侧，否则模型会把它当成"对方说的"，
+                    // 下一轮原样复述同一句 —— 这也是验收里"不会重复同一句"的前提
                     if (m.noTranscript || !String(m.content || '').trim()) {
-                        out = { role: 'user', content: '[语音]（内容不清晰，你没听清）' };
+                        out = {
+                            role: fromUser ? 'user' : 'assistant',
+                            content: fromUser ? '[语音]（内容不清晰，你没听清）' : '[你发了一条语音]（内容不清晰）'
+                        };
                     } else {
-                        out = { role: 'user', content: '[语音] ' + m.content };
+                        out = {
+                            role: fromUser ? 'user' : 'assistant',
+                            content: (fromUser ? '[语音] ' : '[你发了一条语音] ') + m.content
+                        };
                     }
                 } else if (m.type === 'music') {
                     const j = parseJsonSafe(m.content);
@@ -21345,7 +21418,9 @@ ${tonePrompt}
             cheer: /加油|冲|可以的|干杯|庆祝|稳了/,
             night: /晚安|睡了|困|熬夜|睡不着/,
             work: /上班|加班|开会|工作|老板|下班/,
-            food: /吃|饿了|外卖|好吃|奶茶|夜宵/
+            food: /吃|饿了|外卖|好吃|奶茶|夜宵/,
+            cute: /可爱|卖萌|撒娇|贴贴|蹭蹭|宝宝|喵|呜|抱抱|么么|乖|想你|亲亲/,
+            meme: /抽象|离谱|什么鬼|整活|绷不住|难绷|笑不活|有病|神经|难评|乐子|什么操作/
         };
 
         function canSendSticker(personaId, text, sticker) {
@@ -21376,6 +21451,234 @@ ${tonePrompt}
             if (Array.isArray(sticker.tags) && sticker.tags.length) {
                 const hit = sticker.tags.some(t => STICKER_EMOTION_WORDS[t] && STICKER_EMOTION_WORDS[t].test(body));
                 if (!hit) return false;
+            }
+            return true;
+        }
+
+        // ------------------------------------------------------------
+        //  AI 语音消息：第四条「模型只表达意图、代码决定发不发」的通道
+        //  [pic] 决定发不发图，[sticker] 决定发不发表情包，[voice] 决定发不发语音。
+        //  模型只写标记 + 原文，能不能发、发多长、什么时候发，全在下面这几道闸门里。
+        // ------------------------------------------------------------
+        const VOICE_MIN_GAP_TURNS = 6;      // 最近 6 轮（按 user 消息计）发过就不再发
+        const VOICE_MAX_CHARS = 40;         // 一条语音最多 40 字
+        const VOICE_REQUEST_RE = /发(条|个)?语音|语音(消息|回复|说)|说句话(给我)?(听|听听)|让我听听|用语音|发个声音|说给我听/;
+        // 否定优先：「别发语音」「不用语音」是拒绝，不是请求
+        const VOICE_REQUEST_NEG_RE = /(不要|不用|别|不想|免了|没必要)[^，。！？\n]{0,6}语音/;
+        // 和 STICKER_EMOTION_WORDS 并列：命中情感语义才值得抬高概率
+        const VOICE_EMOTION_WORDS = {
+            shy:    /想你|抱抱|亲亲|贴贴|哼|嘛|人家|陪我|不要走|理理我|想你啦/,
+            soothe: /别难过|我在|没事的|对不起|别哭|有我呢|乖/,
+            love:   /喜欢|爱你|心动|想见你|宝贝|想你了/,
+            happy:  /哈哈|开心|太好|终于|太好了|耶/
+        };
+        const VOICE_TAG_RE = /\[\s*voice\s*(?::\s*([A-Za-z_]+))?\s*\]/i;
+        const VOICE_EMOTIONS = ['happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised', 'calm', 'fluent', 'whisper'];
+
+        // speech-02 只认下面这几个 emotion；[voice:shy]/[voice:soothe]/[voice:love]
+        // 是给模型用的"语义标签"，到这里要落成真实情绪，否则等于白写（全变 neutral）
+        const VOICE_EMOTION_ALIAS = {
+            shy: 'calm', soothe: 'calm', love: 'calm', gentle: 'calm', calm: 'calm',
+            excited: 'happy', cute: 'happy', cheerful: 'happy',
+            surprised: 'surprised', whisper: 'whisper', sad: 'sad', angry: 'angry',
+            '撒娇': 'calm', '哄': 'calm', '温柔': 'calm', '爱': 'calm', '平静': 'calm',
+            '开心': 'happy', '难过': 'sad', '生气': 'angry', '耳语': 'whisper'
+        };
+
+        // 不认识的 emotion 一律丢弃（走默认语气），别把乱七八糟的字符串塞给 TTS
+        function normalizeVoiceEmotion(raw) {
+            const e = String(raw || '').trim().toLowerCase();
+            if (!e) return '';
+            if (VOICE_EMOTIONS.indexOf(e) !== -1) return e;
+            return VOICE_EMOTION_ALIAS[e] || VOICE_EMOTION_ALIAS[String(raw || '').trim()] || '';
+        }
+
+        // 语音原文清洗：去引号/去残留标记，超 40 字截到最近一个句读，别让长句念到一半断气
+        function clipVoiceContent(text) {
+            let s = String(text == null ? '' : text)
+                .replace(/\[\s*(?:voice|sticker|pic|hongbao|transfer)[^\]]*\]/gi, '')
+                .replace(/^["“'「『]+|["”'」』]+$/g, '')
+                .replace(/\s+/g, ' ')
+                .trim();
+            if (!s) return '';
+            if (s.length <= VOICE_MAX_CHARS) return s;
+            const head = s.slice(0, VOICE_MAX_CHARS);
+            const cut = Math.max(head.lastIndexOf('。'), head.lastIndexOf('！'), head.lastIndexOf('？'), head.lastIndexOf('…'), head.lastIndexOf('，'));
+            return (cut >= 8 ? head.slice(0, cut + 1) : head).trim();
+        }
+
+        // [voice] 我好想你 / [voice:happy] 你终于回来了
+        // 必须在 splitReplyLines 之前抽走，否则标记会被当成正文切进气泡。
+        // 只认第一条：同轮吐两条，第二条的标记剥掉、剩下的字降级为文字。
+        function splitVoiceTag(reply) {
+            const s = String(reply == null ? '' : reply);
+            if (s.toLowerCase().indexOf('[voice') === -1) return { text: s, voice: null };
+
+            let voice = null;
+            const kept = [];
+            s.split('\n').forEach(line => {
+                let rest = line;
+                let m = rest.match(VOICE_TAG_RE);
+                while (m) {
+                    const before = rest.slice(0, m.index);
+                    const after = rest.slice(m.index + m[0].length);
+                    if (!voice) {
+                        const body = clipVoiceContent(String(after || '').replace(/^[\s：:，,、\-—]+/, ''));
+                        if (body) {
+                            voice = { content: body, emotion: normalizeVoiceEmotion(m[1]) };
+                            rest = before;   // 标记前面的字（"喏"）照常当文字
+                            break;
+                        }
+                    }
+                    // 第二条 / 空内容：只剥标记，文字留下
+                    rest = before + after;
+                    m = rest.match(VOICE_TAG_RE);
+                }
+                rest = rest.replace(VOICE_TAG_RE, '').trim();
+                if (rest) kept.push(rest);
+            });
+            return { text: kept.join('\n').trim(), voice };
+        }
+
+        // 玩家明确要语音："发条语音听听"
+        function detectVoiceRequest(text) {
+            const s = String(text == null ? '' : text);
+            if (!s || s.length > 100) return false;
+            if (VOICE_REQUEST_NEG_RE.test(s)) return false;
+            return VOICE_REQUEST_RE.test(s);
+        }
+
+        // 同样是「按 user 消息计轮」：一条回复会拆成多个气泡，按条数算会失真
+        function recentAIVoiceCount(personaId, windowSize) {
+            const msgs = data.chats[personaId] || [];
+            const limit = Math.max(1, windowSize || VOICE_MIN_GAP_TURNS);
+            let users = 0;
+            let n = 0;
+            for (let i = msgs.length - 1; i >= 0; i--) {
+                const m = msgs[i];
+                if (!m) continue;
+                if (m.sender === 'user') {
+                    users++;
+                    if (users > limit) break;
+                } else if (m.sender === 'assistant' && m.type === 'voice' && m.via === 'aiVoice') {
+                    n++;
+                }
+            }
+            return n;
+        }
+
+        // 发不发语音，最终由这里说了算（prompt 只负责"想不想"）
+        function canSendVoice(personaId, text, opts) {
+            opts = opts || {};
+            if (!personaId) return false;
+            // 1. 硬前提：有音色卡（专属优先，其次全局）
+            if (!resolveVoiceCard(personaId)) return false;
+            // 2. 硬前提：语音服务开着且有 Key
+            const v = mmSettings();
+            if (!v.enabled || !v.mmKey) return false;
+            // 3. 设置项关掉 → 整条链路关掉
+            if (v.proactiveVoice === false) return false;
+
+            // 4. 玩家强请求 → 直接放行（连发也照发，不然"发条语音听听"会被上一轮的语音挡掉）
+            if (opts.force) return true;
+
+            // 5. 最近 6 轮已经发过 → 拒发
+            if (recentAIVoiceCount(personaId, VOICE_MIN_GAP_TURNS) > 0) return false;
+
+            const body = String(text || '').trim();
+            if (!body) return false;
+            // 6. 严肃语境不发：道歉/吵架/坏消息里冒出语音最出戏
+            if (SERIOUS_RE.test(body)) return false;
+
+            // 7. 概率：命中情感词按关系加成，没命中只留"随手发一条"的余量
+            let p = 0.06;
+            const hit = Object.keys(VOICE_EMOTION_WORDS).some(k => VOICE_EMOTION_WORDS[k].test(body));
+            if (hit) p = Math.min(0.8, 0.35 + relationTier(personaId) * 0.15);
+            if (opts.proactive) p *= 0.6;   // 主动消息再打六折，别一上来就甩语音
+            if (Math.random() > p) return false;
+            return true;
+        }
+
+        // readAudioDuration(file) 只吃 File，这里补一个吃 Blob 的轻量版
+        function blobDuration(blob) {
+            return new Promise(res => {
+                const url = URL.createObjectURL(blob);
+                const a = new Audio();
+                let settled = false;
+                const done = v => {
+                    if (settled) return;
+                    settled = true;
+                    try { URL.revokeObjectURL(url); } catch (e) {}
+                    res(v);
+                };
+                a.onloadedmetadata = () => done(isFinite(a.duration) ? Math.round(a.duration) : 0);
+                a.onerror = () => done(0);
+                setTimeout(() => done(0), 5000);
+                a.src = url;
+            });
+        }
+
+        // 合成 + 落库 + 补一条语音气泡。
+        // 关键：调用方绝不 await 这个函数（见 applyReply），否则整条回复会被 TTS 拖住。
+        async function synthesizeAndAppendVoice(personaId, voice, opts) {
+            opts = opts || {};
+            const content = clipVoiceContent(voice && voice.content);
+            if (!content) return false;
+            if (!getPersonaById(personaId)) return false;
+            const card = resolveVoiceCard(personaId);
+            if (!card) return false;
+
+            const v = mmSettings();
+            let blob = null;
+            try {
+                blob = await ttsRequest(content, {
+                    voice: card.voiceId,
+                    speed: v.speed,
+                    pitch: v.pitch,
+                    vol: v.vol,
+                    emotion: voice.emotion || 'neutral'
+                });
+            } catch (e) {
+                console.warn('[aiVoice] 合成失败', (e && e.message) || e);
+                if (opts.force) {
+                    // 玩家明确要了语音却没发出来：补一句话，别让人干等
+                    addMessage(personaId, 'assistant', 'text', '（这条语音没能发出去，等下再给你说）');
+                    if (isChatOpenWith(personaId)) renderMessages(personaId);
+                    saveData();
+                }
+                return false;
+            }
+            if (!blob || !blob.size) return false;
+
+            const duration = await blobDuration(blob);
+            const audioId = 'v_' + genId();
+            try {
+                await VoiceDB.put({ id: audioId, blob, mime: blob.type || 'audio/mp3', createdAt: Date.now() });
+            } catch (e) {
+                console.warn('[aiVoice] 落库失败', e);
+                return false;
+            }
+
+            addMessage(personaId, 'assistant', 'voice', content, {
+                audioId,
+                duration: Math.max(1, duration || 1),
+                noTranscript: false,
+                via: 'aiVoice',
+                isProactive: !!opts.proactive
+            });
+            saveData();
+
+            if (isChatOpenWith(personaId)) {
+                renderMessages(personaId);
+            } else if (opts.notify === false) {
+                // 主动消息已经为文字气泡计过未读/发过通知，别为语音再弹一次
+                updateWxTabBadge();
+                renderWechatList();
+            } else {
+                data.unreadCounts[personaId] = (data.unreadCounts[personaId] || 0) + 1;
+                showIncomingNotification(personaId, '🎤 ' + content);
+                updateWxTabBadge();
+                renderWechatList();
             }
             return true;
         }
@@ -21487,7 +21790,8 @@ ${tonePrompt}
             return lines;
         }
 
-        async function applyReply(personaId, reply) {
+        async function applyReply(personaId, reply, opts) {
+            opts = opts || {};
             const raw = String(reply == null ? '' : reply);
             const hasThreat = /\[\[BLOCK_THREAT\]\]/.test(raw);
             // 先洗动作描写再拆行：顺序反了，清洗残留会跟着行一起进历史
@@ -21500,7 +21804,10 @@ ${tonePrompt}
 
             // [sticker:N] 必须在 splitLongLine 之前摘掉，否则会被当成正文切进气泡
             const st = splitStickerTag(reply);
-            const parsed = splitPicTag(st.text);
+            // [voice] / [voice:happy] 同理：和 [pic]/[sticker] 同源，模型只表达意图，发不发由 canSendVoice 决定
+            const vt = splitVoiceTag(st.text);
+            const voicePlan = vt.voice;
+            const parsed = splitPicTag(vt.text);
             const pubs = (data.photos || []).filter(p => p.isPublic && p.desc);
 
             // 表情包：模型只负责"想发哪个"，发不发由代码闸门说了算
@@ -21513,7 +21820,8 @@ ${tonePrompt}
             }
 
             // 整条都是动作描写、被洗空了：给个真人式的省略，别静默吞掉这一轮
-            if (!parsed.text && parsed.photoIndex == null && !stickerOk && !moneyTag && raw.replace(/\[\[BLOCK_THREAT\]\]/g, '').trim()) {
+            // （如果这条回复带了语音，就不补省略号了 —— 语音本身就是"说了话"）
+            if (!parsed.text && parsed.photoIndex == null && !stickerOk && !moneyTag && !voicePlan && raw.replace(/\[\[BLOCK_THREAT\]\]/g, '').trim()) {
                 addMessage(personaId, 'assistant', 'text', '…');
             }
 
@@ -21560,6 +21868,19 @@ ${tonePrompt}
                 const grant = rollAIMoneyGrant(personaId, moneyTag);
                 if (grant) addAIMoneyMessage(personaId, grant);
                 else console.debug('[money] 已拦截', moneyTag);
+            }
+
+            // 语音最后补：文字气泡已经在上面全部落地，TTS 挂后台跑，绝不 await
+            // （await 的话这条回复会被合成拖住 2–5 秒，前面的气泡都出不来）
+            if (voicePlan) {
+                const force = !!opts.forceVoice;
+                if (canSendVoice(personaId, parsed.text, { force })) {
+                    synthesizeAndAppendVoice(personaId, voicePlan, { force }).catch(e => {
+                        console.warn('[aiVoice] 后台合成异常', e);
+                    });
+                } else {
+                    console.debug('[voice] 已拦截不发', { content: voicePlan.content, force });
+                }
             }
 
             if (hasThreat) handleBlockThreat(personaId);
@@ -21615,7 +21936,9 @@ ${tonePrompt}
                 .concat(moneyFollow ? [moneyFollow] : []);
             const tail = buildChatDynamicTail(personaId, {
                 extraList: extraAll,
-                moneyScene: opts.moneyScene || ''
+                moneyScene: opts.moneyScene || '',
+                skipVoiceRule: !!opts.skipVoiceRule,
+                forceVoice: !!opts.forceVoice
             });
             replying[personaId] = true;
             // instant = 关闭了模拟打字延迟：直接从 API 拿结果，不挂"正在输入"气泡
@@ -21656,7 +21979,9 @@ ${tonePrompt}
                         const tail2 = buildChatDynamicTail(personaId, {
                             extraList: extraAll,
                             moneyScene: opts.moneyScene || '',
-                            blind: true
+                            blind: true,
+                            skipVoiceRule: !!opts.skipVoiceRule,
+                            forceVoice: !!opts.forceVoice
                         });
                         const msgs2 = attachDynamicTail(buildChatHistory(personaId, getContextMemory(), false), tail2);
                         reply = await callChatRomance(
@@ -21674,7 +21999,9 @@ ${tonePrompt}
                     try {
                         const retryTail = buildChatDynamicTail(personaId, {
                             extraList: extraAll.concat([topicRetry]),
-                            moneyScene: opts.moneyScene || ''
+                            moneyScene: opts.moneyScene || '',
+                            skipVoiceRule: !!opts.skipVoiceRule,
+                            forceVoice: !!opts.forceVoice
                         });
                         const retryReply = await callChatRomance({
                             system: system,
@@ -21691,7 +22018,7 @@ ${tonePrompt}
                 if (!reply) { toast('AI 返回了空内容'); return false; }
 
                 const before = (data.chats[personaId] || []).length;
-                await applyReply(personaId, reply);
+                await applyReply(personaId, reply, opts);
                 // 玩家发的红包/转账，在角色说完话之后再"收下"（先说话后收钱，顺序更像真人）
                 settlePlayerMoney(personaId);
 
@@ -22508,9 +22835,12 @@ ${tonePrompt}
                 const dur = Math.max(1, Math.round(Number(m.duration) || 1));
                 const txt = String(m.content || '').replace(/^🎤\s*/, '').trim();
                 const bars = [5, 11, 7, 13].map(h => `<i style="height:${h}px"></i>`).join('');
+                // 角色主动发的语音、还没播过 → 右侧红点（和微信一致）；播一次就没了
+                const dot = (m.via === 'aiVoice' && !m.playedAt) ? '<span class="wx-vdot"></span>' : '';
                 return `<div class="wx-voice-line" data-voice="${m.audioId || ''}">` +
                     `<div class="wx-vwave">${bars}</div>` +
                     `<span class="wx-vdur">${dur}"</span>` +
+                    dot +
                     `</div>` +
                     (txt ? `<div class="wx-voice-trans">${escHtml(txt)}</div>` : '');
             }
@@ -23015,6 +23345,22 @@ ${tonePrompt}
             if (vb) {
                 const audioId = vb.querySelector('[data-voice]')?.dataset.voice;
                 if (!audioId) { toast('这条语音已经不在本机了'); return; }
+                // 播过就把"未读红点"清掉（只改这一条 + 局部 DOM，不整屏重绘）
+                try {
+                    const cw = document.getElementById('chatWindow');
+                    const pid = cw && cw.dataset.persona;
+                    const row = vb.closest('.wx-msg-row');
+                    const mid = row && row.dataset.msgId;
+                    if (pid && mid) {
+                        const m = (data.chats[pid] || []).find(x => x && x.id === mid);
+                        if (m && m.via === 'aiVoice' && !m.playedAt) {
+                            m.playedAt = Date.now();
+                            saveData();
+                            const dot = vb.querySelector('.wx-vdot');
+                            if (dot) dot.remove();
+                        }
+                    }
+                } catch (err) { /* 标记失败不影响播放 */ }
                 playVoiceMessage(audioId, vb);
                 return;
             }
@@ -23345,7 +23691,9 @@ ${tonePrompt}
                 delayMultiplier: Number(opts.delayMultiplier) || 1,
                 // 识图参数也要一起存：刷新/切后台后恢复时，才知道这张图要真的发给模型
                 allowVision: !!opts.allowVision,
-                pendingPhotoToken: opts.pendingPhotoToken || ''
+                pendingPhotoToken: opts.pendingPhotoToken || '',
+                // 语音强请求也要一起存：切后台再回来，"发条语音听听"不能被弄丢
+                forceVoice: !!opts.forceVoice
             };
             data.lastInteractionAt[personaId] = Date.now();
             saveData();
@@ -23382,7 +23730,8 @@ ${tonePrompt}
                         jealousyFallback: p.jealousyFallback || '',
                         delayMultiplier: p.delayMultiplier || 1,
                         allowVision: !!p.allowVision,
-                        pendingPhotoToken: p.pendingPhotoToken || ''
+                        pendingPhotoToken: p.pendingPhotoToken || '',
+                        forceVoice: !!p.forceVoice
                     });
                     renderWechatList();
                 };
@@ -23514,9 +23863,16 @@ ${tonePrompt}
                     }
                 }
 
+                // 主动消息不经过 applyReply：[voice] 要在这里自己抽掉，
+                // 否则标记会原样出现在气泡里（下一轮还会被喂回模型）
+                const pv = splitVoiceTag(content);
+                const proactiveVoice = pv.voice;
+                content = pv.text;
+
                 // 主动消息也会一次吐好几行：和聊天回复走同一套拆行，别整段塞进一个气泡
-                const bubbles = splitReplyLines(content);
-                const out = bubbles.length > 15 ? bubbles.slice(0, 15) : (bubbles.length ? bubbles : [content]);
+                const bubbles = content ? splitReplyLines(content) : [];
+                const out = bubbles.length > 15 ? bubbles.slice(0, 15) : bubbles;
+                if (!out.length && !proactiveVoice) return false;
                 out.forEach(line => addMessage(personaId, 'assistant', 'text', line, { isProactive: true }));
                 data.lastInteractionAt[personaId] = Date.now();
                 const prev = data.lastProactive[personaId];
@@ -23528,13 +23884,20 @@ ${tonePrompt}
 
                 if (!isChatOpenWith(personaId)) {
                     data.unreadCounts[personaId] = (data.unreadCounts[personaId] || 0) + 1;
-                    showIncomingNotification(personaId, out[0] || content);
+                    showIncomingNotification(personaId, out[0] || (proactiveVoice ? '🎤 ' + proactiveVoice.content : content));
                 } else {
                     renderMessages(personaId);
                 }
                 saveData();
                 updateWxTabBadge();
                 renderWechatList();
+
+                // 语音最后补，同样不 await：文字气泡先到，语音 2–5 秒后跟上
+                if (proactiveVoice && canSendVoice(personaId, content || proactiveVoice.content, { proactive: true })) {
+                    synthesizeAndAppendVoice(personaId, proactiveVoice, { proactive: true, notify: false }).catch(e => {
+                        console.warn('[aiVoice] 主动语音合成异常', e);
+                    });
+                }
                 return true;
             } catch (e) {
                 console.warn('主动消息生成失败', e);
@@ -24399,8 +24762,14 @@ ${tonePrompt}
                 '用户刚刚发的是一条语音消息，但内容没有成功转写，你并不知道 ta 说了什么。' +
                 '请用自然的、符合你人设的口吻回应，可以让 ta 再说一遍或者打字说明，不要假装听清了。';
             const jv = text ? rollJealousy(personaId, text) : null;
+            // 玩家用语音说"发条语音听听"：转写文本同样要识别成强请求
+            const wantsVoice = !!text && detectVoiceRequest(text) &&
+                !!resolveVoiceCard(personaId) &&
+                mmSettings().enabled && !!mmSettings().mmKey &&
+                mmSettings().proactiveVoice !== false;
             scheduleReply(personaId, Object.assign(
                 text ? {} : { extraSystem: VOICE_UNTRANSCRIBED },
+                wantsVoice ? { forceVoice: true } : {},
                 jv ? {
                     jealousyPrompt: buildJealousyPrompt(jv),
                     jealousyFallback: JEALOUSY_FALLBACK[jv.level] || JEALOUSY_FALLBACK[1],
@@ -24590,7 +24959,14 @@ ${tonePrompt}
             document.addEventListener('pointercancel', onPointerCancel, { passive: true });
 
             // 彻底压住浏览器的「长按 → 选择 / callout / 拖拽」
-            const stopNative = (e) => { e.preventDefault(); e.stopPropagation(); };
+            // 注意：只在「这次按下真的会进入录音」时才拦。
+            // 否则 touchstart 被 preventDefault 之后，浏览器不会再补发 click，
+            // 闭麦时那颗「点一下 打字」的按钮就会变成完全点不动。
+            const stopNative = (e) => {
+                if (handlers.canStart && !handlers.canStart()) return;
+                e.preventDefault();
+                e.stopPropagation();
+            };
             btnEl.addEventListener('contextmenu', stopNative);
             btnEl.addEventListener('selectstart', stopNative);
             btnEl.addEventListener('dragstart', stopNative);
@@ -26371,6 +26747,8 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             // 用来判断"是不是第二份音色"（删了卡也照样提醒，见 voiceCloneUsed）
             if (typeof v.cloneCount !== 'number' || !isFinite(v.cloneCount) || v.cloneCount < 0) v.cloneCount = 0;
             if (v.enabled === undefined) v.enabled = true;
+            // 聊天语音消息：默认开；只有明确关过才是 false
+            if (v.proactiveVoice === undefined) v.proactiveVoice = true;
             if (v.mmRegion !== 'io') v.mmRegion = 'cn';
             // Key 里混进空格 / 换行 / 零宽字符会让鉴权直接 401，读的时候统一洗一遍
             if (typeof v.mmKey === 'string') {
@@ -26886,6 +27264,8 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             set('gPitch', v.pitch);
             set('gVol', v.vol);
             paintVoiceParamLabels();
+            const pvSw = document.getElementById('vcProactiveVoice');
+            if (pvSw) pvSw.classList.toggle('on', v.proactiveVoice !== false);
 
             if (mmVoiceLib.length) {
                 const c = { system: 0, voice_cloning: 0, voice_generation: 0 };
@@ -27746,6 +28126,17 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 el.addEventListener('change', () => saveData());
             });
 
+            // 聊天语音消息总开关（关掉 → canSendVoice 直接 false，prompt 也不再注入语音规则）
+            const pvSw = document.getElementById('vcProactiveVoice');
+            if (pvSw) {
+                pvSw.addEventListener('click', () => {
+                    const s = mmSettings();
+                    s.proactiveVoice = s.proactiveVoice === false;
+                    pvSw.classList.toggle('on', s.proactiveVoice !== false);
+                    saveData();
+                });
+            }
+
             // 设置页入口
             const entry = document.getElementById('voiceCenterEntry');
             if (entry) {
@@ -27875,9 +28266,19 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             const btn = document.getElementById('wxCallTalkBtn');
             if (!btn) return;
             btn.classList.remove('active', 'canceling');
-            setHoldLabel(btn, '按住 说话');
+            syncCallTalkBtn();
             const overlay = document.getElementById('wxCallOverlay');
             if (overlay) overlay.classList.remove('recording');
+        }
+
+        // 闭麦时「按住说话」没有意义：按钮改成「点一下 打字」，点了直接开输入框
+        function syncCallTalkBtn() {
+            const btn = document.getElementById('wxCallTalkBtn');
+            if (!btn) return;
+            const typing = !!callState.muted;
+            btn.classList.toggle('typing', typing);
+            btn.title = typing ? '已闭麦，点一下用文字说' : '按住说话';
+            setHoldLabel(btn, typing ? '点一下 打字' : '按住 说话');
         }
 
         function applyCallVisual() {
@@ -28168,7 +28569,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         }
 
         // 被打断（上滑 / pointercancel / 切后台 / 挂断）：直接丢弃，不弹补字弹窗
-        function cancelCallRecord() {
+        function cancelCallRecord(opts) {
             const hadAnything = callState.recording || callState.stream || callState.recorder;
             callState.recording = false;
             callState.recSeq = (callState.recSeq || 0) + 1;   // 作废进行中的 done
@@ -28194,7 +28595,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
 
             const tip = document.getElementById('wxCallTip');
             if (tip) tip.textContent = '';
-            if (hadAnything && callState.active && callState.phase === 'active') toast('已取消');
+            if (hadAnything && callState.active && callState.phase === 'active' && !(opts && opts.silent)) toast('已取消');
         }
 
         async function sendCallText(text, blob, duration, opts) {
@@ -28256,7 +28657,9 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                     extra: extra + (callAntiRepeat ? '\n' + callAntiRepeat : ''),
                     skipPhotoMenu: true,
                     // 通话里发不出表情包（没有 applyReply 这条链路），别让模型吐出 [sticker:N]
-                    skipStickerMenu: true
+                    skipStickerMenu: true,
+                    // 通话本身就是实时语音，再吐 [voice] 就是两套混着跑
+                    skipVoiceRule: true
                 });
                 let reply = await callChatRomance({
                     system,
@@ -28265,6 +28668,8 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                     vision: false
                 });
                 // 情绪标记要在清洗前取：normalizeCallText 会把它当占位标记删掉
+                // 通话里没有 [voice] 这条链路，残留的标记先摘掉，别让字幕里念出"方括号 voice"
+                reply = String(reply || '').replace(/\[\s*voice\s*(?::\s*[A-Za-z_]+)?\s*\]/ig, '');
                 const emotion = extractEmotionTag(reply).emotion;
                 // 清洗 + 补标点：写进聊天记录的也是标点正常的文本
                 let line = normalizeCallText(reply).slice(0, 120).trim();
@@ -28334,6 +28739,18 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                     resolve(null);
                 });
             });
+        }
+
+        // 闭麦时的打字入口：复用「说点什么」弹窗，发出去和说话同一条链路
+        async function openCallTyping() {
+            if (!callState.active || callState.phase !== 'active') return;
+            if (callState.recording) return;
+            callState.ttsToken++;   // 打字也算插话：先让对方停下来
+            stopBlobAudio();
+            const text = await askCallText('已闭麦，用文字说这句 —— 对方会像听到语音一样回应。');
+            if (!text) return;
+            if (!callState.active || callState.phase !== 'active') return;
+            sendCallText(text);
         }
 
         function endCall() {
@@ -28406,8 +28823,18 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 if (callState.stream) {
                     callState.stream.getAudioTracks().forEach(t => { t.enabled = !callState.muted; });
                 }
+                // 闭麦瞬间正在录：这条路已经没有声音了，直接丢弃，别发一条静音语音出去
+                if (callState.muted && callState.recording) cancelCallRecord({ silent: true });
+
                 updateCallActBtns();
-                toast(callState.muted ? '已静音' : '已取消静音');
+                syncCallTalkBtn();
+
+                const tip = document.getElementById('wxCallTip');
+                if (tip) {
+                    tip.textContent = callState.muted
+                        ? '已闭麦 · 点「点一下 打字」用文字说'
+                        : '麦克风已开 · 按住下方按钮说话';
+                }
             });
 
             const spk = document.getElementById('wxCallSpeaker');
@@ -28423,7 +28850,8 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             // 通话界面：不允许上滑取消（通话里的「按住说话」就是临时插话，语义越简单越稳）
             const callHoldCtl = bindHoldToTalk(talk, {
                 allowSlideCancel: false,
-                canStart: () => callState.active && callState.phase === 'active' && !callState.recording,
+                // 闭麦时不再进入录音：交给下面的 click 走打字
+                canStart: () => callState.active && callState.phase === 'active' && !callState.recording && !callState.muted,
                 onStart: () => {
                     if (callState.phase !== 'active') return;
                     callState.ttsToken++;   // 让正在排队的后续分段立刻作废
@@ -28443,6 +28871,14 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 onCancel: () => {
                     cancelCallRecord();
                 }
+            });
+
+            // 闭麦状态下，这颗按钮从「按住说话」变成「点一下打字」的入口。
+            // 未闭麦时 canStart 会 preventDefault，这里直接跳过，不会重复触发。
+            talk.addEventListener('click', () => {
+                if (!callState.muted) return;
+                if (!callState.active || callState.phase !== 'active' || callState.recording) return;
+                openCallTyping();
             });
         })();
 
@@ -28957,6 +29393,8 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 .replace(/\[pic:\d+\]/g, '')
                 // 群聊不开放红包/转账：模型万一吐了标记，直接摘掉，别让原始标记出现在气泡里
                 .replace(/\[\s*(?:hongbao|transfer)\s*[:：][^\]\n]*\]/g, '')
+                // 群聊不开放 AI 语音（本期只做单聊）：[voice] 标记一律清掉，别漏进气泡
+                .replace(/\[\s*voice\s*(?::\s*[A-Za-z_]+)?\s*\]/ig, '')
                 .trim();
             // 群聊同样使用智能切分
             const lines = splitReplyLines(text);
@@ -29787,12 +30225,14 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         //  改 NOTICE_VERSION 就会对所有人重新弹一次
         // ============================================================
         const NOTICE_KEY = 'aiPhoneNoticeVersion';
-        const NOTICE_VERSION = 'v20-2026-10-31';
+        const NOTICE_VERSION = 'v21-2026-10-31';
         const NOTICE_TITLE = '📢 更新公告';
-        const NOTICE_CONTENT = `· 对ios进行了适配
-· 修复了部分bug，增加了红包、转账功能
-· 新增了语音模型接入，设置界面在录音中，教程：前往minimax注册账号，实名验证并创建你的key，并准备一段一分钟左右的小杰碎碎念mp3，来到小手机，将完整的key填入，上传音频文件选择复制音色，音色卡建立成功后选择绑定角色
-如有问题欢迎反馈～
+        const NOTICE_CONTENT = `· 优化了通话界面，现在点击闭麦键可以直接打字，适合在外面不方便的毛毛
+· 修复了部分bug，增加了语音信息功能，现在他们可以给你发语音啦
+·优化了表情包功能，你可以上传表情包并供所有人使用了
+·优化了记忆功能，现在他们会记得你聊过的东西、你的喜好和你的性格啦
+· 新增了语音模型接入，设置界面在录音中，教程请前往我的微博（花生可可-）查看～
+如有问题欢迎反馈
 by 花生可可`;
 
         function showNotice(force) {
