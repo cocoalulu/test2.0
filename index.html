@@ -20261,6 +20261,17 @@ ${tonePrompt}
             return s;
         }
 
+        // 统一拆行入口：把一段回复拆成"一条一条发出去"的气泡文本。
+        // 所有会往聊天里写文字的路径（普通回复 / 群聊 / 主动消息）都必须走这里，
+        // 否则漏掉一条路径，就会出现"一整个气泡里挤了四五行"。
+        function splitReplyLines(text) {
+            const lines = [];
+            normalizeSpaceBreaks(String(text == null ? '' : text))
+                .split('\n').map(l => l.trim()).filter(l => l.length > 0)
+                .forEach(l => splitLongLine(l, 26).forEach(x => lines.push(x)));
+            return lines;
+        }
+
         async function applyReply(personaId, reply) {
             const raw = String(reply == null ? '' : reply);
             const hasThreat = /\[\[BLOCK_THREAT\]\]/.test(raw);
@@ -20292,10 +20303,8 @@ ${tonePrompt}
             }
 
             if (parsed.text) {
-                const lines = [];
-                // [FIX] 先把"用空格冒充换行"的段落还原成多行，再走原有拆行逻辑
-                normalizeSpaceBreaks(parsed.text).split('\n').map(l => l.trim()).filter(l => l.length > 0)
-                    .forEach(l => splitLongLine(l, 26).forEach(x => lines.push(x)));
+                // 拆行统一走 splitReplyLines：空格冒充换行、长句切分都在里面
+                const lines = splitReplyLines(parsed.text);
 
                 if (lines.length === 0) {
                     // 理论兜底：parsed.text 非空时必能切出至少一行
@@ -22244,7 +22253,10 @@ ${tonePrompt}
                 const content = String(reply).trim().replace(/^["“」『]|["”「』]$/g, '');
                 if (!content) return false;
 
-                addMessage(personaId, 'assistant', 'text', content, { isProactive: true });
+                // 主动消息也会一次吐好几行：和聊天回复走同一套拆行，别整段塞进一个气泡
+                const bubbles = splitReplyLines(content);
+                const out = bubbles.length > 15 ? bubbles.slice(0, 15) : (bubbles.length ? bubbles : [content]);
+                out.forEach(line => addMessage(personaId, 'assistant', 'text', line, { isProactive: true }));
                 data.lastInteractionAt[personaId] = Date.now();
                 const prev = data.lastProactive[personaId];
                 data.lastProactive[personaId] = {
@@ -22255,7 +22267,7 @@ ${tonePrompt}
 
                 if (!isChatOpenWith(personaId)) {
                     data.unreadCounts[personaId] = (data.unreadCounts[personaId] || 0) + 1;
-                    showIncomingNotification(personaId, content);
+                    showIncomingNotification(personaId, out[0] || content);
                 } else {
                     renderMessages(personaId);
                 }
@@ -27677,9 +27689,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 .replace(/\[\s*(?:hongbao|transfer)\s*[:：][^\]\n]*\]/g, '')
                 .trim();
             // 群聊同样使用智能切分
-            const lines = [];
-            normalizeSpaceBreaks(text).split('\n').map(l => l.trim()).filter(l => l.length > 0)
-                .forEach(l => splitLongLine(l, 26).forEach(x => lines.push(x)));
+            const lines = splitReplyLines(text);
 
             if (!lines.length) return;
 
