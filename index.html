@@ -7459,6 +7459,14 @@
                         <button class="btn btn-primary btn-sm mt-8" id="presetSyncBtn" type="button">用预设覆盖</button>
                     </div>
 
+                    <div class="setting-item" id="bannedScanCard">
+                        <div class="label">违禁词扫描</div>
+                        <div class="desc">只检查老存档里已有的违禁词（角色、世界书、备忘录、朋友圈、论坛、群聊），只列出来给你看，不会自动改数据。</div>
+                        <button class="btn btn-sm mt-8" id="bannedScanBtn" type="button">扫描违禁词</button>
+                        <div class="ctx-hint" id="bannedScanHint" style="margin-top:8px;">尚未扫描</div>
+                        <div id="bannedScanResult" style="margin-top:6px;"></div>
+                    </div>
+
                     <div class="setting-item" id="immersiveCard">
                         <div class="label">沉浸式全屏</div>
                         <div class="desc">去掉手机外框和页面留白，让界面按屏幕高度铺满；支持时同步进入浏览器全屏，按 Esc 可退出。</div>
@@ -8451,6 +8459,130 @@
         //  DATA LAYER
         // ============================================================
         const STORAGE_KEY = 'aiPhoneData';
+
+        // ============================================================
+        //  违禁词表（玩家侧硬性拦截）
+        //  规则：
+        //   · 中文 / 混合词：在"归一化文本"上匹配（去空白、标点、全角转半角）
+        //   · 纯 ASCII 短词（≤3 字母，如 lm / mzc / lmp / mre）：
+        //     在归一化文本上匹配，但要求前后不是英文字母，避免误伤 "alma" 这类英文单词
+        // ============================================================
+        const BANNED_WORDS = [
+            '穆祉丞', 'mzc', 'lm', '橹穆', '师兄', '恩恩', '困丞', '豚馒', '馒馒', '枳', 'lmp',
+            '兔豚', '豚兔', '表哥', '穆瑞恩', '张桂源', '张函瑞', '杨博文', '左奇函', '陈奕恒',
+            '陈思罕', '陈浚铭', '张奕然', '李煜东', '聂玮宸', '官俊臣', '杨涵博', '魏子宸',
+            '表弟', '果夫', '穆夫', '橹夫', '厂一夫', '恩仔', '哥哥宝宝', 'mre', '大总统',
+            '小总统', '馒儿'
+        ].filter((w, i, a) => w && a.indexOf(w) === i);   // 去重
+
+        // 归一化：NFKC 统一全角半角 → 小写 → 去空白 → 去标点
+        // 这样 "穆 祉 丞"、"m.z.c"、"ＭＺＣ" 都会被拦下
+        function normalizeForBan(s) {
+            return String(s == null ? '' : s)
+                .normalize('NFKC')
+                .toLowerCase()
+                .replace(/[\s\u3000]+/g, '')
+                .replace(/[.,，。、；;：:！!？?～~\-—_*·"'\u201c\u201d\u2018\u2019()（）\[\]【】{}<>《》|/\\]+/g, '');
+        }
+
+        // 纯 ASCII 短词：前后不能是英文字母（"alma" 里的 lm 不命中，"L M C" 归一化后命中）
+        function hasBoundedAscii(norm, word) {
+            const w = word.toLowerCase();
+            if (!w) return false;
+            let from = 0;
+            while (true) {
+                const idx = norm.indexOf(w, from);
+                if (idx < 0) return false;
+                const before = idx > 0 ? norm[idx - 1] : '';
+                const after = idx + w.length < norm.length ? norm[idx + w.length] : '';
+                const isLetter = c => /[a-z]/.test(c);
+                if (!isLetter(before) && !isLetter(after)) return true;
+                from = idx + 1;
+            }
+        }
+
+        // 返回命中的违禁词（没命中返回 ''）
+        function findBannedWord(text) {
+            const raw = String(text == null ? '' : text);
+            if (!raw) return '';
+            const norm = normalizeForBan(raw);
+            if (!norm) return '';
+            for (let i = 0; i < BANNED_WORDS.length; i++) {
+                const w = BANNED_WORDS[i];
+                if (!w) continue;
+                const isAscii = /^[a-z0-9]+$/i.test(w);
+                if (isAscii && w.length <= 3) {
+                    if (hasBoundedAscii(norm, w)) return w;
+                } else {
+                    if (norm.indexOf(normalizeForBan(w)) >= 0) return w;
+                }
+            }
+            return '';
+        }
+
+        // 批量检查：传入多个字段，返回第一个命中的词
+        function findBannedIn() {
+            for (let i = 0; i < arguments.length; i++) {
+                const hit = findBannedWord(arguments[i]);
+                if (hit) return hit;
+            }
+            return '';
+        }
+
+        // 统一的拦截断言：命中 → toast + 返回 false；没命中 → 返回 true
+        // label 用于提示语（例如"角色设定""消息内容"），不传默认"内容"
+        function assertNoBanned(texts, label) {
+            const list = Array.isArray(texts) ? texts : [texts];
+            const hit = findBannedIn.apply(null, list);
+            if (!hit) return true;
+            try {
+                toast((label || '内容') + '包含不允许的词汇，请修改后再试', 3000);
+                console.warn('[banned] 命中：', hit, '｜字段：', label || '');
+            } catch (e) {}
+            return false;
+        }
+
+        // P1 兜底：把 AI 输出里出现的违禁词替换成占位词（只用于 AI 生成内容）
+        // · 中文词：逐字之间容忍空白/标点，"穆 祉 丞" 也能洗掉
+        // · 纯 ASCII 词：按词边界替换，"alma" 里的 lm 不会被误洗
+        // · 单字词（如"枳"）不洗：AI 输出里"枳实"这类正常词会被误伤，交给玩家侧拦
+        function scrubBannedWords(text, placeholder) {
+            let out = String(text == null ? '' : text);
+            if (!out) return '';
+            const ph = String(placeholder || '某同学');
+            const escRe = c => c.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const GAP = '[\\s\\u3000.,，。、；;：:！!？?～~\\-_*·"\'()（）\\[\\]【】]*';
+
+            // 中文 / 混合词：>=2 字，逐字之间容忍分隔符
+            BANNED_WORDS.forEach(w => {
+                if (!w || w.length < 2) return;
+                if (!/[\u4e00-\u9fa5]/.test(w)) return;
+                const re = new RegExp(w.split('').map(escRe).join(GAP), 'g');
+                out = out.replace(re, ph);
+            });
+
+            // 纯 ASCII 词：按词边界替换（用捕获组代替后行断言，兼容老 Safari）
+            // 每个字符同时接受全角写法，兜住"ＭＺＣ"这类
+            const asciiChar = c => {
+                const lo = c.toLowerCase(), up = c.toUpperCase();
+                let cls = lo + up;
+                const code = lo.charCodeAt(0);
+                if (code >= 33 && code <= 126) {
+                    cls += String.fromCharCode(code + 0xFEE0);
+                    const upCode = up.charCodeAt(0);
+                    if (upCode !== code) cls += String.fromCharCode(upCode + 0xFEE0);
+                }
+                return '[' + cls + ']';
+            };
+            BANNED_WORDS.forEach(w => {
+                if (!w || !/^[a-z0-9]+$/i.test(w)) return;
+                const body = w.split('').map(asciiChar).join(GAP);
+                const re = new RegExp('(^|[^A-Za-z])(' + body + ')(?![A-Za-z])', 'gi');
+                out = out.replace(re, (m, pre) => pre + ph);
+            });
+
+            return out;
+        }
 
         // ============================================================
         //  发布版 · API 预设
@@ -10934,6 +11066,8 @@
                 .forEach(name => {
                     if (out.indexOf(name) !== -1) out = out.split(name).join('某同学');
                 });
+            // 论坛内容里也不允许出现违禁词（老存档 / 模型瞎编的名字都兜一层）
+            out = scrubBannedWords(out, '某同学');
             return out;
         }
 
@@ -11154,11 +11288,16 @@ ${tonePrompt}
                     });
                     const parsed = parseMomentWithPic(raw);
                     if (!parsed.text && !parsed.images.length) continue;
+                    // AI 输出兜底：模型偶尔会自己编名字，落库前把违禁词洗掉
+                    const safeMomentText = scrubBannedWords(parsed.text, '某同学');
+                    if (safeMomentText !== parsed.text) {
+                        console.warn('[banned] AI 朋友圈正文含违禁词，已替换');
+                    }
                     data.moments.unshift({
                         id: genId(),
                         senderId: sender.id,
                         isPlayer: false,
-                        content: parsed.text,
+                        content: safeMomentText,
                         images: parsed.images,
                         imageDescs: parsed.descs,
                         location: '',
@@ -11565,6 +11704,109 @@ ${tonePrompt}
             toast(applied ? '已用预设覆盖 ' + applied + ' 处' : '已经是最新版');
             return applied;
         }
+
+        // ============================================================
+        //  P2 · 老数据违禁词扫描（只列不改，避免"枳实"这类正常词被误伤）
+        // ============================================================
+        function scanBannedWordsInData() {
+            const rows = [];
+            const push = (where, field, text) => {
+                const t = String(text == null ? '' : text);
+                if (!t.trim()) return;
+                const hit = findBannedWord(t);
+                if (!hit) return;
+                const plain = t.replace(/\s+/g, ' ').trim();
+                rows.push({
+                    where,
+                    field,
+                    hit,
+                    excerpt: plain.length > 40 ? plain.slice(0, 40) + '…' : plain
+                });
+            };
+
+            (data.personas || []).forEach(p => {
+                if (!p) return;
+                const who = '角色 · ' + (p.nickname || p.name || p.id);
+                push(who, '姓名', p.name);
+                push(who, '昵称', p.nickname);
+                push(who, '角色设定', p.role);
+            });
+
+            (data.worldBooks || []).forEach(w => {
+                if (!w) return;
+                const who = '世界书 · ' + (w.name || w.id);
+                push(who, '名称', w.name);
+                push(who, '内容', w.content);
+            });
+
+            (data.memos || []).forEach(m => {
+                if (!m) return;
+                const who = '备忘录 · ' + (m.title || m.id);
+                push(who, '标题', m.title);
+                push(who, '内容', m.content);
+            });
+
+            (data.forumPosts || []).forEach(p => {
+                if (!p) return;
+                const who = '论坛帖子 · ' + (p.title || p.id);
+                push(who, '标题', p.title);
+                push(who, '正文', p.content);
+                push(who, '作者', p.author);
+                (p.comments || []).forEach(c => {
+                    if (!c) return;
+                    push(who, '回帖', c.content);
+                    push(who, '回帖作者', c.author);
+                });
+            });
+
+            (data.groups || []).forEach(g => {
+                if (!g) return;
+                const who = '群聊 · ' + (g.name || g.id);
+                push(who, '群名', g.name);
+                push(who, '群公告', g.notice);
+            });
+
+            (data.moments || []).forEach(m => {
+                if (!m) return;
+                const who = '朋友圈 · ' + (m.senderId === 'player' ? '我' : getPersonaName(m.senderId));
+                push(who, '正文', m.content);
+                push(who, '位置', m.location);
+                (m.comments || []).forEach(c => {
+                    if (!c) return;
+                    push(who, '评论', c.content);
+                });
+            });
+
+            // 同一条文本命中多次只保留一条
+            const seen = new Set();
+            return rows.filter(r => {
+                const k = r.where + '|' + r.field + '|' + r.excerpt;
+                if (seen.has(k)) return false;
+                seen.add(k);
+                return true;
+            });
+        }
+
+        document.getElementById('bannedScanBtn').addEventListener('click', () => {
+            const res = document.getElementById('bannedScanResult');
+            const hint = document.getElementById('bannedScanHint');
+            const rows = scanBannedWordsInData();
+            if (!rows.length) {
+                hint.textContent = '扫描完成：老存档里没有发现违禁词';
+                res.innerHTML = '';
+                toast('没有发现违禁词');
+                return;
+            }
+            hint.textContent = '扫描完成：发现 ' + rows.length + ' 处，点进去手动修改或删除';
+            res.innerHTML = rows.map(r => `
+                <div style="font-size:12.5px;line-height:1.65;color:rgba(255,255,255,.72);padding:6px 0;border-bottom:1px solid rgba(255,255,255,.06);">
+                    <span style="color:rgba(255,255,255,.5);">${escHtml(r.where)} · ${escHtml(r.field)}</span><br />
+                    <span style="color:#ff8f8f;">命中「${escHtml(r.hit)}」</span>
+                    <span style="color:rgba(255,255,255,.45);">${escHtml(r.excerpt)}</span>
+                </div>
+            `).join('');
+            toast('发现 ' + rows.length + ' 处违禁词');
+        });
 
         document.getElementById('presetSyncBtn').addEventListener('click', () => {
             const keys = presetPendingList();
@@ -12188,6 +12430,7 @@ ${tonePrompt}
                 const prevRole = persona.role || '';
                 const nickname = document.getElementById('editNickname').value.trim() || persona.name;
                 const role = document.getElementById('editRole').value.trim() || '你是一个友好的聊天伙伴。';
+                if (!assertNoBanned([nickname, role], '角色设定')) return;   // 命中不关弹窗，让用户自己改
 
                 // 手动改过的字段打标记：之后预设升级只对齐没动过的部分。
                 // 用规范化指纹比较，避免"只是多了个空格"也被当成改过。
@@ -12647,6 +12890,7 @@ ${tonePrompt}
             if (!p) return;
             const text = String(rawText || '').trim();
             if (!text) return;
+            if (!assertNoBanned([text], '好友申请')) return;
 
             pushFriendRequestMessage(id, 'user', text);
             renderFriendRequest(id);
@@ -13503,7 +13747,7 @@ ${tonePrompt}
                 id: genId(),
                 senderId: personaId,
                 isPlayer: false,
-                content,
+                content: scrubBannedWords(content, '某同学'),
                 images: selfie ? ['photo:' + selfie.id] : [],
                 imageDescs: selfie ? [selfie.desc || ''] : [],
                 location: '',
@@ -13649,6 +13893,7 @@ ${tonePrompt}
             const input = document.getElementById('chatInput');
             const text = (content || input.value).trim();
             if (!text) return;
+            if (!assertNoBanned([text], '消息')) return;   // 命中不清空输入框，让用户自己删改
             input.value = '';
             const bar = document.getElementById('wxInputBar');
             if (bar) bar.classList.remove('has-text');
@@ -13768,6 +14013,7 @@ ${tonePrompt}
                 if (!name) { alert('请输入姓名'); return; }
                 const nickname = document.getElementById('pNick').value.trim() || name;
                 const role = document.getElementById('pRole').value.trim() || '你是一个友好的聊天伙伴。';
+                if (!assertNoBanned([name, nickname, role], '角色设定')) return;
                 const checks = document.querySelectorAll('#wbCheckList input[type="checkbox"]:checked');
                 const boundWorldBookIds = Array.from(checks).map(el => el.value);
                 data.personas.push({
@@ -13927,6 +14173,7 @@ ${tonePrompt}
             document.getElementById('saveWbEdit').addEventListener('click', () => {
                 const name = document.getElementById('wbName').value.trim();
                 if (!name) { alert('请输入名称'); return; }
+                if (!assertNoBanned([name, document.getElementById('wbContent').value], '世界书')) return;
                 wb.name = name;
                 wb.group = document.getElementById('wbGroup').value.trim() || '默认';
                 wb.content = document.getElementById('wbContent').value.trim() || '无内容';
@@ -13972,6 +14219,7 @@ ${tonePrompt}
                 if (!name) { alert('请输入名称'); return; }
                 const group = document.getElementById('wbGroupNew').value.trim() || '默认';
                 const content = document.getElementById('wbContentNew').value.trim() || '无内容';
+                if (!assertNoBanned([name, content], '世界书')) return;
                 const scope = document.getElementById('wbScopeNew').value;
                 const bindIds = scope === 'local' ? readWbBindChecks() : [];
                 const newWb = {
@@ -14200,6 +14448,7 @@ ${tonePrompt}
             const nickEl = document.getElementById('fmNickname');
             const saveNick = () => {
                 const v = (nickEl.value || '').trim().slice(0, 16);
+                if (!assertNoBanned([v], '论坛昵称')) return;
                 data.forumSettings = Object.assign({}, FORUM_DEFAULTS, data.forumSettings || {});
                 data.forumSettings.lastNickname = v;
                 saveData();
@@ -14384,6 +14633,7 @@ ${tonePrompt}
             const input = document.getElementById('replyInput');
             const text = input.value.trim();
             if (!text) return;
+            if (!assertNoBanned([text], '回复内容')) return;   // 命中不清空输入框
             if (!currentForumPostId) return;
             const post = data.forumPosts.find(p => p.id === currentForumPostId);
             if (!post) return;
@@ -14447,6 +14697,7 @@ ${tonePrompt}
                 const title = document.getElementById('postTitle').value.trim();
                 if (!title) { alert('请输入标题'); return; }
                 const content = document.getElementById('postContent').value.trim() || '无内容';
+                if (!assertNoBanned([nickname, title, content], '帖子内容')) return;   // 命中不关弹窗
 
                 data.forumSettings = data.forumSettings || {};
                 data.forumSettings.lastNickname = nickname;
@@ -14706,6 +14957,11 @@ ${tonePrompt}
             const content = String(o.content == null ? '' : o.content).trim();
 
             if (!content) return null;
+            // AI 输出兜底：评论内容命中违禁词就不写库（玩家侧已在 addComment 提前拦过）
+            if (findBannedWord(content)) {
+                console.warn('[banned] 朋友圈评论含违禁词，已拦截：', findBannedWord(content));
+                return null;
+            }
             if (!canCommentOn(moment, commenterId, replyToId)) {
                 console.warn('[朋友圈] 评论被规则拦截', {
                     momentId: moment.id,
@@ -15259,6 +15515,7 @@ ${tonePrompt}
         function addComment(momentId, content, replyToId) {
             const moment = (data.moments || []).find(m => m.id === momentId);
             if (!moment) return;
+            if (!assertNoBanned([content], '评论')) return;   // 命中不清空输入框
 
             const c = pushMomentComment(moment, {
                 commenterId: 'player',
@@ -15373,6 +15630,7 @@ ${tonePrompt}
             document.getElementById('mcDescCancel').addEventListener('click', closeModal);
             document.getElementById('mcDescSave').addEventListener('click', () => {
                 const v = (document.getElementById('mcDescInput').value || '').trim();
+                if (!assertNoBanned([v], '图片描述')) return;   // 命中不关弹窗
                 item.desc = v;
                 closeModal();
                 renderMcGrid();
@@ -15453,6 +15711,7 @@ ${tonePrompt}
             const locEl = document.getElementById('mcLocation');
             const text = (textEl.value || '').trim();
             const loc = (locEl.value || '').trim();
+            if (!assertNoBanned([text, loc], '朋友圈内容')) return;
             const picked = mcPickedImages.slice();
 
             if (!text && !picked.length) { toast('写点什么，或者发张图'); return; }
@@ -16210,7 +16469,9 @@ ${tonePrompt}
             const input = document.getElementById('meFieldInput');
             setTimeout(() => input && input.focus(), 80);
             const save = () => {
-                data.profile[field] = (input.value || '').trim();
+                const v = (input.value || '').trim();
+                if (!assertNoBanned([v], '个人资料')) return;   // 命中不关弹窗
+                data.profile[field] = v;
                 saveData();
                 closeModal();
                 renderWechatMe();
@@ -16269,6 +16530,11 @@ ${tonePrompt}
         }
 
         document.getElementById('saveProfileBtn').addEventListener('click', () => {
+            if (!assertNoBanned([
+                document.getElementById('profileName').value,
+                document.getElementById('profileNickname').value,
+                document.getElementById('profileDetail').value
+            ], '个人设定')) return;
             data.profile = {
                 name: document.getElementById('profileName').value.trim(),
                 nickname: document.getElementById('profileNickname').value.trim(),
@@ -16777,6 +17043,7 @@ ${tonePrompt}
                 data.memos.unshift(memo);
             }
             editingMemoId = memo.id;
+            memoBanWarned = false;
             document.getElementById('memoTitle').value = memo.title || '';
             document.getElementById('memoContent').value = memo.content || '';
             document.getElementById('memoPinBtn').style.opacity = memo.pinned ? '1' : '.35';
@@ -16792,11 +17059,30 @@ ${tonePrompt}
             }, 200);
         }
 
+        // 备忘录是"边输入边保存"（400ms 一次），命中违禁词时只提示一次，
+        // 输入一变（每次 input）就重置，避免连弹一串 toast。
+        let memoBanWarned = false;
+
         function autoSaveMemo() {
             const memo = (data.memos || []).find(m => m.id === editingMemoId);
             if (!memo) return;
-            memo.title = document.getElementById('memoTitle').value;
-            memo.content = document.getElementById('memoContent').value;
+            const titleVal = document.getElementById('memoTitle').value;
+            const contentVal = document.getElementById('memoContent').value;
+            const hit = findBannedIn(titleVal, contentVal);
+            if (hit) {
+                // 命中 → 跳过这次保存，内容仍留在编辑器里等用户自己改
+                if (!memoBanWarned) {
+                    memoBanWarned = true;
+                    try { toast('备忘录包含不允许的词汇，请修改后再试', 3000); } catch (e) {}
+                    console.warn('[banned] 命中：', hit, '｜字段：备忘录');
+                }
+                const st = document.getElementById('memoStatus');
+                if (st) { st.textContent = '含不允许的词汇 · 未保存'; st.style.opacity = '1'; }
+                clearTimeout(autoSaveMemo._t);
+                return;
+            }
+            memo.title = titleVal;
+            memo.content = contentVal;
             memo.updatedAt = Date.now();
             saveData();
             const st = document.getElementById('memoStatus');
@@ -16809,13 +17095,23 @@ ${tonePrompt}
         function closeMemoEditor() {
             const memo = (data.memos || []).find(m => m.id === editingMemoId);
             if (memo) {
-                memo.title = document.getElementById('memoTitle').value;
-                memo.content = document.getElementById('memoContent').value;
-                if (!memo.title.trim() && !memo.content.trim()) {
-                    data.memos = data.memos.filter(m => m.id !== memo.id);
+                const titleVal = document.getElementById('memoTitle').value;
+                const contentVal = document.getElementById('memoContent').value;
+                const hit = findBannedIn(titleVal, contentVal);
+                if (hit) {
+                    // 命中就不落盘：保留上一次已保存的版本，本次改动丢弃
+                    try { toast('备忘录包含不允许的词汇，本次内容未保存', 3000); } catch (e) {}
+                    console.warn('[banned] 命中：', hit, '｜字段：备忘录（关闭时）');
+                } else {
+                    memo.title = titleVal;
+                    memo.content = contentVal;
+                    if (!memo.title.trim() && !memo.content.trim()) {
+                        data.memos = data.memos.filter(m => m.id !== memo.id);
+                    }
                 }
             }
             editingMemoId = null;
+            memoBanWarned = false;
             clearTimeout(memoTimer);
             document.getElementById('memoEditor').classList.remove('open');
             document.getElementById('memoTitle').value = '';
@@ -16829,6 +17125,7 @@ ${tonePrompt}
                 const st = document.getElementById('memoStatus');
                 st.textContent = '输入中…';
                 st.style.opacity = '.6';
+                memoBanWarned = false;   // 用户又改了，允许下一次再提示一遍
                 clearTimeout(memoTimer);
                 memoTimer = setTimeout(autoSaveMemo, 400);
             });
@@ -17550,6 +17847,7 @@ ${tonePrompt}
             const input = document.getElementById('photoDescInput');
             input.focus();
             document.getElementById('photoDescSave').addEventListener('click', () => {
+                if (!assertNoBanned([input.value], '图片描述')) return;   // 命中不关弹窗
                 photo.desc = input.value.trim();
                 saveData();
                 closeModal();
@@ -19168,6 +19466,7 @@ ${tonePrompt}
                 const price = Number(document.getElementById('cdPrice').value);
                 const emoji = document.getElementById('cdEmoji').value.trim() || '';
                 if (!name) { alert('请填写餐品名称'); return; }
+                if (!assertNoBanned([name], '餐品名称')) return;   // 命中不关弹窗
                 if (!Number.isFinite(price) || price < 0) { alert('请填写正确的价格'); return; }
 
                 const tk = takeoutData();
@@ -19506,6 +19805,7 @@ ${tonePrompt}
                 const desc = document.getElementById('tbPubDesc').value.trim();
                 const price = Number(document.getElementById('tbPubPrice').value);
                 if (!name) { alert('请填写商品名称'); return; }
+                if (!assertNoBanned([name, desc], '商品信息')) return;   // 命中不关弹窗
                 if (!Number.isFinite(price) || price < 0) { alert('请填写正确的价格'); return; }
 
                 const item = {
@@ -22043,6 +22343,9 @@ ${tonePrompt}
                         out = lines.slice(0, MAX_BUBBLES);
                     }
                     out.forEach(line => {
+                        // AI 输出兜底：命中违禁词就整条不发（不替换成 *** —— 气泡里出现星号更怪）
+                        const hit = findBannedWord(line);
+                        if (hit) { console.warn('[banned] AI 回复含违禁词，已跳过该条：', hit, line); return; }
                         addMessage(personaId, 'assistant', 'text', line);
                     });
                 }
@@ -24927,6 +25230,12 @@ ${tonePrompt}
             // 能不能转写是锦上添花，不是发送的前置条件。
             opts = opts || {};
             let text = (transcript || '').trim();
+            // 语音已录完，这里只拦"文字内容"：命中就把转写丢掉，让 AI 当成没听清
+            // （走 noTranscript 分支自然追问，不弹窗逼玩家重录）
+            if (text && findBannedWord(text)) {
+                console.warn('[banned] 语音转写命中，已置空：', findBannedWord(text));
+                text = '';
+            }
             const audioId = 'v_' + genId();
             try {
                 await VoiceDB.put({ id: audioId, blob, mime: blob.type, createdAt: Date.now() });
@@ -24950,6 +25259,16 @@ ${tonePrompt}
                     text = await transcribeAudio(blob, opts.mime || blob.type, '');
                 } finally {
                     hideVoiceAsrBusy();
+                }
+                // 云端转写命中违禁词：文字丢掉，语音照发，AI 走"没听清"分支
+                if (text && findBannedWord(text)) {
+                    console.warn('[banned] 语音转写命中，已置空：', findBannedWord(text));
+                    text = '';
+                    msg.content = '';
+                    msg.noTranscript = true;
+                    saveData();
+                    renderMessages(personaId);
+                    renderWechatList();
                 }
                 if (text) {
                     msg.content = text;
@@ -26434,6 +26753,7 @@ ${tonePrompt}
             document.getElementById('ceSave').addEventListener('click', () => {
                 const title = document.getElementById('ceTitle').value.trim();
                 if (!title) { alert('请输入标题'); return; }
+                if (!assertNoBanned([title, document.getElementById('ceNote').value], '日程')) return;   // 命中不关弹窗
                 const type = typeEl.value;
                 const date = document.getElementById('ceDate').value || todayStr();
                 const endDate = type === 'period' ? (document.getElementById('ceEnd').value || '') : '';
@@ -28945,8 +29265,14 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         async function sendCallText(text, blob, duration, opts) {
             const personaId = callState.personaId;
             if (!callState.active || callState.phase !== 'active' || !personaId) return;
-            const clean = String(text || '').trim();
+            let clean = String(text || '').trim();
             const hasAudio = !!(blob && blob.size);
+            // 违禁词：打字说的 → 直接拦下；语音转写命中的 → 语音照发，只把转写置空
+            // （AI 读不到文字就会走"没听清"分支自然追问，不逼玩家重录）
+            if (clean && findBannedWord(clean)) {
+                if (!hasAudio) { assertNoBanned([clean], '通话内容'); return; }
+                clean = '';
+            }
             // 没识别出文字但录到了声音：发一条「没听清」的语音，让 AI 自然追问，
             // 不再弹输入框逼用户打字。
             const noTranscript = !!(opts && opts.noTranscript) || !clean;
@@ -29424,6 +29750,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 const members = Array.from(picked);
                 if (members.length < 2) { toast('至少选 2 个成员'); return; }
                 const nameInput = document.getElementById('groupNameInput');
+                if (!assertNoBanned([nameInput ? nameInput.value : ''], '群名')) return;   // 命中不关弹窗
                 const gid = createGroup(members, nameInput ? nameInput.value : '');
                 closeModal();
                 if (gid) openGroupChat(gid);
@@ -29555,6 +29882,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             const raw = (content != null && String(content).trim()) ? content : (input ? input.value : '');
             const text = String(raw || '').trim();
             if (!text) return;
+            if (!assertNoBanned([text], '消息')) return;   // 命中不清空输入框
             if (input) input.value = '';
             const bar = document.getElementById('wxInputBar');
             if (bar) bar.classList.remove('has-text');
@@ -29759,6 +30087,9 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
 
             let quote = parsed.quote;
             outLines.forEach(line => {
+                // AI 输出兜底：命中违禁词就整条不发
+                const hit = findBannedWord(line);
+                if (hit) { console.warn('[banned] AI 群回复含违禁词，已跳过该条：', hit, line); return; }
                 addGroupMessage(gid, personaId, 'text', line, quote ? { quoted: quote } : undefined);
                 quote = null;   // 只在第一条带引用
             });
@@ -30211,6 +30542,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 const v = (nameEl.value || '').trim().slice(0, 20);
                 if (!v) { nameEl.value = g.name; return; }
                 if (v === g.name) return;
+                if (!assertNoBanned([v], '群名')) { nameEl.value = g.name; return; }   // 命中原样退回
                 g.name = v;
                 saveData();
                 renderWechatList();
@@ -30224,6 +30556,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             noticeEl.addEventListener('blur', () => {
                 const v = (noticeEl.value || '').trim();
                 if (v === (g.notice || '')) return;
+                if (!assertNoBanned([v], '群公告')) { noticeEl.value = g.notice || ''; return; }   // 命中原样退回
                 g.notice = v;
                 saveData();
                 toast('群公告已保存');
