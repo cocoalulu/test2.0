@@ -1270,6 +1270,8 @@
             animation: fadeUp 0.25s ease;
             color: #e8e8f0;
         }
+        /* 内容偏多的弹窗（世界书编辑等）：借用更多纵向空间，按钮尽量不用滚 */
+        .modal.modal-tall { max-height: 88%; }
         .modal .modal-title {
             font-size: 18px;
             font-weight: 600;
@@ -1417,6 +1419,7 @@
             padding: 6px 8px;
             background: rgba(255, 255, 255, 0.03);
         }
+        .wb-check-list.compact { max-height: 96px; }
         .wb-check-list .item {
             display: flex;
             align-items: center;
@@ -7047,6 +7050,107 @@
             text-align: center;
             line-height: 1.6;
         }
+
+        /* ---- v30 · 长期记忆库 ---- */
+        .mem-toolbar {
+            display: flex;
+            gap: 8px;
+            margin: 4px 0 12px;
+            flex-wrap: wrap;
+        }
+        .mem-toolbar .btn { flex: 1; white-space: nowrap; }
+        .mem-item {
+            border: 1px solid rgba(255, 255, 255, .09);
+            border-radius: 14px;
+            padding: 10px 12px;
+            margin-bottom: 8px;
+            background: rgba(255, 255, 255, .035);
+        }
+        .mem-item.pinned {
+            border-color: rgba(124, 156, 255, .42);
+            background: rgba(124, 156, 255, .08);
+        }
+        .mem-item.archived { opacity: .52; }
+        .mem-top {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 5px;
+        }
+        .mem-chip {
+            font-size: 10.5px;
+            line-height: 1.6;
+            padding: 0 7px;
+            border-radius: 99px;
+            background: rgba(255, 255, 255, .10);
+            color: rgba(255, 255, 255, .72);
+            flex: none;
+        }
+        .mem-chip.t-preference { background: rgba(255, 158, 120, .16); color: #ffb08a; }
+        .mem-chip.t-promise    { background: rgba(255, 214, 102, .14); color: #ffd977; }
+        .mem-chip.t-event      { background: rgba(124, 196, 255, .14); color: #8fc9ff; }
+        .mem-chip.t-relationship { background: rgba(255, 128, 171, .14); color: #ff9ec2; }
+        .mem-strength {
+            font-size: 10.5px;
+            color: rgba(255, 255, 255, .38);
+            margin-left: auto;
+            flex: none;
+        }
+        .mem-text {
+            font-size: 13.5px;
+            line-height: 1.65;
+            color: #e8e8f0;
+            word-break: break-word;
+        }
+        .mem-meta {
+            display: flex;
+            flex-wrap: wrap;
+            align-items: center;
+            gap: 10px;
+            margin-top: 7px;
+            font-size: 11px;
+            color: rgba(255, 255, 255, .38);
+        }
+        .mem-acts { display: flex; gap: 12px; margin-left: auto; }
+        .mem-mini {
+            border: none;
+            background: none;
+            padding: 0;
+            font-size: 11px;
+            color: rgba(255, 255, 255, .55);
+            cursor: pointer;
+        }
+        .mem-mini:active { opacity: .6; }
+        .mem-mini.danger { color: #ff8a8a; }
+        .mem-empty {
+            text-align: center;
+            padding: 26px 10px;
+            font-size: 12.5px;
+            color: rgba(255, 255, 255, .38);
+            line-height: 1.9;
+        }
+        .mem-section-title {
+            font-size: 11.5px;
+            color: rgba(255, 255, 255, .38);
+            margin: 14px 0 8px;
+            letter-spacing: .04em;
+        }
+        .mem-manual {
+            display: flex;
+            gap: 8px;
+            margin: 2px 0 10px;
+        }
+        .mem-manual input { margin-top: 0; flex: 1; }
+        .mem-manual button { flex: none; }
+        .mem-src {
+            font-size: 12px;
+            line-height: 1.75;
+            color: rgba(255, 255, 255, .72);
+            border-left: 2px solid rgba(255, 255, 255, .14);
+            padding-left: 10px;
+            margin-bottom: 10px;
+        }
+        .mem-src .who { color: rgba(255, 255, 255, .4); font-size: 11px; }
     </style>
 </head>
 <body>
@@ -7253,6 +7357,32 @@
                             <span class="v" id="ctxMemoryVal">20</span>
                         </div>
                         <div class="ctx-hint" id="ctxMemoryHint">约合 10 轮对话</div>
+                    </div>
+                    <div class="setting-item" id="longMemoryCard">
+                        <div class="label">长期记忆</div>
+                        <div class="desc">角色会把值得长期记住的事（偏好、约定、重要事件）单独存在记忆库里。清空聊天记录只会清掉对话原文，不会清掉这些记忆。</div>
+                        <div class="ms-row" style="margin-top:8px;">
+                            <span>开启长期记忆</span>
+                            <button class="ms-switch" id="msLongMemory" type="button"></button>
+                        </div>
+                        <div class="wp-slider-row" style="padding:14px 0 0;">
+                            <span class="k" style="width:auto;">每轮带几条</span>
+                            <input type="range" id="memTopK" min="1" max="8" step="1" value="4" />
+                            <span class="v" id="memTopKVal">4 条</span>
+                        </div>
+                        <div class="wp-slider-row" style="padding:8px 0 0;">
+                            <span class="k" style="width:auto;">每几条提炼</span>
+                            <input type="range" id="memEveryN" min="4" max="20" step="1" value="8" />
+                            <span class="v" id="memEveryNVal">8 条</span>
+                        </div>
+                        <div class="wp-slider-row" style="padding:8px 0 2px;">
+                            <span class="k" style="width:auto;">遗忘速度</span>
+                            <input type="range" id="memDecay" min="0.5" max="2.5" step="0.1" value="1" />
+                            <span class="v" id="memDecayVal">标准</span>
+                        </div>
+                        <div class="ctx-hint" id="memStatsHint">暂无记忆</div>
+                        <div class="ctx-hint">记忆只存在这台设备的浏览器里；每轮最多注入 300 token 左右，超出的按相关度砍掉。</div>
+                        <button class="btn btn-sm mt-8" id="memClearAllBtn" type="button">清空全部记忆</button>
                     </div>
                     <div class="setting-item" id="typingDelayCard">
                         <div class="label">模拟打字延迟</div>
@@ -7585,6 +7715,7 @@
                     <div class="as-title">聊天设置</div>
                     <button class="as-item" id="sheetBg">设置聊天背景</button>
                     <button class="as-item" id="sheetEdit">编辑联系人</button>
+                    <button class="as-item" id="sheetMemory">记忆库</button>
                     <button class="as-item" id="sheetBlock">拉黑</button>
                     <button class="as-item as-danger" id="sheetDeleteFriend">删除好友</button>
                     <button class="as-item as-danger" id="sheetClear">清空聊天记录</button>
@@ -8492,6 +8623,25 @@
 - 人设语速慢 → 不要为了“碎片化连发”而打乱节奏
 聊天风格是为角色服务的，不是反过来。违背人设的“活人感”，比机械回复更糟。`;
 
+        // v31 · 预设世界书「王橹杰·人设细节补充」（局部绑定：只对王橹杰生效）
+        // 内容来源：用户提供的《世界书-人设细节补充-王橹杰》。
+        // 预设初始化与老存档迁移共用同一份文案，改一处即可。
+        const PRESET_WLJ_DETAIL_BOOK_NAME = '王橹杰·人设细节补充';
+        const PRESET_WLJ_DETAIL_KEY = 'wlj_detail';
+        const PRESET_WLJ_DETAIL = `以下是王橹杰的一些零碎特点（聊天时自然流露即可，不要当成清单逐条念出来）：
+1. 紧张的时候容易胃疼，害怕的时候会变成话痨
+2. 睡觉前会往枕头、被子上喷香水
+3. 喜欢看一些文艺电影和书
+4. 非常喜欢小马宝莉，是会重刷的那种程度
+5. 手气很好，盲盒一般都能抽到自己想要的
+6. 喜欢ccd、拍立得，喜欢记录朋友和生活
+7. 对自己的容貌要求很严格，所以会进行身材管理和容貌管理，最近在尝试做抗氧果汁喝
+8. 容易水肿
+9. 喜欢逛街，喜欢往包上挂很多挂坠、徽章
+10. 小时候养猫很喜欢小猫咪，但是养了没一段时间，发现过敏了，妈妈不得已把小猫送走，为此他很伤心
+11. 喜欢吃漂亮饭
+12. 喜欢迪拜巧克力软曲奇并致力于推荐给所有人`;
+
         const PRESET_ROLE_WLJ = `你叫王橹杰，16岁，生日1月8日，成都人。现在你在微信上和对方文字聊天。
 
 【外貌】颜值非常高（满分级别，各种风格都能驾驭），身材高挑有气质（身高185+），有一双很漂亮的丹凤眼，嘴唇形状很特别。
@@ -9006,6 +9156,23 @@
             });
         }
 
+        // v31 · 把「王橹杰·人设细节补充」这本局部世界书绑到王橹杰身上
+        //   · 按 presetKey / 名字找人找书，不认 id（老存档里的 id 是别处生成的）
+        //   · 幂等：重复调用不会重复绑定，也不会把书塞给别的角色
+        function bindWljDetailBook(d) {
+            if (!d || !Array.isArray(d.worldBooks) || !Array.isArray(d.personas)) return false;
+            const persona = presetFindPersona(d, 'wlj');
+            if (!persona) return false;
+            const book = d.worldBooks.find(w => w && (
+                w.presetKey === PRESET_WLJ_DETAIL_KEY || w.name === PRESET_WLJ_DETAIL_BOOK_NAME
+            ));
+            if (!book) return false;
+            if (!Array.isArray(persona.boundWorldBookIds)) persona.boundWorldBookIds = [];
+            if (persona.boundWorldBookIds.includes(book.id)) return false;
+            persona.boundWorldBookIds.push(book.id);
+            return true;
+        }
+
         // 把预设（世界书 / 两位角色 / 开场消息 / 朋友圈）写进数据对象
         function seedPreset(target) {
             const d = target || {};
@@ -9028,12 +9195,23 @@
                     group: '预设',
                     forumExcluded: true,
                     presetKey: 'alive_chat'
+                },
+                {
+                    id: genId(),
+                    name: PRESET_WLJ_DETAIL_BOOK_NAME,
+                    content: PRESET_WLJ_DETAIL,
+                    scope: 'local',
+                    group: '预设',
+                    presetKey: PRESET_WLJ_DETAIL_KEY
                 }
             ];
             // 新存档已内置「聊天活人感」，老存档迁移逻辑据此跳过
             d.aliveChatPresetVersion = 1;
+            d.wljDetailPresetVersion = 1;
             d.forumActiveGlobalIds = [];
             d.personas = personas;
+            // v31 · 局部世界书只绑给王橹杰，别的角色读不到
+            bindWljDetailBook(d);
 
             const now = Date.now();
             // 开场白一律从注册表读，避免文案散落在两处
@@ -9120,6 +9298,10 @@
                 personas: [],
                 worldBooks: [],
                 chats: {},
+                // v30 · 长期记忆：独立于 chats，清空聊天不会掉
+                memories: {},            // { [personaId]: Memory[] }
+                memoryMeta: {},          // { [personaId]: { cursorId, lastExtractAt } }
+                memorySettings: { enabled: true, recallTopK: 4, extractEveryN: 8, extractCooldownMin: 10, decaySpeed: 1 },
                 forumPosts: [],
                 emojis: [],
                 stickers: [],
@@ -9290,6 +9472,52 @@
                             }));
                     }
                     if (!d.chats) d.chats = {};
+                    // ---- v30 · 长期记忆迁移：老存档补空对象，脏字段逐条夹到合法区间 ----
+                    if (!d.memories || typeof d.memories !== 'object' || Array.isArray(d.memories)) d.memories = {};
+                    Object.keys(d.memories).forEach(pid => {
+                        const arr = d.memories[pid];
+                        if (!Array.isArray(arr)) { delete d.memories[pid]; return; }
+                        const seenIds = Object.create(null);
+                        d.memories[pid] = arr.filter(m => m && typeof m === 'object' && typeof m.text === 'string' && m.text.trim())
+                            .map(m => {
+                                const imp = Math.max(1, Math.min(5, Math.round(Number(m.importance) || 3)));
+                                let id = typeof m.id === 'string' && m.id ? m.id : ('mem_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8));
+                                while (seenIds[id]) id = 'mem_' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8);
+                                seenIds[id] = 1;
+                                const st = Number(m.strength);
+                                return {
+                                    id,
+                                    type: ['event', 'fact', 'preference', 'promise', 'relationship'].indexOf(m.type) >= 0 ? m.type : 'fact',
+                                    text: String(m.text).replace(/\s+/g, ' ').trim().slice(0, 120),
+                                    importance: imp,
+                                    strength: Math.max(0, Math.min(1, isFinite(st) ? st : imp / 5)),
+                                    createdAt: Number(m.createdAt) || Date.now(),
+                                    updatedAt: Number(m.updatedAt) || Number(m.createdAt) || Date.now(),
+                                    lastRecalledAt: Number(m.lastRecalledAt) || Number(m.createdAt) || Date.now(),
+                                    recallCount: Math.max(0, Math.round(Number(m.recallCount) || 0)),
+                                    mergeCount: Math.max(1, Math.round(Number(m.mergeCount) || 1)),
+                                    sourceMsgIds: Array.isArray(m.sourceMsgIds) ? m.sourceMsgIds.filter(x => typeof x === 'string').slice(-8) : [],
+                                    pinned: !!m.pinned,
+                                    archived: !!m.archived
+                                };
+                            })
+                            .slice(0, 400);
+                    });
+                    if (!d.memoryMeta || typeof d.memoryMeta !== 'object' || Array.isArray(d.memoryMeta)) d.memoryMeta = {};
+                    if (!d.memorySettings || typeof d.memorySettings !== 'object') d.memorySettings = {};
+                    {
+                        const ms = d.memorySettings;
+                        if (typeof ms.enabled !== 'boolean') ms.enabled = true;
+                        const clampInt = (v, lo, hi, def) => {
+                            const n = Math.round(Number(v));
+                            return isFinite(n) ? Math.max(lo, Math.min(hi, n)) : def;
+                        };
+                        ms.recallTopK = clampInt(ms.recallTopK, 1, 8, 4);
+                        ms.extractEveryN = clampInt(ms.extractEveryN, 4, 20, 8);
+                        ms.extractCooldownMin = clampInt(ms.extractCooldownMin, 1, 120, 10);
+                        const ds = Number(ms.decaySpeed);
+                        ms.decaySpeed = isFinite(ds) ? Math.max(0.5, Math.min(2.5, ds)) : 1;
+                    }
                     if (!d.forumActiveGlobalIds) d.forumActiveGlobalIds = [];
                     if (!d.moments) d.moments = [];
                     // ---- v27 · 红包 / 转账 · 深夜计数 ----
@@ -9644,6 +9872,29 @@
                             });
                         }
                         d.aliveChatPresetVersion = 1;
+                    }
+
+                    // ---- v31 · 王橹杰专属局部世界书：老存档补一本并自动绑定 ----
+                    // 只补一次（版本号控制）：用户之后手动删掉这本书，不会再被强行加回来。
+                    // 角色被整个删掉时也不补——没有王橹杰，这本书没人读。
+                    if ((d.wljDetailPresetVersion || 0) < 1) {
+                        if (!Array.isArray(d.worldBooks)) d.worldBooks = [];
+                        const hasBook = d.worldBooks.some(w => w && (
+                            w.presetKey === PRESET_WLJ_DETAIL_KEY || w.name === PRESET_WLJ_DETAIL_BOOK_NAME
+                        ));
+                        const hasWlj = !!presetFindPersona(d, 'wlj');
+                        if (!hasBook && hasWlj) {
+                            d.worldBooks.push({
+                                id: genId(),
+                                name: PRESET_WLJ_DETAIL_BOOK_NAME,
+                                content: PRESET_WLJ_DETAIL,
+                                scope: 'local',
+                                group: '预设',
+                                presetKey: PRESET_WLJ_DETAIL_KEY
+                            });
+                        }
+                        bindWljDetailBook(d);
+                        d.wljDetailPresetVersion = 1;
                     }
 
                     // ---- v26 · 世界书补「人设优先」段（只追加缺失内容，不覆盖用户改动）----
@@ -10917,7 +11168,7 @@ ${tonePrompt}
                 alert('没有聊天记录需要清除。');
                 return;
             }
-            if (confirm(`确定要清除所有聊天记录（共 ${total} 条消息）吗？此操作不可撤销！`)) {
+            if (confirm(`确定要清除所有聊天记录（共 ${total} 条消息）吗？\n长期记忆会保留，角色仍然记得你。此操作不可撤销！`)) {
                 // 清理语音 / 图片文件 + 所有调度定时器
                 for (const key in data.chats) {
                     (data.chats[key] || []).forEach(m => {
@@ -10942,12 +11193,12 @@ ${tonePrompt}
                 closeChatWindow();
                 renderWechatList();
                 updateWxTabBadge();
-                alert('✅ 聊天记录已清除。');
+                alert('✅ 聊天记录已清除。\n长期记忆已保留，角色仍然记得你。');
             }
         }
 
         function resetAllData() {
-            if (confirm('⚠️ 确定要重置所有数据吗？\n将清除世界书、人设、论坛、朋友圈、聊天记录、备忘录等所有内容。\nAPI 配置、个人设定、壁纸会保留。\n此操作不可撤销！')) {
+            if (confirm('⚠️ 确定要重置所有数据吗？\n将清除世界书、人设、论坛、朋友圈、聊天记录、记忆库、备忘录等所有内容。\nAPI 配置、个人设定、壁纸会保留。\n此操作不可撤销！')) {
                 const savedApis = data.apis.slice();
                 const savedProfile = { ...data.profile };
                 const savedWallpaper = data.wallpaper ? { ...data.wallpaper } : null;
@@ -11383,6 +11634,7 @@ ${tonePrompt}
             renderPresetSyncCard();
             renderContextMemorySetting();
             renderTypingDelayCard();
+            renderMemorySettings();
             renderCacheStats();
             renderMomentSettingsCard();
             renderJealousyCard();
@@ -11900,6 +12152,7 @@ ${tonePrompt}
         function closeChatWindow() {
             const cw = document.getElementById('chatWindow');
             if (!cw) return;
+            const closedPid = cw.dataset.persona || '';
             cw.classList.remove('open');
             cw.dataset.persona = '';
             cw.dataset.group = '';
@@ -11911,6 +12164,10 @@ ${tonePrompt}
             pendingQuote = null;
             renderQuoteBar();
             renderListenTogether();
+            // 聊完就走 → 补一刀提炼，避免记忆漏记（条数门槛比平时低）
+            if (closedPid) {
+                try { maybeExtractMemory(closedPid, { onClose: true }); } catch (e) {}
+            }
         }
 
         function deletePersona(id) {
@@ -11950,6 +12207,9 @@ ${tonePrompt}
             delete data.lastProactive[id];
             delete data.chatBackgrounds[id];
             delete data.friendRequests[id];
+            // 人没了，记忆也没必要留着（和"清空聊天"不同：这是删除联系人）
+            if (data.memories) delete data.memories[id];
+            if (data.memoryMeta) delete data.memoryMeta[id];
             if (listenTogether && listenTogether.personaId === id) stopListenTogether();
             // 把人从所有群里摘掉；群空了就解散
             (data.groups || []).slice().forEach(g => {
@@ -13476,11 +13736,16 @@ ${tonePrompt}
                 html += `<div class="wb-group"><div class="group-title">${g} <span style="font-weight:400;font-size:12px;color:rgba(255,255,255,0.4);">${items.length} 本</span></div>`;
                 items.forEach(w => {
                     const scopeLabel = w.scope === 'global' ? '🌐 全局' : '📌 局部';
+                    const bindNames = w.scope === 'local' ? boundPersonaNames(w.id) : [];
+                    const bindLine = w.scope === 'local'
+                        ? `<div class="desc" style="color:${bindNames.length ? 'rgba(124,156,255,0.85)' : 'rgba(255,140,140,0.75)'};margin-top:2px;">${bindNames.length ? '已绑定：' + escHtml(bindNames.join('、')) : '未绑定任何角色（暂不生效）'}</div>`
+                        : '';
                     html += `
                         <div class="wb-item">
                             <div class="info">
                                 <div class="name">${w.name} <span class="badge">${scopeLabel}</span></div>
                                 <div class="desc">${w.content.slice(0, 60)}${w.content.length>60?'...':''}</div>
+                                ${bindLine}
                             </div>
                             <div class="actions">
                                 <button class="btn btn-sm btn-primary" onclick="editWb('${w.id}')">编辑</button>
@@ -13492,6 +13757,59 @@ ${tonePrompt}
                 html += '</div>';
             }
             container.innerHTML = html;
+        }
+
+        // ============================================================
+        //  世界书 ↔ 角色 绑定（唯一入口）
+        //  ------------------------------------------------------------
+        //  · 局部世界书只有被角色 boundWorldBookIds 收下才会进 System
+        //  · 勾选 = 绑定，取消 = 解绑；不勾任何角色就是「写了但没人读」
+        //  · 世界书的创建 / 编辑弹窗都走这里，保证「勾选」和「角色身上的 id」永远一致
+        // ============================================================
+        function boundPersonaNames(bookId) {
+            return (data.personas || [])
+                .filter(p => (p.boundWorldBookIds || []).indexOf(bookId) !== -1)
+                .map(p => p.nickname || p.name);
+        }
+
+        // 把 bookId 的绑定关系整体同步成 personaIds（其余角色身上的残留一并清掉）
+        function syncWbBinding(bookId, personaIds) {
+            const wanted = Array.isArray(personaIds) ? personaIds : [];
+            (data.personas || []).forEach(p => {
+                if (!Array.isArray(p.boundWorldBookIds)) p.boundWorldBookIds = [];
+                const has = p.boundWorldBookIds.indexOf(bookId) !== -1;
+                const want = wanted.indexOf(p.id) !== -1;
+                if (want && !has) p.boundWorldBookIds.push(bookId);
+                else if (!want && has) p.boundWorldBookIds = p.boundWorldBookIds.filter(id => id !== bookId);
+            });
+        }
+
+        // 弹窗里的「绑定角色」勾选列表（bookId 为空 = 新建，全部不勾）
+        function wbBindListHtml(bookId) {
+            if (!data.personas || !data.personas.length) {
+                return '<div style="color:rgba(255,255,255,0.4);font-size:13px;padding:4px 0;">暂无角色，先去微信里创建人设。</div>';
+            }
+            return data.personas.map(p => {
+                const on = bookId && (p.boundWorldBookIds || []).indexOf(bookId) !== -1;
+                return `
+                    <div class="item">
+                        <input type="checkbox" value="${p.id}" ${on ? 'checked' : ''} />
+                        <span>${escHtml(p.nickname || p.name)}</span>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // 范围选中「全局」时收起绑定区：全局书本来就不需要绑定
+        function bindScopeToggle(scopeEl, wrapEl) {
+            const apply = () => { wrapEl.style.display = scopeEl.value === 'local' ? '' : 'none'; };
+            scopeEl.addEventListener('change', apply);
+            apply();
+        }
+
+        function readWbBindChecks() {
+            return Array.from(document.querySelectorAll('#wbBindList input[type="checkbox"]:checked'))
+                .map(el => el.value);
         }
 
         function deleteWb(id) {
@@ -13516,17 +13834,22 @@ ${tonePrompt}
                 <label>分组</label>
                 <input id="wbGroup" value="${wb.group || ''}" placeholder="默认" />
                 <label>内容 (AI 会读取这段设定)</label>
-                <textarea id="wbContent" rows="4">${wb.content}</textarea>
+                <textarea id="wbContent" rows="3">${wb.content}</textarea>
                 <label>范围</label>
                 <select id="wbScope">
                     <option value="global" ${wb.scope==='global'?'selected':''}>全局 (对所有角色生效)</option>
-                    <option value="local" ${wb.scope==='local'?'selected':''}>局部 (需手动绑定到角色)</option>
+                    <option value="local" ${wb.scope==='local'?'selected':''}>局部 (只对勾选的角色生效)</option>
                 </select>
+                <div id="wbBindWrap">
+                    <label>绑定角色</label>
+                    <div class="wb-check-list compact" id="wbBindList">${wbBindListHtml(wb.id)}</div>
+                </div>
                 <div class="btn-row">
                     <button class="btn" onclick="closeModal()">取消</button>
                     <button class="btn btn-primary" id="saveWbEdit">保存</button>
                 </div>
-            `);
+            `, { tall: true });
+            bindScopeToggle(document.getElementById('wbScope'), document.getElementById('wbBindWrap'));
             document.getElementById('saveWbEdit').addEventListener('click', () => {
                 const name = document.getElementById('wbName').value.trim();
                 if (!name) { alert('请输入名称'); return; }
@@ -13534,6 +13857,8 @@ ${tonePrompt}
                 wb.group = document.getElementById('wbGroup').value.trim() || '默认';
                 wb.content = document.getElementById('wbContent').value.trim() || '无内容';
                 wb.scope = document.getElementById('wbScope').value;
+                // 全局书不参与绑定：顺手把历史残留解掉，避免「局部→全局」后还挂着脏绑定
+                syncWbBinding(wb.id, wb.scope === 'local' ? readWbBindChecks() : []);
                 if (wb.scope === 'global' && !data.forumActiveGlobalIds.includes(wb.id)) {
                     data.forumActiveGlobalIds.push(wb.id);
                 }
@@ -13552,23 +13877,29 @@ ${tonePrompt}
                 <label>分组</label>
                 <input id="wbGroupNew" placeholder="默认" />
                 <label>内容 (AI 会读取这段设定)</label>
-                <textarea id="wbContentNew" rows="4" placeholder="例如：不说脏话，保持礼貌..."></textarea>
+                <textarea id="wbContentNew" rows="3" placeholder="例如：不说脏话，保持礼貌..."></textarea>
                 <label>范围</label>
                 <select id="wbScopeNew">
                     <option value="global">全局 (对所有角色生效)</option>
-                    <option value="local">局部 (需手动绑定到角色)</option>
+                    <option value="local">局部 (只对勾选的角色生效)</option>
                 </select>
+                <div id="wbBindWrapNew">
+                    <label>绑定角色</label>
+                    <div class="wb-check-list compact" id="wbBindList">${wbBindListHtml(null)}</div>
+                </div>
                 <div class="btn-row">
                     <button class="btn" onclick="closeModal()">取消</button>
                     <button class="btn btn-primary" id="saveWbNew">创建</button>
                 </div>
-            `);
+            `, { tall: true });
+            bindScopeToggle(document.getElementById('wbScopeNew'), document.getElementById('wbBindWrapNew'));
             document.getElementById('saveWbNew').addEventListener('click', () => {
                 const name = document.getElementById('wbNameNew').value.trim();
                 if (!name) { alert('请输入名称'); return; }
                 const group = document.getElementById('wbGroupNew').value.trim() || '默认';
                 const content = document.getElementById('wbContentNew').value.trim() || '无内容';
                 const scope = document.getElementById('wbScopeNew').value;
+                const bindIds = scope === 'local' ? readWbBindChecks() : [];
                 const newWb = {
                     id: genId(),
                     name,
@@ -13577,6 +13908,7 @@ ${tonePrompt}
                     scope: scope
                 };
                 data.worldBooks.push(newWb);
+                syncWbBinding(newWb.id, bindIds);
                 if (scope === 'global') {
                     data.forumActiveGlobalIds.push(newWb.id);
                 }
@@ -15882,10 +16214,12 @@ ${tonePrompt}
         // ============================================================
         //  模态框
         // ============================================================
-        function showModal(html) {
+        function showModal(html, opts) {
             const overlay = document.getElementById('modalOverlay');
             const content = document.getElementById('modalContent');
             content.innerHTML = html;
+            // 弹窗共用同一个容器，高个子弹窗每次打开都要显式声明，避免串味到下一个弹窗
+            content.classList.toggle('modal-tall', !!(opts && opts.tall));
             overlay.classList.add('show');
         }
 
@@ -19416,8 +19750,9 @@ ${tonePrompt}
             const body = {
                 model: api.model || DEFAULT_API.model,
                 messages: [...sys, ...history],
-                max_tokens: 800,
-                temperature: 0.85
+                // 默认值保持不变；记忆提炼这类轻任务可以传更小的预算
+                max_tokens: isFinite(Number(opts.maxTokens)) ? Math.max(64, Math.min(2000, Number(opts.maxTokens))) : 800,
+                temperature: isFinite(Number(opts.temperature)) ? Math.max(0, Math.min(1.5, Number(opts.temperature))) : 0.85
             };
             const resp = await fetch(api.url, {
                 method: 'POST',
@@ -19438,7 +19773,7 @@ ${tonePrompt}
                 throw new Error(msg);
             }
             const json = await resp.json();
-            if (json.usage) recordCacheUsage(json.usage);
+            if (json.usage && !opts.skipUsage) recordCacheUsage(json.usage);
             if (json.choices && json.choices.length) {
                 const c = json.choices[0].message.content;
                 return (typeof c === 'string' ? c : '').trim();
@@ -19936,6 +20271,679 @@ ${tonePrompt}
         // 这样 System + 历史前缀保持字节一致，只有最后一点点 token 需要重算
         // 天气 / 特殊日子【不在这里】常驻注入：两者都由 sendUserMessage 在代码层判定，
         // 只有命中时才通过 opts.extraList 拼进来。没命中＝零 token，别往这里加默认段落。
+        // ============================================================
+        //  v30 · 长期记忆（L2 情景 / L3 语义）
+        //  ------------------------------------------------------------
+        //  data.chats 是「工作记忆」：完整对话原文，会被"清空聊天记录"清掉。
+        //  data.memories 是「长期记忆」：偏好/事实/约定/事件，独立存储，
+        //  清空聊天后角色依然记得"她不吃香菜""下周三要考科目二"。
+        //  三条主线：节流提炼 → 指数衰减（半衰期由 importance 决定）→ 按相关度召回。
+        //  兜底：每条可溯源到原消息、可单独删除、可钉住不忘。
+        // ============================================================
+        const MEM_TYPES = { event: '事件', fact: '事实', preference: '偏好', promise: '约定', relationship: '关系' };
+        const MEM_MAX_PER_PERSONA = 160;      // 每角色上限，超了按 strength × importance 归档
+        const MEM_RECALL_MAX_CHARS = 620;     // 记忆块字符上限（中文约 300 token）
+        const MEM_DAY = 86400000;
+
+        // 记忆库读写：永远走这里，避免各处各自兜底
+        function memoryList(personaId) {
+            if (!personaId) return [];
+            if (!data.memories || typeof data.memories !== 'object') data.memories = {};
+            if (!Array.isArray(data.memories[personaId])) data.memories[personaId] = [];
+            return data.memories[personaId];
+        }
+
+        function memCfg() {
+            if (!data.memorySettings || typeof data.memorySettings !== 'object') data.memorySettings = {};
+            const s = data.memorySettings;
+            if (typeof s.enabled !== 'boolean') s.enabled = true;
+            const ci = (v, lo, hi, def) => {
+                const n = Math.round(Number(v));
+                return isFinite(n) ? Math.max(lo, Math.min(hi, n)) : def;
+            };
+            s.recallTopK = ci(s.recallTopK, 1, 8, 4);
+            s.extractEveryN = ci(s.extractEveryN, 4, 20, 8);
+            s.extractCooldownMin = ci(s.extractCooldownMin, 1, 120, 10);
+            const ds = Number(s.decaySpeed);
+            s.decaySpeed = isFinite(ds) ? Math.max(0.5, Math.min(2.5, ds)) : 1;
+            return s;
+        }
+
+        function memMeta(personaId) {
+            if (!data.memoryMeta || typeof data.memoryMeta !== 'object') data.memoryMeta = {};
+            if (!data.memoryMeta[personaId] || typeof data.memoryMeta[personaId] !== 'object') data.memoryMeta[personaId] = {};
+            return data.memoryMeta[personaId];
+        }
+
+        // ---- 遗忘曲线：1 分≈3 天半衰期，5 分≈138 天；decaySpeed 是全局倍率 ----
+        function memHalfLifeDays(importance, speed) {
+            const imp = Math.max(1, Math.min(5, Number(importance) || 3));
+            return (3 + imp * 27) / Math.max(0.4, Number(speed) || 1);
+        }
+
+        // 只算不写：strength 的含义是"上次强化那一刻的强度"
+        function memStrength(mem, now) {
+            if (!mem) return 0;
+            const base = Number(mem.strength);
+            if (!isFinite(base)) return 0;
+            if (mem.pinned) return Math.max(0, Math.min(1, base));
+            const t = Number(now) || Date.now();
+            const last = Number(mem.lastRecalledAt) || Number(mem.createdAt) || t;
+            const days = Math.max(0, (t - last) / MEM_DAY);
+            const k = Math.pow(0.5, days / memHalfLifeDays(mem.importance, memCfg().decaySpeed));
+            return Math.max(0, Math.min(1, base * k));
+        }
+
+        // ---- 中文二字切分：和 detectRepeatedPhrases 同源，不依赖 embedding ----
+        const MEM_STOP_CHARS = '的了吧吗呢啊呀哦嗯是在有和就都也很不没我你他她它们个上下去来要会能这那说好一二三把被给对又还再';
+        const MEM_STOP_WORDS = new Set(['the', 'and', 'you', 'are', 'for', 'that', 'this', 'with', '哦', '嗯']);
+
+        function memTokens(text) {
+            const s = String(text || '').toLowerCase();
+            const out = new Set();
+            const latin = s.match(/[a-z0-9]{2,}/g) || [];
+            latin.forEach(w => { if (!MEM_STOP_WORDS.has(w)) out.add(w); });
+            const cjk = s.replace(/[^\u4e00-\u9fa5]/g, ' ');
+            cjk.split(/\s+/).forEach(seg => {
+                for (let i = 0; i + 1 < seg.length; i++) {
+                    const a = seg[i], b = seg[i + 1];
+                    if (MEM_STOP_CHARS.indexOf(a) >= 0 && MEM_STOP_CHARS.indexOf(b) >= 0) continue;
+                    out.add(a + b);
+                }
+            });
+            return out;
+        }
+
+        function memSimilarity(a, b) {
+            if (!a || !b) return 0;
+            if (String(a).replace(/\s+/g, '') === String(b).replace(/\s+/g, '')) return 1;
+            const A = memTokens(a), B = memTokens(b);
+            if (!A.size || !B.size) return 0;
+            let inter = 0;
+            A.forEach(t => { if (B.has(t)) inter++; });
+            return inter / (A.size + B.size - inter);
+        }
+
+        const MEM_TIME_RE = /(今天|明天|后天|昨天|前天|下周|下个?月|周末|生日|考试|面试|放假|开学|过年|节|月底|月底|周[一二三四五六日天])/;
+
+        function memKeywordScore(text, qTokens) {
+            if (!qTokens || !qTokens.size) return 0;
+            const T = memTokens(text);
+            if (!T.size) return 0;
+            let hit = 0;
+            qTokens.forEach(t => { if (T.has(t)) hit++; });
+            // 归一化：短句命中 2 个字就够，长句需要更多重合
+            return Math.min(1, hit / Math.max(3, Math.sqrt(qTokens.size) * 1.2));
+        }
+
+        function memScore(mem, qTokens, now, qText) {
+            const strength = memStrength(mem, now);
+            let kw = memKeywordScore(mem.text, qTokens);
+            // 时间词共振：用户提到"明天/下周"，记忆里也有时间词，权重再抬一点
+            if (kw > 0 && qText && MEM_TIME_RE.test(mem.text) && MEM_TIME_RE.test(qText)) kw = Math.min(1, kw + 0.1);
+            const last = Number(mem.lastRecalledAt) || Number(mem.createdAt) || now;
+            const recency = Math.exp(-Math.max(0, now - last) / (14 * MEM_DAY));
+            const imp = Math.max(1, Math.min(5, Number(mem.importance) || 3)) / 5;
+            let score = 0.45 * kw + 0.30 * strength + 0.15 * recency + 0.10 * imp;
+            if (mem.pinned) score += 999;
+            return score;
+        }
+
+        // 同一轮里 buildChatDynamicTail 可能被调用多次（视觉降级 / 复读重写），
+        // 用 20 秒缓存避免同一条记忆被反复"强化"。
+        const memRecallCache = Object.create(null);
+
+        function recallMemories(personaId, query) {
+            const now = Date.now();
+            const q = String(query || '').slice(0, 120);
+            const key = personaId + '|' + q;
+            const cached = memRecallCache[key];
+            if (cached && now - cached.at < 20000) return cached.list;
+
+            const qTokens = memTokens(q);
+            const scored = memoryList(personaId)
+                .filter(m => m && !m.archived)
+                .map(m => ({ m, s: memScore(m, qTokens, now, q) }))
+                .filter(x => x.s >= 0.28)
+                .sort((a, b) => b.s - a.s);
+
+            const picked = scored.slice(0, memCfg().recallTopK).map(x => x.m);
+            // 测试效应：被想起一次就强化一次
+            picked.forEach(m => {
+                m.strength = Math.min(1, memStrength(m, now) + 0.35);
+                m.lastRecalledAt = now;
+                m.recallCount = Math.max(0, Math.round(Number(m.recallCount) || 0)) + 1;
+            });
+            // 顺手清一下过期缓存
+            Object.keys(memRecallCache).forEach(k => {
+                if (now - memRecallCache[k].at > 300000) delete memRecallCache[k];
+            });
+            memRecallCache[key] = { at: now, list: picked };
+            return picked;
+        }
+
+        function memoryQueryFor(personaId, opts) {
+            if (opts && opts.memoryQuery) return String(opts.memoryQuery).slice(0, 200);
+            const chat = (data.chats && data.chats[personaId]) || [];
+            for (let i = chat.length - 1, n = 0; i >= 0 && n < 8; i--, n++) {
+                const m = chat[i];
+                if (m && m.sender === 'user' && typeof m.content === 'string' && (!m.type || m.type === 'text')) {
+                    return m.content.slice(0, 200);
+                }
+            }
+            return '';
+        }
+
+        // 记忆块：注入动态尾部（不进 System，避免破坏 DeepSeek 的前缀缓存）
+        function buildMemoryBlock(personaId, query) {
+            if (!memCfg().enabled) return '';
+            if (!personaId) return '';
+            const list = recallMemories(personaId, query);
+            if (!list.length) return '';
+            const lines = [];
+            let chars = 0;
+            for (const m of list) {
+                const line = '· ' + String(m.text || '').replace(/\s+/g, ' ').trim();
+                if (line.length < 4) continue;
+                if (chars + line.length > MEM_RECALL_MAX_CHARS) break;
+                chars += line.length;
+                lines.push(line);
+            }
+            if (!lines.length) return '';
+            return '【你记得的事（长期记忆，只在自然相关时提起）】\n' + lines.join('\n') +
+                '\n以上是你自己记得的事，不要逐条复述，不要说"我记得""根据记录"这类话；' +
+                '只在话题自然相关时顺口带出。如果和你的人设冲突，以人设为准。';
+        }
+
+        // ---- 淘汰：不真删，只是归档（人类遗忘是提取失败，不是数据消失）----
+        function pruneMemories(personaId) {
+            const list = memoryList(personaId);
+            const now = Date.now();
+            list.forEach(m => {
+                if (m.pinned || m.archived) return;
+                const s = memStrength(m, now);
+                const last = Number(m.lastRecalledAt) || Number(m.createdAt) || now;
+                if (s < 0.05 && now - last > 60 * MEM_DAY) m.archived = true;
+            });
+            const live = list.filter(m => !m.archived && !m.pinned);
+            const over = live.length - MEM_MAX_PER_PERSONA;
+            if (over > 0) {
+                live.sort((a, b) => (memStrength(a, now) * (Number(a.importance) || 3)) - (memStrength(b, now) * (Number(b.importance) || 3)));
+                live.slice(0, over).forEach(m => { m.archived = true; });
+            }
+        }
+
+        // ---- 提炼：节流式批量，不每轮都烧钱 ----
+        const memExtractBusy = Object.create(null);
+
+        const MEM_EXTRACT_SYSTEM = [
+            '你是聊天记忆提取器。读下面的聊天记录，只提取关于【玩家/用户】的「值得长期记住」的信息。',
+            '',
+            '【核心原则】',
+            '1. 只记住“玩家”的信息。绝对不要提取角色（你自己）的设定、喜好或日常琐事。',
+            '2. 输出内容绝对不要使用“对方”、“TA”这类代词，必须使用【玩家】或【玩家的实际名字】作主语，避免混淆。',
+            '',
+            '【只提取】',
+            '1. 玩家明确的偏好：喜欢/讨厌/忌口/习惯/过敏',
+            '2. 玩家的具体事件与计划：考试、面试、生病、出行、搬家、和家人朋友之间的事',
+            '3. 明确的时间与约定：日期、生日、答应过的事、约好的见面',
+            '4. 关系变化：确认关系、吵架、和好、见家长、重要承诺',
+            '5. 玩家的稳定事实：职业、学校、专业、住处、家人、宠物',
+            '',
+            '【不要提取】',
+            '- 寒暄、客套、情绪化的临场反应（“哈哈哈”“烦死了”“好累”）',
+            '- 角色（AI自己）的设定、外貌、口头禅、说话风格、分享的日常（哪怕角色说“我在加班”、“我在画画”，也不要提取为玩家的信息）',
+            '- 猜测、推断、玩家没有明确说过的内容',
+            '',
+            '【格式】只输出 JSON 数组，不要解释，不要代码块：',
+            '[{"type":"preference|promise|event|relationship|fact","text":"玩家喜欢XX / 玩家下周要考试 / 玩家讨厌吃香菜（必须有明确主语）","importance":1-5}]',
+            'importance：5=人生大事；4=重要偏好或承诺；3=稳定事实；2=一般事件；1=琐事。',
+            '最多 5 条。没有值得记的就输出 []。'
+        ].join('\n');
+
+        // 返回 null = 模型没给出可解析的 JSON（这次提炼作废，cursor 不推进，下次再试）
+        function parseMemoryJson(raw) {
+            let s = String(raw || '').trim();
+            s = s.replace(/^```(?:json)?/i, '').replace(/```$/,'').trim();
+            const a = s.indexOf('['), b = s.lastIndexOf(']');
+            if (a === -1 || b <= a) return null;
+            try {
+                const arr = JSON.parse(s.slice(a, b + 1));
+                return Array.isArray(arr) ? arr : null;
+            } catch (e) {
+                console.warn('[memory] JSON 解析失败，原始输出：', s.slice(0, 200));
+                return null;
+            }
+        }
+
+        function applyExtractedMemories(personaId, items, sourceMsgs) {
+            const list = memoryList(personaId);
+            const now = Date.now();
+            const srcIds = (sourceMsgs || []).slice(-8).map(m => m && m.id).filter(Boolean);
+            const batch = [];
+            let added = 0, merged = 0;
+            // 主语守门员：提示词改了也可能被绕回“对方”，这里做最后一道拦截
+            const persona = getPersonaById(personaId) || {};
+            const cName = String(persona.nickname || persona.name || '').trim();
+
+            (items || []).slice(0, 6).forEach(it => {
+                if (!it || typeof it !== 'object') return;
+                let text = String(it.text || '').replace(/\s+/g, ' ').trim().replace(/^[·\-—\s"'“”]+/, '');
+                if (text.length < 4 || text.length > 90) return;
+                if (violatesRomanceLock(text)) return;                 // 情感履历锁：记忆是最容易被绕过的后门
+                if (/^(对方|用户|TA|ta)(是|在|喜欢|讨厌|想|要|会|有|常|每天|最近|今天|明天|下周|住|来自|觉得|不|的)/.test(text)) {
+                    console.warn('[memory] 丢弃主语不明的记忆（疑似角色信息）：', text);
+                    return;
+                }
+                if (cName && text.indexOf(cName) === 0) {               // 以角色名开头 = 角色自己的事
+                    console.warn('[memory] 丢弃角色侧记忆：', text);
+                    return;
+                }
+                if (/^(对方|用户|他|她)?(说|问|回答|表示|觉得)[了过]?[，,：:]/.test(text)) return;
+                if (batch.some(t => memSimilarity(t, text) >= 0.72)) return;
+                batch.push(text);
+
+                const type = MEM_TYPES[it.type] ? it.type : 'fact';
+                let imp = Math.round(Number(it.importance));
+                imp = isFinite(imp) ? Math.max(1, Math.min(5, imp)) : 3;
+
+                // 同类合并：三次"加班到很晚"应该合成一条，而不是三条车轱辘话
+                const dup = list.find(m => memSimilarity(m.text, text) >= 0.62);
+                if (dup) {
+                    dup.importance = Math.max(Number(dup.importance) || 1, imp);
+                    dup.strength = Math.min(1, memStrength(dup, now) + 0.2);
+                    dup.lastRecalledAt = now;
+                    dup.mergeCount = Math.max(1, Math.round(Number(dup.mergeCount) || 1)) + 1;
+                    dup.updatedAt = now;
+                    dup.archived = false;
+                    dup.sourceMsgIds = Array.from(new Set([].concat(dup.sourceMsgIds || [], srcIds))).slice(-8);
+                    if (text.length > String(dup.text).length && text.length <= 90) dup.text = text;
+                    merged++;
+                    return;
+                }
+
+                list.push({
+                    id: 'mem_' + genId(),
+                    type,
+                    text,
+                    importance: imp,
+                    strength: imp / 5,          // 初始强度 = importance / 5
+                    createdAt: now,
+                    updatedAt: now,
+                    lastRecalledAt: now,
+                    recallCount: 0,
+                    mergeCount: 1,
+                    sourceMsgIds: srcIds.slice(),
+                    pinned: false,
+                    archived: false
+                });
+                added++;
+            });
+
+            if (added || merged) {
+                pruneMemories(personaId);
+                saveData();
+            }
+            return { added, merged };
+        }
+
+        async function runMemoryExtraction(personaId, opts) {
+            opts = opts || {};
+            if (memExtractBusy[personaId]) return { added: 0, merged: 0 };
+            const api = pickApi();
+            const persona = getPersonaById(personaId);
+            if (!api || !persona) return { added: 0, merged: 0 };
+
+            const chat = data.chats[personaId] || [];
+            const msgs = chat
+                .filter(m => m && typeof m.content === 'string' && m.content.trim() && (!m.type || m.type === 'text'))
+                .slice(-30);
+            if (msgs.length < (opts.force ? 2 : 4)) return { added: 0, merged: 0 };
+
+            memExtractBusy[personaId] = true;
+            const meta = memMeta(personaId);
+            // 提炼期间可能又来新消息：cursor 只推进到"这次真正读到的最后一条"
+            const lastIdAtStart = msgs.length ? msgs[msgs.length - 1].id : '';
+            try {
+                // 玩家代号绝不使用“对方”，统一用“玩家”兜底
+                const pName = (data.profile && (data.profile.nickname || data.profile.name)) || '玩家';
+                const cName = persona.nickname || persona.name || '角色';
+
+                // 在开头给模型加个身份声明，并在对话中严格区分玩家和角色
+                const transcript = '【玩家名字】' + pName + '\n【你的名字】' + cName + '\n\n【聊天记录】\n' +
+                    msgs.map(m => {
+                        const who = m.sender === 'user' ? pName : cName;
+                        return who + '：' + m.content.replace(/\s+/g, ' ').slice(0, 180);
+                    }).join('\n');
+
+                // 把已经记住的丢给模型看一眼，减少"换个说法又说一遍"的重复
+                const known = memoryList(personaId)
+                    .filter(m => m && !m.archived)
+                    .slice(-20)
+                    .map(m => '· ' + String(m.text).slice(0, 40))
+                    .join('\n');
+                // transcript 自带「聊天记录」标题，这里不要再重复拼一次
+                const userContent = (known ? '【已经记住的内容，不要重复提取】\n' + known + '\n\n' : '') +
+                    transcript;
+
+                const raw = await callChat({
+                    api,
+                    system: MEM_EXTRACT_SYSTEM,
+                    messages: [{ role: 'user', content: userContent }],
+                    maxTokens: 500,
+                    temperature: 0.2,
+                    skipUsage: true   // 后台轻任务，不计入聊天缓存命中率
+                });
+                const items = parseMemoryJson(raw);
+                if (items === null) {
+                    console.warn('[memory] 提炼结果不是合法 JSON，保留 cursor，下次再试');
+                    meta.lastExtractAt = Date.now();   // 只吃冷却，不推进 cursor
+                    saveData();
+                    if (opts.manual) toast('AI 没按格式返回，稍后再试一次');
+                    return { added: 0, merged: 0 };
+                }
+                const res = applyExtractedMemories(personaId, items, msgs);
+                meta.lastExtractAt = Date.now();
+                meta.cursorId = lastIdAtStart;
+                saveData();
+                console.log('[memory] 提炼完成：新增 ' + res.added + '，合并 ' + res.merged);
+                if (opts.manual) {
+                    toast(res.added || res.merged
+                        ? '记住了 ' + (res.added + res.merged) + ' 件事'
+                        : '这段聊天里没有值得长期记的事');
+                }
+                return res;
+            } catch (e) {
+                console.warn('[memory] 提炼失败：', e && e.message);
+                if (opts.manual) toast('提炼失败：' + (e && e.message ? e.message : e), 3200);
+                return { added: 0, merged: 0 };
+            } finally {
+                memExtractBusy[personaId] = false;
+            }
+        }
+
+        function memNewMessagesSince(personaId, cursorId) {
+            const chat = data.chats[personaId] || [];
+            if (!cursorId) return chat.slice();
+            const idx = chat.findIndex(m => m && m.id === cursorId);
+            return idx >= 0 ? chat.slice(idx + 1) : chat.slice();
+        }
+
+        // 三个触发点：每 N 条自动 / 切走会话补一刀 / 用户手动
+        function maybeExtractMemory(personaId, opts) {
+            opts = opts || {};
+            if (!personaId || !memCfg().enabled) return;
+            if (memExtractBusy[personaId]) return;
+            if (!data.personas.some(p => p.id === personaId)) return;
+            const chat = data.chats[personaId] || [];
+            if (chat.length < 4) return;
+
+            const meta = memMeta(personaId);
+            const fresh = memNewMessagesSince(personaId, meta.cursorId)
+                .filter(m => m && typeof m.content === 'string' && m.content.trim() && (!m.type || m.type === 'text'));
+            const need = opts.onClose ? Math.min(4, memCfg().extractEveryN) : memCfg().extractEveryN;
+            const since = Date.now() - (Number(meta.lastExtractAt) || 0);
+            // 两个触发口径：攒够 N 条，或者隔了很久且手里已经有三四条新的（慢聊也不至于一直不提炼）
+            const longGap = fresh.length >= 3 && since >= 30 * 60000;
+            if (fresh.length < need && !longGap) return;
+            if (!opts.force && since < memCfg().extractCooldownMin * 60000) return;
+            // 不阻塞聊天：下一帧再发请求
+            setTimeout(() => { runMemoryExtraction(personaId, opts).catch(() => {}); }, 0);
+        }
+
+        // ---- 记忆库 UI ----
+        function memDaysAgo(ts) {
+            const d = Math.floor((Date.now() - (Number(ts) || 0)) / MEM_DAY);
+            if (d <= 0) return '今天';
+            if (d === 1) return '昨天';
+            if (d < 30) return d + ' 天前';
+            if (d < 365) return Math.floor(d / 30) + ' 个月前';
+            return Math.floor(d / 365) + ' 年前';
+        }
+
+        function memStats() {
+            let active = 0, archived = 0, pinned = 0;
+            Object.keys(data.memories || {}).forEach(pid => {
+                (data.memories[pid] || []).forEach(m => {
+                    if (m.archived) archived++;
+                    else if (m.pinned) { active++; pinned++; }
+                    else active++;
+                });
+            });
+            return { active, archived, pinned };
+        }
+
+        function openMemoryPanel(personaId) {
+            const p = getPersonaById(personaId);
+            if (!p) return;
+            closeChatSheet();
+            const list = memoryList(personaId);
+            const now = Date.now();
+            pruneMemories(personaId);
+            const active = list.filter(m => !m.archived)
+                .map(m => ({ m, s: memScore(m, memTokens(''), now, '') }))
+                .sort((a, b) => (b.m.pinned - a.m.pinned) || (b.s - a.s) || (b.m.importance - a.m.importance));
+            const archived = list.filter(m => m.archived)
+                .sort((a, b) => (Number(b.lastRecalledAt) || 0) - (Number(a.lastRecalledAt) || 0));
+
+            const itemHtml = (m, isArchived) => {
+                const st = Math.round(memStrength(m, now) * 100);
+                const srcN = (m.sourceMsgIds || []).length;
+                const merged = Math.max(1, Number(m.mergeCount) || 1);
+                return '<div class="mem-item' + (m.pinned ? ' pinned' : '') + (isArchived ? ' archived' : '') + '">' +
+                    '<div class="mem-top">' +
+                        '<span class="mem-chip t-' + m.type + '">' + (MEM_TYPES[m.type] || '事实') + '</span>' +
+                        '<span class="mem-strength">强度 ' + st + '%</span>' +
+                    '</div>' +
+                    '<div class="mem-text">' + escHtml(m.text) + '</div>' +
+                    '<div class="mem-meta">' +
+                        '<span>' + memDaysAgo(m.createdAt) + '记住' + (merged > 1 ? ' · 合并 ' + merged + ' 次' : '') + ' · 想起 ' + (Number(m.recallCount) || 0) + ' 次</span>' +
+                        '<span class="mem-acts">' +
+                            (srcN ? '<button class="mem-mini" onclick="memShowSource(\'' + personaId + '\',\'' + m.id + '\')">来源 ' + srcN + '</button>' : '') +
+                            '<button class="mem-mini" onclick="memTogglePin(\'' + personaId + '\',\'' + m.id + '\')">' + (m.pinned ? '取消钉住' : '钉住') + '</button>' +
+                            '<button class="mem-mini danger" onclick="memDelete(\'' + personaId + '\',\'' + m.id + '\')">' + (isArchived ? '彻底删除' : '删除') + '</button>' +
+                        '</span>' +
+                    '</div>' +
+                '</div>';
+            };
+
+            const listHtml = active.length
+                ? active.map(x => itemHtml(x.m, false)).join('')
+                : '<div class="mem-empty">还没有长期记忆。<br>聊 8 条左右会自动提炼一次，也可以点上面的「记住这次聊天」。</div>';
+
+            const archivedHtml = archived.length
+                ? '<div class="mem-section-title">已经模糊的事（不再注入上下文，可恢复）</div>' + archived.map(m => itemHtml(m, true)).join('')
+                : '';
+
+            showModal(
+                '<div class="modal-title">记忆库 · ' + escHtml(p.nickname || p.name) + '</div>' +
+                '<div class="ctx-hint" style="margin:-6px 0 10px;">共 ' + active.length + ' 条清晰记忆' + (archived.length ? '，' + archived.length + ' 条已模糊' : '') + '。清空聊天记录不会影响这里。</div>' +
+                '<div class="mem-toolbar">' +
+                    '<button class="btn btn-sm btn-primary" id="memExtractNow">记住这次聊天</button>' +
+                    '<button class="btn btn-sm" id="memClearOne">清空 TA 的记忆</button>' +
+                '</div>' +
+                '<div class="mem-manual">' +
+                    '<input id="memManualInput" placeholder="手动记一条，例如：玩家不吃香菜" maxlength="80" />' +
+                    '<button class="btn btn-sm" id="memManualSave">记住</button>' +
+                '</div>' +
+                listHtml +
+                archivedHtml +
+                '<div class="btn-row"><button class="btn" onclick="closeModal()">关闭</button></div>'
+            );
+
+            const btnExtract = document.getElementById('memExtractNow');
+            if (btnExtract) btnExtract.addEventListener('click', async () => {
+                const usable = (data.chats[personaId] || []).filter(m => m && typeof m.content === 'string' && m.content.trim() && (!m.type || m.type === 'text'));
+                if (usable.length < 2) { toast('还没聊几句，先聊一会儿再记'); return; }
+                btnExtract.disabled = true;
+                btnExtract.textContent = '提炼中…';
+                await runMemoryExtraction(personaId, { force: true, manual: true });
+                openMemoryPanel(personaId);
+            });
+            const btnClear = document.getElementById('memClearOne');
+            if (btnClear) btnClear.addEventListener('click', () => {
+                if (!confirm('确定清空「' + (p.nickname || p.name) + '」的全部长期记忆吗？\n聊天记录不会受影响。')) return;
+                data.memories[personaId] = [];
+                delete data.memoryMeta[personaId];
+                saveData();
+                openMemoryPanel(personaId);
+                toast('已清空该联系人的记忆');
+            });
+            const btnSave = document.getElementById('memManualSave');
+            if (btnSave) btnSave.addEventListener('click', () => {
+                const input = document.getElementById('memManualInput');
+                const text = String((input && input.value) || '').trim();
+                if (text.length < 2) { toast('写点什么再记'); return; }
+                memoryList(personaId).push({
+                    id: 'mem_' + genId(),
+                    type: 'fact',
+                    text: text.slice(0, 90),
+                    importance: 4,
+                    strength: 0.9,
+                    createdAt: Date.now(),
+                    updatedAt: Date.now(),
+                    lastRecalledAt: Date.now(),
+                    recallCount: 0,
+                    mergeCount: 1,
+                    sourceMsgIds: [],
+                    pinned: false,
+                    archived: false
+                });
+                saveData();
+                openMemoryPanel(personaId);
+                toast('已记住');
+            });
+        }
+
+        function memTogglePin(personaId, memId) {
+            const m = memoryList(personaId).find(x => x.id === memId);
+            if (!m) return;
+            m.pinned = !m.pinned;
+            if (m.pinned) {
+                m.strength = Math.max(memStrength(m, Date.now()), 0.6);
+                m.lastRecalledAt = Date.now();
+                m.archived = false;
+            }
+            saveData();
+            openMemoryPanel(personaId);
+        }
+
+        function memDelete(personaId, memId) {
+            const list = memoryList(personaId);
+            const idx = list.findIndex(x => x.id === memId);
+            if (idx < 0) return;
+            if (!confirm('删除这条记忆？')) return;
+            list.splice(idx, 1);
+            saveData();
+            openMemoryPanel(personaId);
+            toast('已删除');
+        }
+
+        function memShowSource(personaId, memId) {
+            const m = memoryList(personaId).find(x => x.id === memId);
+            if (!m) return;
+            const ids = m.sourceMsgIds || [];
+            const chat = data.chats[personaId] || [];
+            const msgs = ids.map(id => chat.find(x => x.id === id)).filter(Boolean);
+            const p = getPersonaById(personaId) || {};
+            const body = msgs.length ? msgs.map(x => {
+                const who = x.sender === 'user' ? ((data.profile.nickname || data.profile.name) || '你') : (p.nickname || p.name || 'TA');
+                const txt = x.type === 'text' || !x.type ? x.content : '[' + (x.type === 'voice' ? '语音' : x.type === 'image' ? '图片' : x.type) + ']';
+                const d = new Date(Number(x.timestamp) || Date.now());
+                const t = (d.getMonth() + 1) + '/' + d.getDate() + ' ' + String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+                return '<div class="mem-src">' + escHtml(String(txt)).slice(0, 300) + '<div class="who">' + escHtml(who) + ' · ' + t + '</div></div>';
+            }).join('') : '<div class="mem-empty">原消息已被清空，只剩这条记忆。</div>';
+
+            showModal(
+                '<div class="modal-title">这条记忆的来源</div>' +
+                '<div class="mem-item"><div class="mem-text">' + escHtml(m.text) + '</div></div>' +
+                body +
+                '<div class="ctx-hint">如果原话不是这个意思，直接删掉这条记忆，别让它污染后面的对话。</div>' +
+                '<div class="btn-row">' +
+                    '<button class="btn" onclick="closeModal()">关闭</button>' +
+                    '<button class="btn btn-primary" onclick="memDeleteFromSource(\'' + personaId + '\',\'' + m.id + '\')">删除这条记忆</button>' +
+                '</div>'
+            );
+        }
+
+        function memDeleteFromSource(personaId, memId) {
+            const list = memoryList(personaId);
+            const idx = list.findIndex(x => x.id === memId);
+            if (idx >= 0) { list.splice(idx, 1); saveData(); }
+            openMemoryPanel(personaId);
+        }
+
+        window.memTogglePin = memTogglePin;
+        window.memDelete = memDelete;
+        window.memShowSource = memShowSource;
+        window.memDeleteFromSource = memDeleteFromSource;
+        window.openMemoryPanel = openMemoryPanel;
+
+        // 设置页：卡片渲染 + 交互
+        function renderMemorySettings() {
+            const sw = document.getElementById('msLongMemory');
+            if (sw) sw.classList.toggle('on', memCfg().enabled);
+            const cfg = memCfg();
+            const topK = document.getElementById('memTopK');
+            const topKV = document.getElementById('memTopKVal');
+            if (topK) { topK.value = cfg.recallTopK; if (topKV) topKV.textContent = cfg.recallTopK + ' 条'; }
+            const every = document.getElementById('memEveryN');
+            const everyV = document.getElementById('memEveryNVal');
+            if (every) { every.value = cfg.extractEveryN; if (everyV) everyV.textContent = cfg.extractEveryN + ' 条'; }
+            const decay = document.getElementById('memDecay');
+            const decayV = document.getElementById('memDecayVal');
+            if (decay) {
+                decay.value = cfg.decaySpeed;
+                if (decayV) decayV.textContent = cfg.decaySpeed <= 0.8 ? '很慢' : cfg.decaySpeed >= 1.8 ? '很快' : '标准';
+            }
+            const hint = document.getElementById('memStatsHint');
+            if (hint) {
+                const st = memStats();
+                hint.textContent = st.active ? ('当前 ' + st.active + ' 条清晰记忆 · ' + st.pinned + ' 条钉住 · ' + st.archived + ' 条已模糊') : '暂无记忆';
+            }
+        }
+
+        (function initMemorySettingsUI() {
+            const sw = document.getElementById('msLongMemory');
+            if (sw) sw.addEventListener('click', () => {
+                const cfg = memCfg();
+                cfg.enabled = !cfg.enabled;
+                saveData();
+                renderMemorySettings();
+                toast(cfg.enabled ? '已开启长期记忆' : '已关闭：不再提炼，也不会注入记忆');
+            });
+
+            const bindSlider = (id, valId, key, lo, hi, fmt) => {
+                const el = document.getElementById(id);
+                if (!el) return;
+                const apply = (persist) => {
+                    const raw = Number(el.value);
+                    const v = Math.max(lo, Math.min(hi, isFinite(raw) ? raw : 1));
+                    memCfg()[key] = v;
+                    const valEl = document.getElementById(valId);
+                    if (valEl) valEl.textContent = fmt ? fmt(v) : String(v);
+                    if (persist) { saveData(); renderMemorySettings(); }
+                };
+                el.addEventListener('input', () => apply(false));
+                el.addEventListener('change', () => apply(true));
+            };
+            bindSlider('memTopK', 'memTopKVal', 'recallTopK', 1, 8, v => v + ' 条');
+            bindSlider('memEveryN', 'memEveryNVal', 'extractEveryN', 4, 20, v => v + ' 条');
+            bindSlider('memDecay', 'memDecayVal', 'decaySpeed', 0.5, 2.5, v => v <= 0.8 ? '很慢' : v >= 1.8 ? '很快' : '标准');
+
+            const clearBtn = document.getElementById('memClearAllBtn');
+            if (clearBtn) clearBtn.addEventListener('click', () => {
+                const st = memStats();
+                if (!st.active && !st.archived) { toast('记忆库已经是空的'); return; }
+                if (!confirm('确定清空所有角色的长期记忆吗？\n聊天记录不受影响。此操作不可撤销。')) return;
+                data.memories = {};
+                data.memoryMeta = {};
+                saveData();
+                renderMemorySettings();
+                toast('已清空全部记忆');
+            });
+        })();
+
         function buildChatDynamicTail(personaId, opts) {
             opts = opts || {};
             const persona = data.personas.find(p => p.id === personaId);
@@ -19946,6 +20954,12 @@ ${tonePrompt}
             // ---- 北京时间（只做"状态底色"，严禁变成话题；见 timeAsBackgroundHint）----
             const bj = beijingTimeHint();
             parts.push(timeAsBackgroundHint(bj));
+
+            // ---- 长期记忆：按这一轮的话题检索 topK 条，只挂在尾部 ----
+            try {
+                const memBlock = buildMemoryBlock(personaId, memoryQueryFor(personaId, opts));
+                if (memBlock) parts.push(memBlock);
+            } catch (e) { console.warn('[memory] 注入失败', e); }
 
             // ---- 深夜硬开关：模型在 23:00 后会本能地"关怀作息"，软引导压不住 ----
             // 用 unshift 顶到最前面（权重最高），措辞用"禁止"而不是"建议"。
@@ -20696,6 +21710,8 @@ ${tonePrompt}
                 saveData();
                 updateWxTabBadge();
                 renderWechatList();
+                // 长记忆：累计够条数且过了冷却，就在后台提炼一次（不阻塞这条回复）
+                try { maybeExtractMemory(personaId); } catch (e) { console.warn('[memory] trigger 失败', e); }
                 return true;
             } catch (e) {
                 if (typing) typing.remove();
@@ -22748,6 +23764,11 @@ ${tonePrompt}
             const delBtn = document.getElementById('sheetDeleteFriend');
             if (blockBtn) blockBtn.textContent = (p && personaStatus(p) === 'blocked_by_me') ? '解除拉黑' : '拉黑';
             if (delBtn) delBtn.textContent = (p && p.isFixed) ? '删除好友（固定联系人）' : '删除好友';
+            const memBtn = document.getElementById('sheetMemory');
+            if (memBtn) {
+                const n = pid ? memoryList(pid).filter(m => !m.archived).length : 0;
+                memBtn.textContent = n ? ('记忆库（' + n + '）') : '记忆库';
+            }
             document.getElementById('chatSheetMask').classList.add('show');
             document.getElementById('chatSheet').classList.add('show');
         }
@@ -22775,11 +23796,15 @@ ${tonePrompt}
             closeChatSheet();
             if (pid) editPersona(pid);
         });
+        document.getElementById('sheetMemory').addEventListener('click', () => {
+            const pid = document.getElementById('chatWindow').dataset.persona;
+            if (pid) openMemoryPanel(pid);
+        });
         document.getElementById('sheetClear').addEventListener('click', () => {
             const pid = document.getElementById('chatWindow').dataset.persona;
             closeChatSheet();
             if (!pid) return;
-            if (!confirm('确定清空与该联系人的聊天记录吗？')) return;
+            if (!confirm('确定清空与该联系人的聊天记录吗？\n长期记忆会保留。')) return;
             (data.chats[pid] || []).forEach(m => {
                 if (m.type === 'voice' && m.audioId) VoiceDB.del(m.audioId).catch(() => {});
             });
@@ -22791,7 +23816,7 @@ ${tonePrompt}
             renderMessages(pid);
             renderWechatList();
             updateWxTabBadge();
-            toast('聊天记录已清空');
+            toast('聊天记录已清空，长期记忆还在');
         });
 
         // 拉黑 / 解除拉黑
