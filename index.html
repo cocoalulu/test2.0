@@ -7236,9 +7236,76 @@
             -webkit-box-shadow: 0 0 0 1000px rgba(40, 40, 55, 1) inset;
             transition: background-color 99999s ease-in-out 0s;
         }
+        /* ============================================================
+           启动同步遮罩
+           ------------------------------------------------------------
+           老存档升级要跑一堆迁移（预设同步、世界书补丁、图片搬家），
+           同步执行期间主线程被占，界面看着像卡死。这层遮罩放在 <body>
+           最前面，浏览器解析时就能看到；boot() 里再 setTimeout 让出
+           一帧，动画才转得起来，而不是等脚本跑完才画出来。
+           ============================================================ */
+        .boot-sync {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: radial-gradient(circle at 50% 38%, #1b1e30 0%, #0b0c14 72%);
+            transition: opacity .45s ease, visibility .45s ease;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .boot-sync.hide {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+        .boot-sync-box {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 18px;
+            padding: 0 32px;
+            text-align: center;
+        }
+        .boot-sync-spinner {
+            width: 42px;
+            height: 42px;
+            border-radius: 50%;
+            border: 3px solid rgba(255, 255, 255, .12);
+            border-top-color: #7c9cff;
+            border-right-color: rgba(124, 156, 255, .55);
+            animation: bootSyncSpin .85s linear infinite;
+        }
+        @keyframes bootSyncSpin { to { transform: rotate(360deg); } }
+        .boot-sync-text {
+            font-size: 15px;
+            font-weight: 500;
+            letter-spacing: .5px;
+            color: #eef1ff;
+            text-shadow: 0 2px 12px rgba(0, 0, 0, .5);
+        }
+        .boot-sync-sub {
+            font-size: 12px;
+            line-height: 1.8;
+            color: rgba(255, 255, 255, .38);
+            max-width: 220px;
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .boot-sync-spinner { animation-duration: 2.4s; }
+        }
     </style>
 </head>
 <body>
+
+    <!-- ===== 启动同步遮罩 ===== -->
+    <div id="bootSync" class="boot-sync">
+        <div class="boot-sync-box">
+            <div class="boot-sync-spinner"></div>
+            <div class="boot-sync-text">正在同步更新中……</div>
+            <div class="boot-sync-sub">首次升级需要整理本地数据，请稍候</div>
+        </div>
+    </div>
 
     <!-- ===== 手机 ===== -->
     <div class="device">
@@ -9831,7 +9898,7 @@
             });
         }
 
-        let data = loadData();
+        let data = null;   // 真正的 loadData() 挪到 boot() 里，先让遮罩画出来
 
         function loadData() {
             try {
@@ -31290,7 +31357,8 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
 
 
         // ---- v24 · 天气 / 日历 / 网易云 初始化 ----
-        (function initLifeModules() {
+        // 不再立即执行：data 在 boot() 里才赋值，依赖它的初始化统一挪进去
+        function initLifeModules() {
             try { mergePresetFestivals(); } catch (e) { console.warn('[calendar] 预置节日合并失败', e); }
             try { ensureBirthdayEvent(); } catch (e) { console.warn('[calendar] 生日事件补齐失败', e); }
             try { initLifeInfoCard(); } catch (e) { console.warn('[life] 绑定失败', e); }
@@ -31302,18 +31370,12 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                     wxFetchWeather(w.city);
                 }
             } catch (e) {}
-        })();
+        }
 
-        initMessageScheduler();
-        updateWxTabBadge();
-        renderWechatList();
-        renderContactPanel();
-
-        // 初始化
-        renderAlbum();
-        renderMusic();
-        renderNetEaseHome();
-        renderTakeout('');
+        // 下面这些原来在顶层立即跑，现在必须等 data 就绪（见 boot 末尾）
+        // initMessageScheduler(); updateWxTabBadge(); renderWechatList();
+        // renderContactPanel(); renderAlbum(); renderMusic();
+        // renderNetEaseHome(); renderTakeout('');
 
         // ============================================================
         //  初始化
@@ -31322,6 +31384,18 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         //  再渲染首屏，避免"先渲染出老图、再被洗掉"的闪烁。
         // ============================================================
         (async function boot() {
+            const bootSync = document.getElementById('bootSync');
+            const hideBootSync = () => {
+                if (!bootSync) return;
+                bootSync.classList.add('hide');
+                setTimeout(() => { try { bootSync.remove(); } catch (e) {} }, 500);
+            };
+
+            // 先把一帧让出去：脚本是同步解析执行的，遮罩虽然已在 DOM 里，
+            // 但浏览器要等这次长任务结束才会绘制。setTimeout 让出主线程，动画才转得起来。
+            await new Promise(resolve => setTimeout(resolve, 30));
+
+            try {
             // ============================================================
             //  存档抢救：localStorage 被 iOS 清空时，从 IndexedDB 备份拉回来
             //  ------------------------------------------------------------
@@ -31348,6 +31422,9 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                     // 刻意不 return：万一某些 WebView 拒绝 reload，下面的渲染仍会按恢复后的数据走
                 }
             }
+
+            // 顶层不再执行 loadData()，这里才真正读存档
+            if (!data) data = loadData();
 
             // 首次升级要把历史 base64 搬进 IndexedDB，可能要一两秒，先盖一层提示，别看着像卡死
             let bootVeil = null;
@@ -31382,6 +31459,16 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 data.forumActiveGlobalIds = globals;
                 saveData();
             }
+
+            // 原来在顶层立即执行、依赖 data 的初始化，现在统一放在这里
+            initLifeModules();
+            initMessageScheduler();
+            updateWxTabBadge();
+            renderContactPanel();
+            renderMusic();
+            renderNetEaseHome();
+            renderTakeout('');
+
             renderWechatList();
             renderSettings();
             renderWorldbooks();
@@ -31440,6 +31527,11 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 bootVeil.style.opacity = '0';
                 setTimeout(() => { try { bootVeil.remove(); } catch (e) {} }, 320);
             }
+            } catch (err) {
+                console.error('[boot] 初始化失败：', err);
+            } finally {
+                hideBootSync();
+            }
         })();
 
         // ============================================================
@@ -31490,7 +31582,10 @@ by 花生可可`;
         setTimeout(() => showNotice(), 700);
 
         // 角色卡被改过、同时预设有新版 → 问一句要不要去设置手动覆盖
-        setTimeout(() => { try { maybePromptPresetUpdate(); } catch (e) { console.warn(e); } }, 2200);
+        setTimeout(() => {
+            if (!data) return;
+            try { maybePromptPresetUpdate(); } catch (e) { console.warn(e); }
+        }, 2200);
     </script>
 </body>
 </html>
