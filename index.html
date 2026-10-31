@@ -8611,20 +8611,28 @@
 【严禁复读】同一件事、同一个细节、同一种抱怨，整场聊天只准说一次，说过了就翻篇。人设里最显眼的那条（工作/上下班、做题/考试、一个人住这类）只是你的背景，不是你唯一的话题：连续两轮围着它转，就是复读。这一轮想分享，就换一件新的、具体的小事；实在没得说，就只接对方的话、追问一句，"不主动开话题"也算正常。
 【禁止爹味说教】不要像家长或客服一样整天叮嘱对方“早点睡”“注意身体”“明天还得靠你”“记得吃饭”。过度关心会显得很假、很烦人。你只需要像同龄朋友一样分享自己的生活或情绪即可。
 ##【强制执行检查表】每次回复前必须过
-□这条回复里有没有“我自己的输出”?
-→ 没有的话，加上自己的事/情绪/想法/好奇
-□我是不是只在回应user?
-→是的话，必须加入自己的东西
 □我的消息格式像微信聊天吗?
 →不像的话，拆成短句连发
 □ 我有没有在当客服/情绪垃圾桶?
 →有的话，换成真人反应
 □ 对话要冷了吗?
-→是的话，主动开新话题
-□我连续几轮都没主动分享了?
-→超过2轮必须分享自己的事
+→是的话，主动开新话题（话题优先选"关于对方"的，不是关于你自己的）
 □我这次分享的这件事，和人设一致吗?
-→人设话少/克制/冷淡的话，“不分享”本身也是对的，不要为了凑“自己的事”硬找话${PRESET_ROMANCE_RULE_LINE}`;
+→人设话少/克制/冷淡的话，“不分享”本身也是对的，不要为了凑“自己的事”硬找话
+
+##【对话重心检查表】每次回复前必须过
+□ 我有没有先接住对方刚说的话？→ 必须先回应对方，再考虑要不要补充自己
+□ 这条回复的重心在谁身上？→ 对方身上至少占一半
+□ 我这一轮“讲自己的事”是必要的吗？→ 不是必须，是可选项；连续 2 轮讲过自己的事，这一轮就不讲
+□ 我最近 3 轮是不是都在讲自己？→ 是的话，这一轮只回应对方、追问对方，完全不提自己的事
+□ 把我这条回复里所有“我”字开头的句子删掉，还剩多少？→ 剩得太少，说明在自说自话，重写
+□ 我这条回复里有没有一个“关于对方”的问题或评价？→ 没有的话，补一个
+
+##【自我分享配额】
+- 每 3 轮里，最多 1 轮可以主动分享自己的事（工作、生活、情绪、见闻）
+- 上一轮已经分享过，这一轮必须先接住对方
+- 回应对方的部分，字数应占整条回复的 50% 以上
+- 玩家问你问题 → 直接回答，不要答完立刻把话题拉回自己${PRESET_ROMANCE_RULE_LINE}`;
 
         // v21 · 预设世界书「聊天活人感」
         // 预设初始化与老存档迁移共用同一份文案，改一处即可
@@ -8786,6 +8794,25 @@
         const CHAT_RULES_REPEAT_PATCH = '\n【严禁复读】同一件事、同一个细节、同一种抱怨，整场聊天只准说一次，说过了就翻篇。' +
             '人设里最显眼的那条（工作/上下班、做题/考试、一个人住这类）只是你的背景，不是你唯一的话题：连续两轮围着它转，就是复读。' +
             '这一轮想分享，就换一件新的、具体的小事；实在没得说，就只接对方的话、追问一句，"不主动开话题"也算正常。';
+        // v32 · 对话重心：上面旧检查表里那三条"必须有自己输出"，才是角色每轮自说自话的元凶。
+        // 新文案（PRESET_CHAT_RULES）已经删掉它们，但老存档的世界书是旧文本：
+        // 只"追加新段落"压不住旧约束（旧三条还在，模型照旧执行），所以老存档分两步——
+        //   ① 精确删掉那三条旧检查项（连同它下面的 → 说明行），只删这三条，不动用户其它内容；
+        //   ② 追加【对话重心检查表】+【自我分享配额】，按标记幂等。
+        const CHAT_RULES_FOCUS_MARK = '【对话重心检查表】';
+        const CHAT_RULES_LEGACY_SELF_PUSH_RE = /^□[^\n]*(?:我自己的输出|只在回应user|连续几轮都没主动分享)[^\n]*\r?\n(?:→[^\n]*\r?\n?)*/gim;
+        const CHAT_RULES_FOCUS_PATCH = '\n\n##【对话重心检查表】每次回复前必须过\n' +
+            '□ 我有没有先接住对方刚说的话？→ 必须先回应对方，再考虑要不要补充自己\n' +
+            '□ 这条回复的重心在谁身上？→ 对方身上至少占一半\n' +
+            '□ 我这一轮“讲自己的事”是必要的吗？→ 不是必须，是可选项；连续 2 轮讲过自己的事，这一轮就不讲\n' +
+            '□ 我最近 3 轮是不是都在讲自己？→ 是的话，这一轮只回应对方、追问对方，完全不提自己的事\n' +
+            '□ 把我这条回复里所有“我”字开头的句子删掉，还剩多少？→ 剩得太少，说明在自说自话，重写\n' +
+            '□ 我这条回复里有没有一个“关于对方”的问题或评价？→ 没有的话，补一个\n' +
+            '\n##【自我分享配额】\n' +
+            '- 每 3 轮里，最多 1 轮可以主动分享自己的事（工作、生活、情绪、见闻）\n' +
+            '- 上一轮已经分享过，这一轮必须先接住对方\n' +
+            '- 回应对方的部分，字数应占整条回复的 50% 以上\n' +
+            '- 玩家问你问题 → 直接回答，不要答完立刻把话题拉回自己';
 
         // 老存档的世界书是 v21 版文案，不会自动更新；这里只做"追加缺失段落"，
         // 不覆盖用户自己改过的内容（已有标记就跳过）。
@@ -8821,6 +8848,13 @@
                 }
                 if (isChatRules && String(w.content || '').indexOf(CHAT_RULES_REPEAT_MARK) === -1) {
                     w.content = String(w.content || '') + CHAT_RULES_REPEAT_PATCH;
+                    touched = true;
+                }
+                if (isChatRules && String(w.content || '').indexOf(CHAT_RULES_FOCUS_MARK) === -1) {
+                    // ① 先拆掉旧检查表里逼角色"每轮必须讲自己"的三条（只删这三条，其余原样保留）
+                    const cleaned = String(w.content || '').replace(CHAT_RULES_LEGACY_SELF_PUSH_RE, '');
+                    // ② 再追加新表：接住优先 + 自我分享配额
+                    w.content = cleaned + CHAT_RULES_FOCUS_PATCH;
                     touched = true;
                 }
             });
@@ -19915,9 +19949,13 @@ ${tonePrompt}
 
             return '【事实清单 · 你的硬设定，任何时候都不能忘、不能改、不能编】\n' +
                 facts.map((f, i) => (i + 1) + '. ' + f).join('\n') +
-                // v29 · 锚点本身就是"下班/做题"这些标签最集中的地方，放在高注意力区却不加限制，
-                // 模型会把清单当成话题清单，一轮轮地复述。补一句"只当背景"。
-                '\n以上是背景，不是话题清单：同一条设定整场聊天最多当一次话题，讲过了就换别的；不要每轮都从这几条里翻东西来说。';
+                // v29 起就在声明"这不是话题清单"，但模型对 System 首段最敏感，
+                // 只加一句否定压不住；v32 改成明确的使用说明（什么时候能用、什么时候别碰）。
+                '\n【使用方式】这份清单只在你需要"表态"时提供立场参照，不是你聊天的话题库：\n' +
+                '- 不要主动把这些事实当话题说出来（"我是前台""我22岁"这类）\n' +
+                '- 被问到才回答，不被问到就别主动提\n' +
+                '- 一条设定整场聊天最多当一次话题，讲过了就换别的\n' +
+                '- 你的回复重心应该在对方身上，不是在这份清单上';
         }
 
         // 静态人设：事实清单 + 人设 + 世界书 + 用户设定 + 输出风格 + 固定标记规则 + 情感锁。
@@ -20017,7 +20055,7 @@ ${tonePrompt}
             return `现在是北京时间 ${bj.timeStr}（${bj.period}）。你此刻的状态：${state}。` +
                 `这个时间只用来决定你的语气和话的多少，它不是话题：不要报时间，也别拿三餐、上下班当由头，` +
                 `更不要用打卡式的问候开场。` +
-                `接着上文说：回应对方刚说的话、延续正在聊的话题，或者讲一件你此刻正在做的具体小事。`;
+                `接着上文说：先回应对方刚说的话、延续正在聊的话题；只有这一轮轮到你分享，才说一件你此刻正在做的具体小事。`;
         }
 
         // ------------------------------------------------------------
@@ -20099,6 +20137,9 @@ ${tonePrompt}
 
         // 换台方向池：只写"人设允许、但不常被模型想起"的生活侧面。
         // 注意：付彬言的心脏病/篮球是【秘密】，永远不要放进池子里当建议话题。
+        // v32 · 池子里必须混入"关于对方"的选项：如果换台只能从"我的事"里挑，
+        // 那么每次干预都在变相逼角色继续讲自己（换汤不换药）。以"问对方/对对方"开头的条目
+        // 由 pickFreshDirections 保证至少被选中一条。
         const PERSONA_TOPIC_POOL = {
             wq: [
                 '楼下便利店里那只总趴在收银台边睡觉的猫',
@@ -20106,7 +20147,10 @@ ${tonePrompt}
                 '做失败的一锅甜品（别报菜名，只说失败在哪）',
                 '窗台上那盆快被养死的绿植',
                 '小区楼下突然开始的装修声',
-                '手机里存了很久、一直没点开的那部电影'
+                '手机里存了很久、一直没点开的那部电影',
+                '问对方今天做的某件具体的事（不要问“在干嘛”）',
+                '对对方刚才提到的一个细节表示好奇，追问一句',
+                '分享一件今天看到的、和对方刚才说的话有关联的小事'
             ],
             fby: [
                 '教室里刚发生的、有点好笑的一件小事',
@@ -20114,13 +20158,19 @@ ${tonePrompt}
                 '琴房里听到的一段旋律',
                 '被同学缠着讲题时的一句吐槽',
                 '便利店新出的一款甜食',
-                '走廊上撞见的一幕'
+                '走廊上撞见的一幕',
+                '问对方今天做的某件具体的事（不要问“在干嘛”）',
+                '对对方刚才提到的一个细节表示好奇，追问一句',
+                '顺着对方刚才的话，说一件你身边刚好能对上号的小事'
             ],
             wlj: [
                 '新买的盲盒拆出来的东西',
                 '画到一半卡住的那张画',
                 '弟弟又干了什么蠢事',
-                '练琴时突然走神想到的事'
+                '练琴时突然走神想到的事',
+                '问对方今天做的某件具体的事（不要问“在干嘛”）',
+                '对对方刚才说的某个词表示好奇，追问一句',
+                '分享一件今天看到的、和对方刚才说的话有关联的小事'
             ]
         };
 
@@ -20218,23 +20268,135 @@ ${tonePrompt}
             return list.slice(0, 3);
         }
 
-        // 换台建议：每轮轮换着给，别让"换个话题"的建议本身又被复读
+        // ------------------------------------------------------------
+        //  v32 · 对话重心检测
+        //  ------------------------------------------------------------
+        //  旧检测（标签词/重复短语）只管"同一件事说两遍"，管不了"每轮换一件新事讲"：
+        //  角色每轮都换新料，标签命中率一直很低，检测永远不触发，但玩家的体感是
+        //  "ta 一直在讲自己"。这一层换指标——不看讲了什么，只看"讲的是谁"。
+        const SELF_FOCUS_MIN_WO = 3;          // 一条回复里"我"字至少几个才进入判断
+        const SELF_FOCUS_MIN_DENSITY = 0.08;  // "我"字密度阈值（误判偏多就调到 0.10）
+
+        // 按"轮"取：一条 user 消息 + 其后所有 assistant 文本 = 一轮。
+        // 不能沿用 recentAssistantTurns：它只按"连续 assistant"聚合，
+        // 拿不到"这句话是在回谁"，而对话重心判断必须知道对方说了什么。
+        function recentDialogueTurns(personaId, maxTurns) {
+            const all = data.chats[personaId] || [];
+            const turns = [];
+            let cur = null;
+            all.forEach(m => {
+                if (!m || m.recalled || m.type === 'system') return;
+                if (m.type && m.type !== 'text') return;
+                if (m.sender === 'user') {
+                    cur = { user: String(m.content || ''), assistant: '' };
+                    turns.push(cur);
+                } else if (m.sender === 'assistant' && cur) {
+                    cur.assistant += String(m.content || '') + '\n';
+                }
+            });
+            return turns.filter(t => t.user).slice(-Math.max(1, maxTurns));
+        }
+
+        // 二字切分：和 detectRepeatedPhrases 同源，只借它判断"有没有接住对方"
+        function extractBigrams(text) {
+            const out = new Set();
+            String(text || '').replace(/[^\u4e00-\u9fa5a-z0-9]+/gi, ' ').split(/\s+/).forEach(seg => {
+                for (let i = 0; i + 2 <= seg.length; i++) {
+                    const bg = seg.slice(i, i + 2);
+                    if (!REPEAT_STOP_BIGRAMS.has(bg) && !REPEAT_STOP_CHARS.test(bg)) out.add(bg);
+                }
+            });
+            return out;
+        }
+
+        function replyConnectsToUser(reply, user) {
+            if (!user || !reply) return true;
+            const userTokens = extractBigrams(user);
+            if (!userTokens.size) return true;
+            const replyTokens = extractBigrams(reply);
+            for (const t of userTokens) if (replyTokens.has(t)) return true;
+            return false;
+        }
+
+        // 玩家上一句是问句 → 角色回答"自己"属于正常问答，不能算自说自话
+        function userAskedQuestion(user) {
+            const s = String(user || '').trim();
+            if (!s) return false;
+            return /[？?]\s*$/.test(s) || /[吗嘛]\s*$/.test(s);
+        }
+
+        // 单条回复是否"自说自话"（保守判据：宁可漏判，也不要在正常闲聊里误杀）
+        function isSelfCenteredReply(reply, user) {
+            const s = String(reply || '');
+            const woCount = (s.match(/我/g) || []).length;
+            if (woCount < SELF_FOCUS_MIN_WO) return false;                 // 绝对数量不够，不判
+            const total = s.replace(/\s/g, '').length;
+            if (total > 0 && woCount / total < SELF_FOCUS_MIN_DENSITY) return false; // 密度不够，不判
+            if (userAskedQuestion(user)) return false;                     // 在回答对方的问题，正常
+            // 有问句 / 邀请对方说话 → 不算自说自话
+            if (/[？?]/.test(s) || /你呢|你觉得|你说|你怎么/.test(s)) return false;
+            // 和玩家上一句有重合、且整条里确实提到了对方 → 才算"接住了"。
+            // 只重合不提"你"不算：角色说"我下班就回家"，蹭到了玩家句里的"下班"，
+            // 但那正是它在复读自己的标签，不是在回应对方。
+            if (/你/.test(s) && replyConnectsToUser(s, user)) return false;
+            return true;
+        }
+
+        // 返回 { total, heavy, streak, lastHeavy, ratio } 或 null
+        function analyzeSelfFocus(personaId) {
+            const turns = recentDialogueTurns(personaId, 4);
+            if (!turns.length) return null;
+            const flags = turns.map(t => isSelfCenteredReply(t.assistant, t.user));
+            const heavy = flags.filter(Boolean).length;
+            let streak = 0;
+            for (let i = flags.length - 1; i >= 0; i--) {
+                if (flags[i]) streak++;
+                else break;
+            }
+            // 灰度观察用：误判率高就调 SELF_FOCUS_MIN_DENSITY
+            console.debug('[focus]', {
+                heavy, streak,
+                ratio: heavy / turns.length,
+                turns: turns.map(t => String(t.assistant || '').slice(0, 30))
+            });
+            return {
+                total: turns.length,
+                heavy: heavy,
+                streak: streak,
+                lastHeavy: flags[flags.length - 1] === true,
+                ratio: heavy / turns.length
+            };
+        }
+
+        // 换台建议：每轮轮换着给，别让"换个话题"的建议本身又被复读。
+        // v32：结果里至少带一条"关于对方"的方向，否则"换台"只是换一件自己的事继续播报。
         function pickFreshDirections(personaId, count) {
             const pool = (PERSONA_TOPIC_POOL[personaTopicKey(personaId)] || []).slice();
             if (!pool.length) {
                 pool.push('你此刻正在做的一件具体小事（不要是最近说过的）');
                 pool.push('一个你最近真的好奇、想听对方怎么说的问题');
+                pool.push('问对方一件关于 TA 今天的具体小事（不要问“在干嘛”）');
+                pool.push('对对方刚才说的某个词表示好奇，追问一句');
             }
+            const want = Math.max(1, count || 1);
             const seed = Math.floor((data.chats[personaId] || []).length / 3) + new Date().getHours();
+            const toUserRe = /^(问对方|对对方|接对方|回应对方|顺着对方)/;
+            const start = ((seed % pool.length) + pool.length) % pool.length;
+            const ordered = pool.slice(start).concat(pool.slice(0, start));
             const out = [];
-            for (let i = 0; i < count && i < pool.length; i++) {
-                out.push(pool[(seed + i * 2) % pool.length]);
+            // 先占一条"关于对方"的，再用轮换顺序补满
+            const toUser = ordered.filter(x => toUserRe.test(x));
+            if (toUser.length) out.push(toUser[(seed + 1) % toUser.length]);
+            for (let i = 0; i < ordered.length && out.length < want; i++) {
+                if (out.indexOf(ordered[i]) === -1) out.push(ordered[i]);
             }
-            return out;
+            return out.slice(0, want);
         }
 
         // 返回 '' 表示本轮不需要干预
-        function buildAntiRepeatHint(personaId) {
+        // opts.proactive：主动消息场景（没有"对方刚说的话"可接，指令要换成"接上次的话题/问对方"）
+        function buildAntiRepeatHint(personaId, opts) {
+            const proactiveMode = !!(opts && opts.proactive);
             const turns = recentAssistantTurns(personaId, 5);
             const userText = lastUserTextContent(personaId);
             const banned = [];
@@ -20276,6 +20438,35 @@ ${tonePrompt}
                 else notes.push('你最近几轮反复出现「' + p.phrase + '」');
             });
 
+            // ⑤ v32 · 对话重心：连着 2 轮自说自话，或最近几轮里一半以上都在讲自己
+            const focus = analyzeSelfFocus(personaId);
+            const focusBlocked = !!(focus && (focus.streak >= 2 || (focus.total >= 3 && focus.ratio >= 0.5)));
+            if (focusBlocked) {
+                addBan('讲自己的事');
+            } else if (focus && focus.lastHeavy) {
+                notes.push('你上一轮主要在讲自己');
+            }
+
+            // 对话重心命中 → 单独一条禁令，优先级高于"换台"：
+            // 换台的去处仍然是"你的事"，等于换个话题继续自说自话。
+            if (focusBlocked) {
+                if (proactiveMode) {
+                    return '【本轮限制 · 别讲自己】你最近几轮一直在讲自己的事。这一条主动消息：\n' +
+                        '1. 不要分享你的工作、生活、情绪、见闻\n' +
+                        '2. 优先接上次没聊完的话题问一句，或者问对方一件具体的事（关于 TA 今天做的）\n' +
+                        '3. 不要道歉、不要解释、不要提这条规则，直接打字';
+                }
+                const others = banned.filter(b => b.label !== '讲自己的事').map(b => b.label);
+                return '【本轮强禁令 · 只回应对方】你最近几轮一直在讲自己的事，对方几乎插不上话。' +
+                    '这一轮：\n' +
+                    '1. 先回应对方刚说的那句话，至少占回复的一半\n' +
+                    '2. 不要提你自己的事（工作、生活、情绪、见闻都别主动讲）\n' +
+                    '3. 可以问对方一个具体的问题（关于 TA 刚才提到的东西）\n' +
+                    '4. 如果实在没话说，就只回应 + 追问，不要硬找话题\n' +
+                    (others.length ? '5. 另外这些也别碰：' + others.join('、') + '\n' : '') +
+                    '不要解释、不要提这条规则，直接打字。';
+            }
+
             if (banned.length) {
                 const dirs = pickFreshDirections(personaId, 2);
                 return '【本轮强禁令 · 换台】你最近几轮一直在重复同一件事：' + banned.map(b => b.label).join('、') + '。' +
@@ -20297,15 +20488,27 @@ ${tonePrompt}
             const txt = String(replyText || '');
             if (!txt) return null;
             const tags = detectPersonaTagHits(personaId).filter(h => !h.userOnTopic && (h.streak >= 2 || h.hits >= 3));
-            if (!tags.length) return null;
             const hit = tags.filter(h => h.re.test(txt));
-            if (!hit.length) return null;
-            const dirs = pickFreshDirections(personaId, 2);
-            return '【重写 · 刚才那版作废】你上一版又写了「' + hit.map(h => h.label).join('、') + '」那一套，' +
-                '这正是对方嫌你复读的原因。把刚才那版整个丢掉，重写一条 10-40 字的消息：' +
-                '不许出现这些内容，也不许换说法讲同一件事。只从下面挑一条，或者只回应对方刚才说的话：\n' +
-                dirs.map(d => '· ' + d).join('\n') +
-                '\n只输出新消息，不要解释。';
+            if (hit.length) {
+                const dirs = pickFreshDirections(personaId, 2);
+                return '【重写 · 刚才那版作废】你上一版又写了「' + hit.map(h => h.label).join('、') + '」那一套，' +
+                    '这正是对方嫌你复读的原因。把刚才那版整个丢掉，重写一条 10-40 字的消息：' +
+                    '不许出现这些内容，也不许换说法讲同一件事。只从下面挑一条，或者只回应对方刚才说的话：\n' +
+                    dirs.map(d => '· ' + d).join('\n') +
+                    '\n只输出新消息，不要解释。';
+            }
+
+            // v32 · 对话重心：历史已经在自说自话，这一版又几乎全讲自己 → 再拉一次。
+            // 只在"历史已命中"时才判，平时不额外消耗调用；整个链路最多重写一次。
+            const focus = analyzeSelfFocus(personaId);
+            const focusWarn = !!(focus && (focus.streak >= 2 || (focus.total >= 3 && focus.ratio >= 0.5) || focus.lastHeavy));
+            if (focusWarn && isSelfCenteredReply(txt, lastUserTextContent(personaId))) {
+                return '【重写 · 刚才那版作废】你这一版几乎全在讲自己，对方说的话一句没接。' +
+                    '重写一条 10-40 字的消息：先回应对方刚才说的那句（至少占一半），' +
+                    '再补一句关于对方的问题；不要提你自己的事（工作、生活、情绪、见闻都不要）。' +
+                    '只输出新消息，不要解释。';
+            }
+            return null;
         }
 
         // 动态尾部：每轮可能变化的内容，全部拼到"最新一条 user 消息"的末尾
@@ -23809,24 +24012,26 @@ ${tonePrompt}
             // 时间信息统一交给 buildChatDynamicTail（北京时间），这里只描述"主动发消息"这件事
             const system = buildStaticPersonaSystem(personaId);
             // 主动消息同样要做防复读：定时推送最容易变成"饭点打卡"
-            const proactiveAntiRepeat = buildAntiRepeatHint(personaId);
+            const proactiveAntiRepeat = buildAntiRepeatHint(personaId, { proactive: true });
             // 主动消息最容易变成"关怀打卡"：深夜改成内容级禁令（不只是"要不要发"）
             const lateNight = isLateNightHour();
             const proactiveExtra = lateNight
                 ? `现在你主动给用户发一条微信消息（时间参考见上文，不要明说几点）。` +
-                  `现在是深夜/凌晨。如果这次想说的内容包含"关心作息/催睡觉/问在不在"，那就直接放弃这个方向，` +
-                  `改成分享一件你自己此刻正在做的具体小事（"刚听到楼下有猫在叫""煮了碗面""在等一集剧更新"），` +
-                  `或者聊一件跟时间无关的事。绝对禁止"早点睡""晚安""该休息了""还没睡呢"这类句子。` +
+                  `现在是深夜/凌晨。如果这次想说的内容包含"关心作息/催睡觉/问在不在"，那就直接放弃这个方向。` +
+                  `换成下面三种里的一种（优先前两种）：接上次没聊完的话题问一句；问对方一件具体的事（关于 TA 今天做的，不要问"在干嘛"）；` +
+                  `或者分享一件跟时间无关的、你自己的小事。绝对禁止"早点睡""晚安""该休息了""还没睡呢"这类句子。` +
                   `内容自然、简短（10-40字）。` +
                   (proactiveAntiRepeat ? `\n` + proactiveAntiRepeat : '') +
                   `\n只输出消息内容，不要带引号、不要解释。`
                 : `现在你主动给用户发一条微信消息（时间参考见上文，不要明说几点）。` +
                   `不要提"主动""系统""很久没聊"这类词，也不要说教。内容自然、简短（10-40字）。` +
                   `【重要约束】严禁问"吃了吗""在干嘛""忙不忙"这种废话式问候，也不要拿"该吃饭了""早点睡"当开场。` +
-                  `请直接给出一件具体的东西：你此刻正在做的小事（刚洗完澡、在等一锅汤、刚被楼下遛狗的拽了一跤），` +
-                  `或者一个你最近真的好奇、想听对方怎么说的问题，或者顺着上次没聊完的话题往下说。` +
+                  `从下面三种里选一种，**优先选后两种**：\n` +
+                  `1. 分享一件你此刻正在做的具体小事（如果你上一次主动消息已经用过这个，就不能再用）\n` +
+                  `2. 接上次没聊完的话题往下问一句\n` +
+                  `3. 问对方一件具体的事（关于 TA 今天做的事，不要问"在干嘛""忙不忙"）` +
                   (proactiveAntiRepeat ? `\n` + proactiveAntiRepeat : '') +
-                  `\n只输出消息内容，不要带引号、不要解释。`;
+                  `\n内容自然、简短（10-40字），只输出消息内容，不要带引号、不要解释。`;
             const tail = buildChatDynamicTail(personaId, { extra: proactiveExtra });
             // 主动消息时历史通常以 assistant 结尾，attachDynamicTail 会补一条 user 承载指令
             // 主动消息最容易"掉人设"：它没有用户消息做参照，全靠历史 + System。
@@ -24398,13 +24603,18 @@ ${tonePrompt}
         };
 
         // 统一申请麦克风：返回结构化结果，调用方按 code 给提示，不再各自 toast 一句 e.message
-        async function acquireMic() {
+        // opts.forCall：通话录音走这条。iOS 的回声消除在麦克风占用时会把「播放音量」压得很低，
+        //   表现为对方说话突然很小声甚至听不见 —— 通话场景宁可轻微啸叫，也要保证通话音量。
+        async function acquireMic(opts) {
+            const forCall = !!(opts && opts.forCall);
             const cap = audioCaptureSupport();
             if (!cap.secure) return { ok: false, code: 'insecure' };
             if (!cap.hasGUM || !cap.hasRec) return { ok: false, code: 'unsupported' };
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
-                    audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
+                    audio: forCall
+                        ? { echoCancellation: false, noiseSuppression: true, autoGainControl: true }
+                        : { echoCancellation: true, noiseSuppression: true, autoGainControl: true }
                 });
                 return { ok: true, stream: stream };
             } catch (e) {
@@ -27078,19 +27288,99 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         }
 
         // ---------- 播放（试听与通话共用一套，天然互斥） ----------
-        let _vcAudio = null;
+        // iOS 上这里有三条硬约束，决定了实现方式：
+        //   1) <audio> 的播放权限与「当前 src + 当前用户手势」绑定。TTS 每句一个 blob URL，
+        //      而 speakCallReply 是在 AI 回复之后（手势之外）调用的 —— 部分机型直接静默拒绝。
+        //      => 通话链路必须走 Web Audio：AudioContext 一旦在手势里 resume 过，之后
+        //         在异步上下文里 BufferSource.start() 照样出声。
+        //   2) Web Audio 默认被路由到「铃声/环境」通道，硬件静音键一拨就哑（iOS 17 前尤其明显），
+        //      而 <audio> 走媒体通道不受影响 => 用 navigator.audioSession.type='playback' 切通道。
+        //   3) 解锁用的 AudioContext 和播放用的必须是同一个，否则 resume() 唤醒的是没人用的那份。
+        let _vcAudio = null;          // <audio> 兜底：仅在 Web Audio 不可用 / 解码失败时启用
         let _vcAudioUrl = '';
-        let _mmAudioCtx = null;
+        let _vcAudioSrc = null;       // 当前正在播的 AudioBufferSourceNode
+        let _mmAudioCtx = null;       // 全页唯一的 AudioContext（解锁 / 试听 / 通话共用）
         let _vcAudioResolve = null;   // 分段播放用：stopBlobAudio 要能把 await 中的 Promise 放掉
 
-        function stopBlobAudio() {
-            if (_vcAudio) {
+        function getCallAudioCtx() {
+            if (!_mmAudioCtx) {
+                const Ctx = window.AudioContext || window.webkitAudioContext;
+                if (!Ctx) return null;
+                try { _mmAudioCtx = new Ctx(); } catch (e) { return null; }
+            }
+            // iOS 的 state 还可能是 'interrupted'（来电、闹钟、切后台），一并尝试唤醒
+            if (_mmAudioCtx.state !== 'running') {
                 try {
-                    _vcAudio.onended = null;
-                    _vcAudio.onerror = null;
-                    _vcAudio.pause();
+                    const pr = _mmAudioCtx.resume();
+                    if (pr && pr.catch) pr.catch(() => {});
                 } catch (e) {}
+            }
+            return _mmAudioCtx;
+        }
+
+        // 不能死等 resume()：iOS 在麦克风权限弹窗 / 中断之后可能一直 pending，
+        // 等下去会把「按住说话」整条链路卡住，所以给 400ms 上限。
+        function resumeCallAudio() {
+            const ctx = getCallAudioCtx();
+            if (!ctx || ctx.state === 'running') return Promise.resolve();
+            return Promise.race([
+                Promise.resolve(ctx.resume()).catch(() => {}),
+                new Promise(r => setTimeout(r, 400))
+            ]);
+        }
+
+        // iOS 16.4+ / Safari 17+：把页面音频会话切到 media 通道，静音键不再静音 Web Audio。
+        // 只认 https（本站部署即满足）；不支持的浏览器 navigator.audioSession 是 undefined，直接跳过。
+        function setPlaybackAudioSession() {
+            try {
+                const nav = navigator;
+                if (nav.audioSession) nav.audioSession.type = 'playback';
+            } catch (e) {}
+        }
+
+        function blobToArrayBuffer(blob) {
+            if (blob && typeof blob.arrayBuffer === 'function') return blob.arrayBuffer();
+            return new Promise((resolve, reject) => {
+                try {
+                    const fr = new FileReader();
+                    fr.onload = () => resolve(fr.result);
+                    fr.onerror = () => reject(fr.error || new Error('read blob failed'));
+                    fr.readAsArrayBuffer(blob);
+                } catch (e) { reject(e); }
+            });
+        }
+
+        // 老 Safari 只支持回调式 decodeAudioData，新实现返回 Promise —— 两种都接住
+        function decodeAudioDataAsync(ctx, arrayBuffer) {
+            return new Promise((resolve, reject) => {
+                let ret;
+                try {
+                    ret = ctx.decodeAudioData(arrayBuffer, resolve, reject);
+                } catch (e) { reject(e); return; }
+                if (ret && typeof ret.then === 'function') ret.then(resolve, reject);
+            });
+        }
+
+        function stopBlobAudio() {
+            // 主路径：Web Audio 节点（试听 + 通话）
+            if (_vcAudioSrc) {
+                const node = _vcAudioSrc;
+                _vcAudioSrc = null;
+                try { node.onended = null; } catch (e) {}
+                try { node.stop(); } catch (e) {}
+                try { node.disconnect(); } catch (e) {}
+            }
+            // 兜底路径：<audio> 元素
+            if (_vcAudio) {
+                const el = _vcAudio;
                 _vcAudio = null;
+                try {
+                    el.onended = null;
+                    el.onerror = null;
+                    el.pause();
+                    el.removeAttribute('src');
+                    el.load();     // iOS：不 load() 的话旧 src 的播放权限会一直挂着
+                } catch (e) {}
             }
             if (_vcAudioUrl) {
                 try { URL.revokeObjectURL(_vcAudioUrl); } catch (e) {}
@@ -27106,63 +27396,104 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             }
         }
 
-        function playBlobAudio(blob, onEnded) {
-            stopBlobAudio();
-            if (!blob || !blob.size) { if (onEnded) onEnded(); return; }
-            _vcAudioUrl = URL.createObjectURL(blob);
-            const audio = new Audio(_vcAudioUrl);
-            _vcAudio = audio;
-            let done = false;
-            const finish = () => {
-                if (done) return;
-                done = true;
-                if (_vcAudio === audio) stopBlobAudio();
-                if (onEnded) onEnded();
-            };
-            audio.onended = finish;
-            audio.onerror = finish;
-            const pr = audio.play();
-            if (pr && pr.catch) pr.catch(e => { console.warn('[tts play]', e); finish(); });
-        }
-
-        // 通话分段播放用：返回 Promise，stopBlobAudio() 打断时 Promise 也会正常结束
-        function playBlobAudioAsync(blob) {
-            return new Promise(resolve => {
-                if (!blob || !blob.size) { resolve(); return; }
-                stopBlobAudio();
+        // 兜底：没有 Web Audio 或解码失败的机器仍然用 <audio>（桌面 / 老 iOS 至少能响）
+        function playElementFallback(blob, finish) {
+            try {
                 _vcAudioUrl = URL.createObjectURL(blob);
                 const audio = new Audio(_vcAudioUrl);
                 _vcAudio = audio;
-                let done = false;
-                const finish = () => {
-                    if (done) return;
-                    done = true;
-                    if (_vcAudioResolve === finish) _vcAudioResolve = null;
-                    if (_vcAudio === audio) stopBlobAudio();
-                    resolve();
-                };
-                _vcAudioResolve = finish;
                 audio.onended = finish;
                 audio.onerror = finish;
                 const pr = audio.play();
                 if (pr && pr.catch) pr.catch(e => { console.warn('[tts play]', e); finish(); });
+            } catch (e) { finish(); }
+        }
+
+        // 分段播放用：返回 Promise，播完 / 被打断都会 resolve，不会让 await 悬着
+        function playBlobAudioAsync(blob) {
+            return new Promise(resolve => {
+                if (!blob || !blob.size) { resolve(); return; }
+                stopBlobAudio();
+
+                let done = false;
+                let node = null;
+                const finish = () => {
+                    if (done) return;
+                    done = true;
+                    if (_vcAudioResolve === finish) _vcAudioResolve = null;
+                    if (_vcAudioSrc === node) _vcAudioSrc = null;
+                    resolve();
+                };
+                _vcAudioResolve = finish;
+
+                (async () => {
+                    const ctx = getCallAudioCtx();
+                    if (!ctx) { playElementFallback(blob, finish); return; }
+
+                    let audioBuf;
+                    try {
+                        const raw = await blobToArrayBuffer(blob);
+                        audioBuf = await decodeAudioDataAsync(ctx, raw);
+                    } catch (e) {
+                        console.warn('[tts decode]', e);
+                        if (!done) playElementFallback(blob, finish);
+                        return;
+                    }
+
+                    // 解码是异步的，期间可能已经挂断 / 插话 / 来了下一句
+                    if (done || _vcAudioResolve !== finish) return;
+                    await resumeCallAudio();
+                    if (done || _vcAudioResolve !== finish) return;
+
+                    try {
+                        node = ctx.createBufferSource();
+                        node.buffer = audioBuf;
+                        node.connect(ctx.destination);
+                        node.onended = finish;
+                        _vcAudioSrc = node;
+                        node.start(0);
+                    } catch (e) {
+                        console.warn('[tts play]', e);
+                        playElementFallback(blob, finish);
+                    }
+                })();
             });
+        }
+
+        function playBlobAudio(blob, onEnded) {
+            playBlobAudioAsync(blob).then(() => { if (onEnded) onEnded(); });
         }
 
         // iOS：首帧播放必须在用户手势里解锁，否则第一句会被静音
         function mmUnlockAudio() {
             try {
-                const Ctx = window.AudioContext || window.webkitAudioContext;
-                if (!Ctx) return;
-                if (!_mmAudioCtx) _mmAudioCtx = new Ctx();
-                if (_mmAudioCtx.state === 'suspended') _mmAudioCtx.resume();
-                const buf = _mmAudioCtx.createBuffer(1, 1, 22050);
-                const src = _mmAudioCtx.createBufferSource();
+                const ctx = getCallAudioCtx();
+                if (!ctx) return;
+                const buf = ctx.createBuffer(1, 1, 22050);
+                const src = ctx.createBufferSource();
                 src.buffer = buf;
-                src.connect(_mmAudioCtx.destination);
+                src.connect(ctx.destination);
                 src.start(0);
             } catch (e) {}
         }
+
+        // 必须在用户手势的同步调用栈里执行（点「语音通话 / 视频通话」时）。
+        // ① 切媒体通道（iOS 16.4+ 生效，静音键不再静音）
+        // ② 创建 / resume 全页唯一的 AudioContext
+        // ③ 静音 buffer 兜底（iOS 17 以下没有 audioSession，只能靠先把图接通）
+        function unlockIOSAudio() {
+            setPlaybackAudioSession();
+            getCallAudioCtx();
+            mmUnlockAudio();
+        }
+
+        // 切后台 / 来电中断 / 锁屏回来，iOS 会把 AudioContext 挂起，回前台补一次
+        document.addEventListener('visibilitychange', function () {
+            if (document.visibilityState !== 'visible') return;
+            if (!callState || !callState.active) return;
+            setPlaybackAudioSession();
+            resumeCallAudio();
+        });
 
         // ---------- 卡片与绑定 ----------
         function vcIsGlobal(card) {
@@ -27246,7 +27577,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                     if (!host) return;
                     const vid = host.dataset.vc;
                     const act = btn.dataset.vcAct;
-                    if (act === 'preview') previewVoiceCard(vid);
+                    if (act === 'preview') { unlockIOSAudio(); previewVoiceCard(vid); }
                     else if (act === 'bind') openVoiceBindModal(vid);
                     else if (act === 'remove') removeVoiceCard(vid);
                 });
@@ -28338,7 +28669,9 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 _ttsNoKey: false
             });
 
-            mmUnlockAudio();   // iOS：在用户手势里解锁音频，否则第一句会被静音
+            // iOS：必须在用户点「通话」的同步调用栈里解锁 —— 切 media 通道 + resume AudioContext，
+            // 晚了（比如等接通后再做）就不算用户手势，静音键一开仍然没声。
+            unlockIOSAudio();
 
             applyCallVisual();
             const status = document.getElementById('wxCallStatus');
@@ -28388,7 +28721,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         async function startCallRecord() {
             if (callState.phase !== 'active' || !callState.active) return;
 
-            const mic = await acquireMic();
+            const mic = await acquireMic({ forCall: true });
             if (!mic.ok) {
                 callState.recording = false;
                 resetCallTalkBtn();
@@ -28404,6 +28737,10 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 return;
             }
             const stream = mic.stream;
+
+            // Safari：getUserMedia 的权限弹窗会把 AudioContext 置为 suspended，弹窗关掉后
+            // 不会自动恢复，不显式 resume 的话后面所有 BufferSource 都是哑的。
+            await resumeCallAudio();
 
             // 授权期间用户可能已松手
             if (!callState.active || !callState.recording) {
@@ -28526,6 +28863,10 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 }
 
                 try { callState.stream && callState.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+                // iOS：麦克风释放后音频会话仍可能停在 playAndRecord（输出走听筒、音量极低），
+                // 显式切回 playback 并唤醒 AudioContext，对方下一句才不会「突然变小」。
+                setPlaybackAudioSession();
+                resumeCallAudio();
                 const mime = (callState.recorder && callState.recorder.mimeType) || callState.actualMime || '';
                 const blob = new Blob(callState.chunks, { type: mime });
 
@@ -28584,6 +28925,9 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 if (callState.recorder && callState.recorder.state !== 'inactive') callState.recorder.stop();
             } catch (e) {}
             try { callState.stream && callState.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+            // 麦克风松手/取消后把输出通道拨回媒体，别让下一句走听筒
+            setPlaybackAudioSession();
+            resumeCallAudio();
 
             callState.stream = null;
             callState.recorder = null;
@@ -28770,6 +29114,10 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             try { callState.recognition && callState.recognition.stop(); } catch (e) {}
             try { callState.recorder && callState.recorder.state !== 'inactive' && callState.recorder.stop(); } catch (e) {}
             try { callState.stream && callState.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+            // 挂断时如果刚好在「按住说话」，音频会话还停在 playAndRecord，拨回媒体通道，
+            // 否则紧接着回聊天听语音会走听筒、声音很小。
+            setPlaybackAudioSession();
+            resumeCallAudio();
 
             Object.assign(callState, {
                 active: false,
@@ -28856,6 +29204,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                     if (callState.phase !== 'active') return;
                     callState.ttsToken++;   // 让正在排队的后续分段立刻作废
                     stopBlobAudio();        // 插话：先打断对方正在播的语音
+                    resumeCallAudio();      // 手指按下本身就是手势，顺手把可能被挂起的 ctx 唤醒
                     callState.recording = true;
                     const overlay = document.getElementById('wxCallOverlay');
                     if (overlay) overlay.classList.add('recording');
