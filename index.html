@@ -5042,6 +5042,151 @@
         .game-card .gc-name { font-size: 16px; font-weight: 600; color: #fff; margin-top: 8px; }
         .game-card .gc-desc { font-size: 12px; color: rgba(255,255,255,.5); margin-top: 4px; }
 
+        /* ---- 游戏页分组标题 ---- */
+        .game-section-title {
+            font-size: 11.5px;
+            color: rgba(255,255,255,.38);
+            letter-spacing: .6px;
+            padding: 4px 4px 8px;
+        }
+        .game-card + .game-section-title { margin-top: 18px; }
+        .page-body > .game-section-title:first-child { padding-top: 2px; }
+
+        /* ---- 外部小游戏卡片 ---- */
+        .game-card-web {
+            position: relative;
+            background: rgba(124,156,255,.055);
+            border-style: dashed;
+            border-color: rgba(124,156,255,.32);
+        }
+        .game-card-web:active { background: rgba(124,156,255,.14); }
+        .game-card-web .gc-name { color: #cfe0ff; }
+        .game-card-web .gc-desc { color: rgba(207,224,255,.6); }
+        .game-card-web .gc-ext {
+            position: absolute;
+            top: 10px; right: 12px;
+            font-size: 11.5px;
+            line-height: 1.5;
+            color: rgba(124,156,255,.92);
+            background: rgba(124,156,255,.12);
+            border: 1px solid rgba(124,156,255,.25);
+            border-radius: 6px;
+            padding: 1px 6px;
+            pointer-events: none;
+        }
+
+        /* ---- 内置浏览器（游戏门户） ---- */
+        .game-webview {
+            position: absolute;
+            inset: 0;
+            z-index: 40;              /* 高于页面(1)，低于通话层(45)/状态栏(46)/modal(100) */
+            display: none;
+            flex-direction: column;
+            background: #16181d;
+            overflow: hidden;
+        }
+        .game-webview.open { display: flex; animation: appOpen .24s var(--ease); }
+
+        .gw-nav {
+            flex-shrink: 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            height: calc(46px + var(--sb-h));
+            padding: var(--sb-h) 8px 0;
+            background: #1e1e1e;
+            border-bottom: 1px solid rgba(255,255,255,.06);
+        }
+        .gw-btn {
+            flex-shrink: 0;
+            width: 34px; height: 34px;
+            display: flex; align-items: center; justify-content: center;
+            background: none; border: none; border-radius: 9px;
+            color: #e8e8e8; cursor: pointer;
+            transition: background .16s;
+        }
+        .gw-btn:active { background: rgba(255,255,255,.1); }
+        .gw-btn svg {
+            width: 19px; height: 19px;
+            stroke: currentColor; stroke-width: 1.9;
+            fill: none; stroke-linecap: round; stroke-linejoin: round;
+        }
+        .gw-url {
+            flex: 1; min-width: 0;
+            height: 30px;
+            display: flex; align-items: center; gap: 5px;
+            padding: 0 11px;
+            border-radius: 15px;
+            background: #2c2c2c;
+            color: rgba(255,255,255,.62);
+            font-size: 12px;
+        }
+        .gw-url .gw-lock { display: flex; align-items: center; flex-shrink: 0; opacity: .6; }
+        .gw-url .gw-lock svg {
+            width: 11px; height: 11px;
+            stroke: currentColor; stroke-width: 2;
+            fill: none; stroke-linecap: round; stroke-linejoin: round;
+        }
+        .gw-url .gw-host {
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            font-size: 11.5px;
+        }
+        .gw-stage {
+            position: relative;
+            flex: 1; min-height: 0;
+            background: #fff;
+        }
+        .gw-frame {
+            position: absolute;
+            inset: 0;
+            width: 100%; height: 100%;
+            border: 0; display: block;
+            background: #fff;
+        }
+        .gw-loading {
+            position: absolute;
+            inset: 0;
+            z-index: 2;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            background: #16181d;
+            color: rgba(255,255,255,.7);
+            font-size: 13px;
+            transition: opacity .25s, visibility .25s;
+            pointer-events: none;     /* 淡出期间不挡 iframe */
+        }
+        .gw-loading.hide { opacity: 0; visibility: hidden; }
+        .gw-spinner {
+            width: 30px; height: 30px;
+            border-radius: 50%;
+            border: 2.5px solid rgba(255,255,255,.12);
+            border-top-color: #7c9cff;
+            animation: gwSpin .8s linear infinite;
+        }
+        @keyframes gwSpin { to { transform: rotate(360deg); } }
+        .gw-loading-hint {
+            font-size: 11.5px;
+            color: rgba(255,255,255,.42);
+            max-width: 240px;
+            text-align: center;
+            line-height: 1.7;
+        }
+        .gw-loading-hint button {
+            margin-top: 10px;
+            padding: 7px 14px;
+            border-radius: 10px;
+            border: 1px solid rgba(124,156,255,.5);
+            background: rgba(124,156,255,.16);
+            color: #cfe0ff;
+            font-size: 12.5px;
+            cursor: pointer;
+            pointer-events: auto;     /* 覆盖父层的 none */
+        }
+
         .game-versus {
             display: flex; align-items: flex-start; justify-content: space-between;
             padding: 10px 22px 4px; flex-shrink: 0;
@@ -6030,6 +6175,13 @@
             text-overflow: ellipsis;
             white-space: nowrap;
         }
+        /* 出错提示要能换行：一行放不下会把原因截掉，等于白提示 */
+        .wx-call-tip.err {
+            white-space: normal;
+            line-height: 1.55;
+            word-break: break-word;
+            color: rgba(255, 214, 214, .92);
+        }
         .wx-call-holdwrap {
             position: relative;
             z-index: 4;
@@ -6130,7 +6282,24 @@
         .wx-call-act.on .ic { background: #f2f2f2; color: #111; }
         .wx-call-act.hangup .ic { background: #fa5151; color: #fff; }
         .wx-call-overlay.calling .wx-call-act:not(.hangup) { display: none; }
-        .wx-call-overlay.calling .wx-call-actions { justify-content: center; }
+        /* v34 · 来电「接听」：默认不出现，只有 incoming + calling 时才由样式打开。
+           用纯 class 驱动（不用 inline display），接通后 phase 变成 active 会自动收起，
+           挂断/拒接重置 overlay.className 也会自动收起，不存在残留。 */
+        .wx-call-act.answer { display: none; }
+        .wx-call-act.answer .ic { background: #07c160; color: #fff; }
+        .wx-call-overlay.calling.incoming .wx-call-act.answer { display: flex; }
+        .wx-call-overlay.calling.incoming .wx-call-act.answer .ic {
+            animation: wxCallAnswerPulse 1.9s ease-out infinite;
+        }
+        @keyframes wxCallAnswerPulse {
+            0%   { box-shadow: 0 0 0 0 rgba(7, 193, 96, .5); }
+            70%  { box-shadow: 0 0 0 15px rgba(7, 193, 96, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(7, 193, 96, 0); }
+        }
+        @media (prefers-reduced-motion: reduce) {
+            .wx-call-overlay.calling.incoming .wx-call-act.answer .ic { animation: none; }
+        }
+        .wx-call-overlay.calling .wx-call-actions { justify-content: center; gap: 60px; }
 
         /* ============================================================
            v17 · 淘宝
@@ -7585,6 +7754,23 @@
                         <div class="ctx-hint">同一目标 30 分钟内再被提到会升级；数值只影响"要不要在意"，不影响回复长度。</div>
                     </div>
 
+                    <div class="setting-item" id="affectionCallCard">
+                        <div class="label">主动来电</div>
+                        <div class="desc">玩家连续说「我想你了」「好喜欢你」「我爱你」这类话时，角色可能主动打来语音/视频电话。</div>
+                        <div class="ms-row"><span>开启</span><button class="ms-switch" id="msAffectionCall" type="button"></button></div>
+                        <div class="wp-slider-row" style="padding:12px 0 0;">
+                            <span class="k" style="width:auto;">连说几条触发</span>
+                            <input type="range" id="msAffectionStreak" min="2" max="6" step="1" value="3" />
+                            <span class="v" id="msAffectionStreakVal">3 条</span>
+                        </div>
+                        <div class="wp-slider-row" style="padding:8px 0 2px;">
+                            <span class="k" style="width:auto;">冷却</span>
+                            <input type="range" id="msAffectionCooldown" min="15" max="180" step="15" value="60" />
+                            <span class="v" id="msAffectionCooldownVal">60 分钟</span>
+                        </div>
+                        <div class="ctx-hint">命中情感句后计数 +1，说点别的会 -1（不会一次清零）；连续超过阈值才评估是否发起。每天最多 2 次。</div>
+                    </div>
+
                     <div class="setting-item" id="presetSyncCard">
                         <div class="label">预设角色卡</div>
                         <div class="desc">没改过的角色卡会随版本自动更新；改过的保留你的版本，想换回预设可以点下面按钮。</div>
@@ -8340,6 +8526,17 @@
                             </div>
                         </div>
 
+                        <!-- 音频自检：把「没声音」拆成播放 / 合成两个独立问题 -->
+                        <div class="setting-item" style="margin-top:14px;">
+                            <div class="label">音频自检</div>
+                            <div class="desc">通话没声音时先点这里。「测试播放」是本地合成两声短音，不联网、不花额度；「测试合成」才会真的请求一次云端。</div>
+                            <div style="display:flex;gap:8px;margin-top:10px;">
+                                <button class="btn btn-sm btn-primary" id="vcAudioTestPlay" style="flex:1;">🔈 测试播放</button>
+                                <button class="btn btn-sm" id="vcAudioTestTts" style="flex:1;">☁️ 测试合成</button>
+                            </div>
+                            <div class="ctx-hint" id="vcAudioTestOut" style="display:none;"></div>
+                        </div>
+
                         <!-- 聊天里的 AI 语音消息（第四条通道） -->
                         <div class="setting-item" style="margin-top:14px;">
                             <div class="label">聊天语音消息</div>
@@ -8470,6 +8667,7 @@
                     <button class="action" id="gameRestartBtn" title="重开" style="display:none;">↻</button>
                 </div>
                 <div id="gameLobby" class="page-body">
+                    <div class="game-section-title">和 TA 玩</div>
                     <div class="game-card" data-game="gomoku">
                         <div class="gc-ico">⚫⚪</div>
                         <div class="gc-name">五子棋</div>
@@ -8479,6 +8677,14 @@
                         <div class="gc-ico">✊✋✌️</div>
                         <div class="gc-name">石头剪刀布</div>
                         <div class="gc-desc">三局两胜，输的人要接受惩罚</div>
+                    </div>
+
+                    <div class="game-section-title">更多</div>
+                    <div class="game-card game-card-web" data-game-web="1">
+                        <span class="gc-ext">↗</span>
+                        <div class="gc-ico">🎮</div>
+                        <div class="gc-name">更多小游戏</div>
+                        <div class="gc-desc">持续更新的独立游戏网页</div>
                     </div>
                 </div>
                 <div id="gamePick" class="page-body" style="display:none;">
@@ -8526,7 +8732,42 @@
             <div class="wx-call-actions">
                 <button class="wx-call-act" id="wxCallMute"><span class="ic"><svg viewBox="0 0 24 24"><path d="M12 3v9"/><path d="M8.4 6.4a5 5 0 0 0 7.2 7.2"/><path d="M5.5 11a6.5 6.5 0 0 0 10.2 5.4"/><path d="M12 17.5V21"/><path d="M4 4l16 16"/></svg></span><span class="lb">静音</span></button>
                 <button class="wx-call-act" id="wxCallSpeaker"><span class="ic"><svg viewBox="0 0 24 24"><path d="M4 9.5h3.5L12 5.5v13L7.5 14.5H4z"/><path d="M16 8.5a5 5 0 0 1 0 7"/><path d="M18.6 6a8.6 8.6 0 0 1 0 12"/></svg></span><span class="lb">免提</span></button>
+                <button class="wx-call-act answer" id="wxCallAnswer"><span class="ic"><svg viewBox="0 0 24 24"><path d="M6.5 3.6h3l1.5 4-2 1.5a11 11 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.4 16.4 0 0 1 4.5 5.8 2 2 0 0 1 6.5 3.6z"/></svg></span><span class="lb">接听</span></button>
                 <button class="wx-call-act hangup" id="wxCallHangup"><span class="ic"><svg viewBox="0 0 24 24"><path d="M2.6 13.4c5.1-4 13.7-4 18.8 0l-2.7 3.3-3.5-1.6v-2.2a12 12 0 0 0-6.4 0v2.2l-3.5 1.6z"/></svg></span><span class="lb">挂断</span></button>
+            </div>
+        </div>
+
+        <!-- 内置浏览器：更多小游戏 -->
+        <div class="game-webview" id="gameWebview">
+            <div class="gw-nav">
+                <button class="gw-btn" id="gwBack" title="返回">
+                    <svg viewBox="0 0 24 24"><path d="M15 18l-6-6 6-6"/></svg>
+                </button>
+                <div class="gw-url">
+                    <span class="gw-lock">
+                        <svg viewBox="0 0 24 24"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>
+                    </span>
+                    <span class="gw-host" id="gwHost">cocoalulu.github.io/game</span>
+                </div>
+                <button class="gw-btn" id="gwReload" title="刷新">
+                    <svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7"/><path d="M20 4.5V11h-6.2"/></svg>
+                </button>
+                <button class="gw-btn" id="gwOpenExt" title="在浏览器中打开">
+                    <svg viewBox="0 0 24 24">
+                        <path d="M14 3h7v7"/><path d="M10 14L21 3"/>
+                        <path d="M21 14v5a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h5"/>
+                    </svg>
+                </button>
+            </div>
+            <div class="gw-stage">
+                <div class="gw-loading" id="gwLoading">
+                    <div class="gw-spinner" id="gwSpinner"></div>
+                    <div id="gwLoadingTitle">正在加载小游戏…</div>
+                    <div class="gw-loading-hint" id="gwLoadingHint"></div>
+                </div>
+                <iframe id="gwFrame" class="gw-frame" title="更多小游戏"
+                        allow="fullscreen; autoplay; clipboard-write; gamepad; gyroscope; accelerometer"
+                        referrerpolicy="no-referrer"></iframe>
             </div>
         </div>
 
@@ -9960,6 +10201,13 @@
                             }));
                     }
                     if (!d.chats) d.chats = {};
+                    // ---- v33 · 主动来电：老存档补默认配置 ----
+                    if (!d.affectionCall || typeof d.affectionCall !== 'object') {
+                        d.affectionCall = Object.assign({}, AFFECTION_CALL_DEF);
+                    }
+                    if (!d.affectionCallState || typeof d.affectionCallState !== 'object') {
+                        d.affectionCallState = {};
+                    }
                     // ---- v30 · 长期记忆迁移：老存档补空对象，脏字段逐条夹到合法区间 ----
                     if (!d.memories || typeof d.memories !== 'object' || Array.isArray(d.memories)) d.memories = {};
                     Object.keys(d.memories).forEach(pid => {
@@ -12515,6 +12763,7 @@ ${tonePrompt}
             renderCacheStats();
             renderMomentSettingsCard();
             renderJealousyCard();
+            renderAffectionCallCard();
             renderLifeInfoCard();
             syncImmersiveBtn();
             const container = document.getElementById('apiList');
@@ -14529,6 +14778,19 @@ ${tonePrompt}
             if (persona) {
                 setTimeout(() => { try { maybeWqProbe('send'); } catch (e) {} }, 3000 + Math.random() * 2000);
             }
+
+            // 明确要求打电话 → 立即弹出来电（无冷却，说一次来一次）
+            // 放在情感检测之前：「打个电话吧」比「我想你了」更明确，优先接管
+            try {
+                if (tryCallRequest(personaId, text)) return;
+            } catch (e) { console.warn('[call request] 失败', e); }
+
+            // 情感浓度检测：连续说"我想你了""好喜欢你""我爱你" → 可能主动打来电话
+            // 一旦挂上电话，这一轮就不该再有文字回复：trackAffectionCall 已经在内部清掉了
+            // 定时器与待处理标记，这里直接结束，防止后面任何附加逻辑再把文字推出去。
+            try {
+                if (trackAffectionCall(personaId, text)) return;
+            } catch (e) { console.warn('[affection] track 失败', e); }
         }
 
         function addMessage(personaId, sender, type, content, extra) {
@@ -22867,6 +23129,8 @@ ${tonePrompt}
 
         async function applyReply(personaId, reply, opts) {
             opts = opts || {};
+            // 主动消息也走这里：气泡要打上 isProactive 标记，通知由调用方统一发（语音别重复弹）
+            const proactiveExtra = opts.isProactive ? { isProactive: true } : undefined;
             const raw = String(reply == null ? '' : reply);
             const hasThreat = /\[\[BLOCK_THREAT\]\]/.test(raw);
             // 先洗动作描写再拆行：顺序反了，清洗残留会跟着行一起进历史
@@ -22894,10 +23158,14 @@ ${tonePrompt}
                 console.debug('[sticker] 已拦截', { name: sticker && sticker.name, text: parsed.text });
             }
 
+            let added = false;
+            let willAddVoice = false;
+
             // 整条都是动作描写、被洗空了：给个真人式的省略，别静默吞掉这一轮
             // （如果这条回复带了语音，就不补省略号了 —— 语音本身就是"说了话"）
             if (!parsed.text && parsed.photoIndex == null && !stickerOk && !moneyTag && !voicePlan && raw.replace(/\[\[BLOCK_THREAT\]\]/g, '').trim()) {
-                addMessage(personaId, 'assistant', 'text', '…');
+                addMessage(personaId, 'assistant', 'text', '…', proactiveExtra);
+                added = true;
             }
 
             if (parsed.text) {
@@ -22906,7 +23174,8 @@ ${tonePrompt}
 
                 if (lines.length === 0) {
                     // 理论兜底：parsed.text 非空时必能切出至少一行
-                    addMessage(personaId, 'assistant', 'text', parsed.text.trim());
+                    addMessage(personaId, 'assistant', 'text', parsed.text.trim(), proactiveExtra);
+                    added = true;
                 } else {
                     // 一次最多连发 15 条，防过度刷屏；超出的直接截断，绝不拼成一条
                     const MAX_BUBBLES = 15;
@@ -22918,7 +23187,8 @@ ${tonePrompt}
                         // AI 输出兜底：命中违禁词就整条不发（不替换成 *** —— 气泡里出现星号更怪）
                         const hit = findBannedWord(line);
                         if (hit) { console.warn('[banned] AI 回复含违禁词，已跳过该条：', hit, line); return; }
-                        addMessage(personaId, 'assistant', 'text', line);
+                        addMessage(personaId, 'assistant', 'text', line, proactiveExtra);
+                        added = true;
                     });
                 }
             }
@@ -22927,7 +23197,8 @@ ${tonePrompt}
                 const photo = pubs[parsed.photoIndex];
                 if (canSendPhoto(personaId, parsed.text, photo)) {
                     const mid = await cloneImage(imageIdOfObj(photo), 'msg_');
-                    addMessage(personaId, 'assistant', 'image', mid ? 'img:' + mid : imageIdOfObj(photo));
+                    addMessage(personaId, 'assistant', 'image', mid ? 'img:' + mid : imageIdOfObj(photo), proactiveExtra);
+                    added = true;
                 } else {
                     console.debug('[photo] 已拦截不相关/过频的发图', { desc: photo.desc, text: parsed.text });
                 }
@@ -22935,25 +23206,37 @@ ${tonePrompt}
 
             // 表情包放在文字之后：先说一句，再补个表情，气泡顺序更像真人
             if (stickerOk) {
-                addMessage(personaId, 'assistant', 'emoji', 'img:' + sticker.imgId);
+                addMessage(personaId, 'assistant', 'emoji', 'img:' + sticker.imgId, proactiveExtra);
                 sticker.usageCount = (sticker.usageCount || 0) + 1;
                 sticker.lastUsedAt = Date.now();
                 saveData();
+                added = true;
             }
 
             // 红包 / 转账放在最后：话说完再"塞钱"，比冷冰冰一张卡片更像真人
             if (moneyTag) {
                 const grant = rollAIMoneyGrant(personaId, moneyTag);
-                if (grant) addAIMoneyMessage(personaId, grant);
-                else console.debug('[money] 已拦截', moneyTag);
+                if (grant) {
+                    addAIMoneyMessage(personaId, grant, proactiveExtra);
+                    added = true;
+                } else {
+                    console.debug('[money] 已拦截', moneyTag);
+                }
             }
 
             // 语音最后补：文字气泡已经在上面全部落地，TTS 挂后台跑，绝不 await
             // （await 的话这条回复会被合成拖住 2–5 秒，前面的气泡都出不来）
             if (voicePlan) {
                 const force = !!opts.forceVoice;
-                if (canSendVoice(personaId, parsed.text, { force })) {
-                    synthesizeAndAppendVoice(personaId, voicePlan, { force }).catch(e => {
+                // proactive 传给 canSendVoice：主动消息场景概率再打 6 折
+                if (canSendVoice(personaId, parsed.text, { force, proactive: !!opts.proactive })) {
+                    willAddVoice = true;
+                    synthesizeAndAppendVoice(personaId, voicePlan, {
+                        force,
+                        proactive: !!opts.proactive,
+                        // 主动消息已经为文字气泡计过未读/发过通知，语音不要再单独弹一次
+                        notify: opts.isProactive ? false : true
+                    }).catch(e => {
                         console.warn('[aiVoice] 后台合成异常', e);
                     });
                 } else {
@@ -22962,6 +23245,8 @@ ${tonePrompt}
             }
 
             if (hasThreat) handleBlockThreat(personaId);
+
+            return { added, willAddVoice };
         }
 
         // AI 口头威胁拉黑 → 计数；第二次起有概率真的拉黑（留 5 秒反应时间）
@@ -23094,6 +23379,12 @@ ${tonePrompt}
                 }
                 if (typing) typing.remove();
                 if (!reply) { toast('AI 返回了空内容'); return false; }
+
+                // v34 · 这轮回复在生成期间被"主动来电"接管了 → 直接丢弃，别抢在铃声前面落地
+                if (consumeAffectionReplyHold(personaId)) {
+                    renderWechatList();
+                    return false;
+                }
 
                 const before = (data.chats[personaId] || []).length;
                 await applyReply(personaId, reply, opts);
@@ -23530,13 +23821,13 @@ ${tonePrompt}
             return { kind: tag.kind, amount, note: tag.note, scene };
         }
 
-        function addAIMoneyMessage(personaId, grant) {
+        function addAIMoneyMessage(personaId, grant, extra) {
             const isRp = grant.kind === 'redPacket';
             const note = (grant.note || MONEY_DEFAULT_NOTE[grant.scene] || '').slice(0, 24);
             const content = isRp
                 ? JSON.stringify({ amount: grant.amount, blessing: note, status: 'unopened', openedAt: 0, senderId: personaId })
                 : JSON.stringify({ amount: grant.amount, note: note, status: 'pending', receivedAt: 0, senderId: personaId });
-            addMessage(personaId, 'assistant', isRp ? 'redPacket' : 'transfer', content);
+            addMessage(personaId, 'assistant', isRp ? 'redPacket' : 'transfer', content, extra);
         }
 
         // 玩家发的红包/转账：AI 回完话之后由这里"收下"
@@ -24614,6 +24905,56 @@ ${tonePrompt}
             }
         })();
 
+        // ---- 主动来电 ----
+        function renderAffectionCallCard() {
+            const c = getAffectionCallCfg();
+            const sw = document.getElementById('msAffectionCall');
+            if (!sw) return;
+            sw.classList.toggle('on', !!c.enabled);
+            const stEl = document.getElementById('msAffectionStreak');
+            const stVal = document.getElementById('msAffectionStreakVal');
+            if (stEl) { stEl.value = String(c.triggerStreak); if (stVal) stVal.textContent = c.triggerStreak + ' 条'; }
+            const cdEl = document.getElementById('msAffectionCooldown');
+            const cdVal = document.getElementById('msAffectionCooldownVal');
+            if (cdEl) { cdEl.value = String(c.cooldownMin); if (cdVal) cdVal.textContent = c.cooldownMin + ' 分钟'; }
+        }
+
+        (function initAffectionCallCard() {
+            const sw = document.getElementById('msAffectionCall');
+            if (!sw) return;
+            sw.addEventListener('click', () => {
+                const c = getAffectionCallCfg();
+                c.enabled = !c.enabled;
+                saveData();
+                renderAffectionCallCard();
+                toast(c.enabled ? '已开启主动来电' : '已关闭主动来电');
+            });
+            const stEl = document.getElementById('msAffectionStreak');
+            if (stEl) {
+                const apply = (persist) => {
+                    const c = getAffectionCallCfg();
+                    c.triggerStreak = Math.max(2, Math.min(6, Math.round(Number(stEl.value) || 3)));
+                    const v = document.getElementById('msAffectionStreakVal');
+                    if (v) v.textContent = c.triggerStreak + ' 条';
+                    if (persist) saveData();
+                };
+                stEl.addEventListener('input', () => apply(false));
+                stEl.addEventListener('change', () => apply(true));
+            }
+            const cdEl = document.getElementById('msAffectionCooldown');
+            if (cdEl) {
+                const apply = (persist) => {
+                    const c = getAffectionCallCfg();
+                    c.cooldownMin = Math.max(15, Math.min(180, Math.round(Number(cdEl.value) || 60)));
+                    const v = document.getElementById('msAffectionCooldownVal');
+                    if (v) v.textContent = c.cooldownMin + ' 分钟';
+                    if (persist) saveData();
+                };
+                cdEl.addEventListener('input', () => apply(false));
+                cdEl.addEventListener('change', () => apply(true));
+            }
+        })();
+
         // ---- 模拟打字延迟开关 ----
         function renderTypingDelayCard() {
             const sw = document.getElementById('msTypingDelay');
@@ -24943,17 +25284,18 @@ ${tonePrompt}
                     }
                 }
 
-                // 主动消息不经过 applyReply：[voice] 要在这里自己抽掉，
-                // 否则标记会原样出现在气泡里（下一轮还会被喂回模型）
-                const pv = splitVoiceTag(content);
-                const proactiveVoice = pv.voice;
-                content = pv.text;
+                // ⭐ 统一交给 applyReply：[pic]/[sticker]/[voice]/[hongbao]/[[BLOCK_THREAT]] 一次收干净。
+                // 不要再在这里手搓 splitVoiceTag —— 手搓一次就漏一种标记，
+                // [pic:N] 被当成正文拆行落库、最后显示成 "[pic:1]" 就是这么来的。
+                const before = (data.chats[personaId] || []).length;
+                const ar = await applyReply(personaId, content, { isProactive: true, proactive: true });
+                const added = (data.chats[personaId] || []).length > before;
+                const voicePending = !!(ar && ar.willAddVoice);
+                if (!added && !voicePending) {
+                    console.warn('[proactive] 全部内容被拦截，本轮不发');
+                    return false;
+                }
 
-                // 主动消息也会一次吐好几行：和聊天回复走同一套拆行，别整段塞进一个气泡
-                const bubbles = content ? splitReplyLines(content) : [];
-                const out = bubbles.length > 15 ? bubbles.slice(0, 15) : bubbles;
-                if (!out.length && !proactiveVoice) return false;
-                out.forEach(line => addMessage(personaId, 'assistant', 'text', line, { isProactive: true }));
                 data.lastInteractionAt[personaId] = Date.now();
                 const prev = data.lastProactive[personaId];
                 data.lastProactive[personaId] = {
@@ -24964,7 +25306,10 @@ ${tonePrompt}
 
                 if (!isChatOpenWith(personaId)) {
                     data.unreadCounts[personaId] = (data.unreadCounts[personaId] || 0) + 1;
-                    showIncomingNotification(personaId, out[0] || (proactiveVoice ? '🎤 ' + proactiveVoice.content : content));
+                    // 通知里优先取文字气泡的预览（"只发了一张图"时别让通知只剩 [图片]）
+                    const newMsgs = (data.chats[personaId] || []).slice(before);
+                    const firstText = newMsgs.find(m => m && (!m.type || m.type === 'text') && m.content);
+                    showIncomingNotification(personaId, firstText ? previewText(firstText) : previewText(getLastMessage(personaId)));
                 } else {
                     renderMessages(personaId);
                 }
@@ -24972,12 +25317,7 @@ ${tonePrompt}
                 updateWxTabBadge();
                 renderWechatList();
 
-                // 语音最后补，同样不 await：文字气泡先到，语音 2–5 秒后跟上
-                if (proactiveVoice && canSendVoice(personaId, content || proactiveVoice.content, { proactive: true })) {
-                    synthesizeAndAppendVoice(personaId, proactiveVoice, { proactive: true, notify: false }).catch(e => {
-                        console.warn('[aiVoice] 主动语音合成异常', e);
-                    });
-                }
+                // 语音由 applyReply 内部挂后台合成，这里只负责通知/未读/列表，不 await
                 return true;
             } catch (e) {
                 console.warn('主动消息生成失败', e);
@@ -25480,11 +25820,17 @@ ${tonePrompt}
         // 统一申请麦克风：返回结构化结果，调用方按 code 给提示，不再各自 toast 一句 e.message
         // opts.forCall：通话录音走这条。iOS 的回声消除在麦克风占用时会把「播放音量」压得很低，
         //   表现为对方说话突然很小声甚至听不见 —— 通话场景宁可轻微啸叫，也要保证通话音量。
+        let micPending = false;   // 只保护"申请过程中"
+
         async function acquireMic(opts) {
             const forCall = !!(opts && opts.forCall);
             const cap = audioCaptureSupport();
             if (!cap.secure) return { ok: false, code: 'insecure' };
             if (!cap.hasGUM || !cap.hasRec) return { ok: false, code: 'unsupported' };
+
+            if (micPending) return { ok: false, code: 'busy' };
+            micPending = true;
+
             try {
                 const stream = await navigator.mediaDevices.getUserMedia({
                     audio: forCall
@@ -25494,6 +25840,7 @@ ${tonePrompt}
                 return { ok: true, stream: stream };
             } catch (e) {
                 const n = (e && e.name) || '';
+                console.warn('[mic] getUserMedia 失败：', n, e && e.message);
                 if (n === 'NotAllowedError' || n === 'SecurityError' || n === 'PermissionDeniedError') {
                     return { ok: false, code: 'denied', error: e };
                 }
@@ -25504,6 +25851,8 @@ ${tonePrompt}
                     return { ok: false, code: 'busy', error: e };
                 }
                 return { ok: false, code: 'unknown', error: e };
+            } finally {
+                micPending = false;
             }
         }
 
@@ -25525,19 +25874,63 @@ ${tonePrompt}
         }
 
         // 「权限被拒」不能只用 toast：用户不知道去哪儿改。这里给可照做的路径。
+        // iOS 上有两层权限（系统级 / 站点级），玩家通常只开了一层；站点级被拒过就不再弹框，
+        // 表现和"没开权限"一模一样 —— 所以两种容器、两层权限都要写清楚。
         function notifyMicError(code) {
-            if (code === 'denied') {
+            if (code === 'insecure') {
                 showModal(`
-                    <div class="modal-title">麦克风被拒绝</div>
-                    <div style="font-size:12.5px;color:rgba(255,255,255,.62);line-height:1.95;margin-bottom:12px;">
-                        · iPhone / iPad：设置 → Safari 浏览器 → 麦克风 → 允许<br>
-                        · 微信里打开：右上角「…」→ 在 Safari 中打开后再试<br>
-                        · 还是不行：设置 → Safari → 高级 → 网站数据，删掉本站数据后刷新重试
+                    <div class="modal-title">需要 HTTPS 才能用麦克风</div>
+                    <div style="font-size:12.5px;color:rgba(255,255,255,.68);line-height:1.95;margin-bottom:12px;">
+                        iPhone 只在 <b style="color:#fff;">https://</b> 页面里允许录音。<br>
+                        当前页面地址不是 HTTPS，所以连授权框都不会弹。<br><br>
+                        请让分享人用 HTTPS 地址重新发一次链接。
                     </div>
                     <div class="btn-row"><button class="btn btn-primary" onclick="closeModal()">知道了</button></div>
                 `);
                 return;
             }
+
+            if (code === 'denied') {
+                const inWx = isWeChatBrowser();
+                const wxSteps = inWx
+                    ? `<b style="color:#fff;">你现在在微信里打开，这里没有改麦克风权限的入口</b><br>
+                       · 右上角「…」→ 在 Safari 中打开，再按下面的步骤操作<br>
+                       · 或者：设置 → 微信 → 麦克风 → 打开，然后<b>清除微信网页数据</b>后重进<br><br>`
+                    : '';
+                showModal(`
+                    <div class="modal-title">麦克风被拒绝</div>
+                    <div style="font-size:12.5px;color:rgba(255,255,255,.68);line-height:1.95;margin-bottom:12px;">
+                        ${wxSteps}
+                        iPhone 上有<b style="color:#fff;">两层</b>麦克风权限，两层都要放行：<br><br>
+                        <b style="color:#fff;">① 系统级</b>（你大概已经开了）<br>
+                        设置 → Safari 浏览器 → 麦克风 → 允许<br><br>
+                        <b style="color:#fff;">② 站点级</b>（卡住的通常是这一层）<br>
+                        在 Safari 里打开本页 → 地址栏左侧「大小 / aA」→ 网站设置 → 麦克风 → 允许<br><br>
+                        <b style="color:#fff;">③ 如果站点级被点过「不允许」</b><br>
+                        设置 → Safari 浏览器 → 高级 → 网站数据 → 找到本页域名 → 删除<br>
+                        删完刷新页面，会重新弹一次授权框
+                    </div>
+                    <div class="btn-row">
+                        <button class="btn btn-primary" onclick="closeModal()">知道了</button>
+                    </div>
+                `, { tall: true });
+                return;
+            }
+
+            if (code === 'busy') {
+                showModal(`
+                    <div class="modal-title">麦克风被占用</div>
+                    <div style="font-size:12.5px;color:rgba(255,255,255,.68);line-height:1.95;margin-bottom:12px;">
+                        系统检测到麦克风正在被别的 App 使用：<br>
+                        · 是不是正在通话 / 语音备忘录在录 / 微信语音聊天开着？<br>
+                        · 关掉那些 App 后重试。<br><br>
+                        如果确定没有，切到后台再切回来，让系统释放一次。
+                    </div>
+                    <div class="btn-row"><button class="btn btn-primary" onclick="closeModal()">重试</button></div>
+                `);
+                return;
+            }
+
             toast(MIC_ERROR_TEXT[code] || MIC_ERROR_TEXT.unknown, 3600);
         }
 
@@ -25574,7 +25967,22 @@ ${tonePrompt}
         }
 
         async function startVoiceRecord() {
-            if (voiceRec.active) return;
+            if (voiceRec.active) {
+                // iOS 上 MediaRecorder 偶发不触发 onstop，voiceRec.active 会永远挂在 true，
+                // 之后每次按住都在这里静默 return —— 表现就是"连权限提示都不出现"。
+                // 超过 30 秒还挂着，当作异常残留，强制清理后继续。
+                const age = Date.now() - (voiceRec.startAt || 0);
+                if (age > 30000) {
+                    console.warn('[voice] 检测到卡住的录音状态（' + Math.round(age / 1000) + 's），强制重置');
+                    try { voiceRec.stream && voiceRec.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
+                    try { voiceRec.recorder && voiceRec.recorder.state !== 'inactive' && voiceRec.recorder.stop(); } catch (e) {}
+                    try { voiceRec.recognition && voiceRec.recognition.stop(); } catch (e) {}
+                    clearInterval(voiceRec.timer);
+                    resetVoiceRec();
+                } else {
+                    return;
+                }
+            }
             const cw = document.getElementById('chatWindow');
             const personaId = cw.dataset.persona;
             if (!personaId) return;
@@ -27792,6 +28200,110 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             maybeAiReaction._t = setTimeout(() => b.classList.remove('show'), 1600);
         }
 
+        // ============================================================
+        //  更多小游戏 · 内置浏览器（iframe 门户）
+        //  ------------------------------------------------------------
+        //  口径：门户页在「手机」内部以伪浏览器打开，而不是整页跳走
+        //    · iframe 常驻内存，关闭只是 display:none —— 游戏进度不丢
+        //    · 切到别的 App 再回来：gwWasOpen 记着，自动恢复上次页面
+        //    · 10 秒没 load 就给「在浏览器中打开」兜底；顶栏常驻该入口
+        // ============================================================
+        const GAME_SITE_URL = 'https://cocoalulu.github.io/game/';
+        const GW_LOAD_TIMEOUT = 10000;
+        let gwState = 'idle';     // idle | loading | loaded | failed
+        let gwTimer = null;
+        let gwWasOpen = false;    // 切走 App 时记住 webview 是否开着
+
+        function loadGameFrame(force) {
+            const frame = document.getElementById('gwFrame');
+            const loading = document.getElementById('gwLoading');
+            const hint = document.getElementById('gwLoadingHint');
+            const title = document.getElementById('gwLoadingTitle');
+            const spinner = document.getElementById('gwSpinner');
+            if (!frame) return;
+
+            gwState = 'loading';
+            if (loading) loading.classList.remove('hide');
+            if (hint) hint.textContent = '';
+            if (title) title.textContent = '正在加载小游戏…';
+            if (spinner) spinner.style.display = '';
+            // 刷新带时间戳绕缓存；首次打开用原始 URL，允许命中缓存
+            frame.src = force
+                ? GAME_SITE_URL + (GAME_SITE_URL.indexOf('?') >= 0 ? '&' : '?') + '_r=' + Date.now()
+                : GAME_SITE_URL;
+
+            clearTimeout(gwTimer);
+            gwTimer = setTimeout(gwShowFallback, GW_LOAD_TIMEOUT);
+        }
+
+        // 兜底态：给出「在浏览器中打开」，不再傻等
+        function gwShowFallback() {
+            if (gwState !== 'loading') return;
+            gwState = 'failed';
+            const title = document.getElementById('gwLoadingTitle');
+            const spinner = document.getElementById('gwSpinner');
+            const hint = document.getElementById('gwLoadingHint');
+            if (title) title.textContent = '没能打开内置页面';
+            if (spinner) spinner.style.display = 'none';
+            if (!hint) return;
+            hint.textContent = '网络或被站点策略拦住了，可以换个方式打开：';
+            const b = document.createElement('button');
+            b.type = 'button';
+            b.textContent = '在浏览器中打开';
+            b.addEventListener('click', openGameExternally);
+            hint.appendChild(document.createElement('br'));
+            hint.appendChild(b);
+        }
+
+        // 注意：iframe 的 load 在「被 X-Frame-Options 拦 / 断网」时同样会触发，浏览器
+        // 会画自己的错误页；跨域下我们分辨不出真假加载，所以不猜 —— load 就认为有内容，
+        // 迟迟不 load（请求挂住）才走兜底，顶栏也常驻「在浏览器中打开」。
+        function openGameWebview() {
+            const box = document.getElementById('gameWebview');
+            if (!box) return;
+            box.classList.add('open');
+            // 已加载过直接复用 iframe（进度保留）；失败过则重试
+            if (gwState === 'idle' || gwState === 'failed') loadGameFrame(false);
+        }
+
+        function closeGameWebview() {
+            const box = document.getElementById('gameWebview');
+            if (box) box.classList.remove('open');
+            clearTimeout(gwTimer);
+            // 不动 gwState：已加载的 iframe 留在内存里，下次打开立即可见
+        }
+
+        function openGameExternally() {
+            let win = null;
+            try { win = window.open(GAME_SITE_URL, '_blank', 'noopener'); } catch (e) { win = null; }
+            if (!win) toast('打不开新窗口，请手动访问 ' + GAME_SITE_URL, 3600);
+        }
+
+        (function initGameWebview() {
+            const back = document.getElementById('gwBack');
+            const reload = document.getElementById('gwReload');
+            const ext = document.getElementById('gwOpenExt');
+            const frame = document.getElementById('gwFrame');
+            const loading = document.getElementById('gwLoading');
+            const host = document.getElementById('gwHost');
+
+            if (host) {
+                host.textContent = GAME_SITE_URL.replace(/^https?:\/\//, '').replace(/\/$/, '');
+            }
+            if (back) back.addEventListener('click', closeGameWebview);
+            if (ext) ext.addEventListener('click', openGameExternally);
+            if (reload) reload.addEventListener('click', () => loadGameFrame(true));
+
+            if (frame) {
+                frame.addEventListener('load', () => {
+                    if (gwState !== 'loading') return;
+                    clearTimeout(gwTimer);
+                    gwState = 'loaded';
+                    if (loading) loading.classList.add('hide');
+                });
+            }
+        })();
+
         /* ---------------- 页面注册与事件 ---------------- */
         pages.recorder = document.getElementById('pageRecorder');
         pages.clock = document.getElementById('pageClock');
@@ -27810,7 +28322,15 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             if (name === 'weather') renderWeather();
             if (name === 'calculator') resetCalculator();
             if (name === 'calendar') renderCalendar();
-            if (name === 'game') openGamePage();
+            if (name === 'game') {
+                openGamePage();
+                // 切出去再回来：自动恢复上次打开的门户页
+                if (gwWasOpen) openGameWebview();
+            } else {
+                const gw = document.getElementById('gameWebview');
+                gwWasOpen = !!(gw && gw.classList.contains('open'));
+                closeGameWebview();
+            }
         };
 
         document.getElementById('recToggleBtn').addEventListener('click', () => {
@@ -27873,17 +28393,71 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         function mmBaseUrl() { return mmHost() + '/v1/t2a_v2'; }
         function mmGetVoiceUrl() { return mmHost() + '/v1/get_voice'; }
 
+        // 分级安全：options.billingSafe === true 表示「这个请求一旦发出，服务端就可能扣费」。
+        // 这类请求只允许发一次 —— 不换域名重试、不做 XHR 兜底、失败就交给用户去后台核对。
         async function mmFetch(path, options) {
+            const opts = options || {};
             const hosts = mmHosts();
+            const isBillingSafe = opts.billingSafe === true;
             let lastErr = null;
+
             for (let i = 0; i < hosts.length; i++) {
                 try {
-                    return await fetch(hosts[i] + path, options);
+                    const fetchOptions = Object.assign({}, opts);
+                    delete fetchOptions.billingSafe;          // 自定义标记不发给服务端
+                    // body 支持工厂函数：重试时重新生成 FormData，避免同一个已被消费的实例
+                    if (typeof opts.body === 'function') fetchOptions.body = opts.body();
+                    return await fetch(hosts[i] + path, fetchOptions);
                 } catch (e) {
                     lastErr = e;
+                    console.warn('[mmFetch] ' + hosts[i] + ' 网络层失败：', (e && e.message) || e);
+
+                    // 关键点 1：计费接口一旦抛错立刻停手，绝不换域名重发
+                    if (isBillingSafe) break;
+
+                    // 关键点 2：非计费的 FormData 上传，fetch 被 WebView 拦时用 XHR 再试一次
+                    //   带 signal 的请求（ASR 自己有超时）不走兜底：XHR 没有对应超时，
+                    //   会把调用方设好的时间上限拖长，反而更糟
+                    const body = (typeof opts.body === 'function') ? opts.body() : opts.body;
+                    if (body instanceof FormData && !opts.signal) {
+                        try {
+                            console.warn('[mmFetch] fetch 失败，尝试 XHR 兜底…');
+                            return await uploadWithXHR(hosts[i] + path, body, opts.headers || {});
+                        } catch (xhrErr) {
+                            lastErr = xhrErr;
+                        }
+                    }
                 }
             }
             throw lastErr || new Error('网络异常');
+        }
+
+        // XHR 兜底：只用于非计费的上传，返回与 fetch 同形的极简 Response
+        function uploadWithXHR(url, formData, headers) {
+            return new Promise((resolve, reject) => {
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', url, true);
+                // 绝对不能手动设置 Content-Type，否则 boundary 会丢
+                for (const key in headers) {
+                    if (key.toLowerCase() !== 'content-type') {
+                        xhr.setRequestHeader(key, headers[key]);
+                    }
+                }
+                xhr.onload = () => {
+                    resolve({
+                        ok: xhr.status >= 200 && xhr.status < 300,
+                        status: xhr.status,
+                        text: () => Promise.resolve(xhr.responseText),
+                        json: () => {
+                            try { return Promise.resolve(JSON.parse(xhr.responseText)); }
+                            catch (e) { return Promise.reject(e); }
+                        }
+                    });
+                };
+                xhr.onerror = () => reject(new Error('XHR 网络错误'));
+                xhr.ontimeout = () => reject(new Error('XHR 超时'));
+                xhr.send(formData);
+            });
         }
 
         // ============================================================
@@ -28081,6 +28655,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                     cap.secure ? 'isSecureContext = true' : '请用 HTTPS 访问（iOS 在 http:// 下不允许录音）'),
                 vscRow('麦克风 API', cap.hasGUM ? 'ok' : 'bad',
                     cap.hasGUM ? 'navigator.mediaDevices.getUserMedia 可用' : '换浏览器 / 用 HTTPS 打开'),
+                vscRow('麦克风实测', 'warn', '<span id="vscMicState">点击下方「检测麦克风」</span>'),
                 vscRow('MediaRecorder', cap.hasRec ? 'ok' : 'bad',
                     cap.hasRec ? '可用' : '当前浏览器不支持录音'),
                 vscRow('可用 mimeType', mime ? 'ok' : 'warn',
@@ -28099,12 +28674,41 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 <div style="font-size:12.5px;line-height:1.8;">${rows}</div>
                 <div class="ctx-hint" style="margin-top:10px;">「识别中」走云端 ASR：浏览器识别为空时才发起请求，8 秒超时。</div>
                 <div class="btn-row" style="margin-top:12px;">
-                    <button class="btn" id="vscRetest">重新检测</button>
-                    <button class="btn btn-primary" onclick="closeModal()">关闭</button>
+                    <button class="btn" id="vscMicTest" style="white-space:nowrap;padding-left:8px;padding-right:8px;">检测麦克风</button>
+                    <button class="btn" id="vscRetest" style="white-space:nowrap;padding-left:8px;padding-right:8px;">重新检测</button>
+                    <button class="btn btn-primary" onclick="closeModal()" style="white-space:nowrap;padding-left:8px;padding-right:8px;">关闭</button>
                 </div>
             `);
             const retest = document.getElementById('vscRetest');
             if (retest) retest.addEventListener('click', () => { openVoiceSelfCheck(); });
+
+            // 「检测麦克风」：真的申请一次 getUserMedia，把权限卡在哪一层直接照出来。
+            // 只写文案没用 —— 玩家分不清"系统级开了但站点级被拒"这种状态。
+            const micTest = document.getElementById('vscMicTest');
+            if (micTest) micTest.addEventListener('click', async () => {
+                const slot = document.getElementById('vscMicState');
+                if (slot) { slot.textContent = '申请中…（注意屏幕上方是否弹出授权框）'; slot.style.color = '#ffb258'; }
+                const r = await probeMicOnce();
+                if (!document.body.contains(slot)) return;
+                if (r.ok) {
+                    slot.textContent = '成功拿到麦克风流 → 权限没问题';
+                    slot.style.color = '#07c160';
+                } else {
+                    const map = {
+                        insecure: '页面不是 HTTPS，不会弹授权框',
+                        unsupported: '浏览器缺 getUserMedia / MediaRecorder',
+                        denied: '权限被拒绝（' + r.name + '）→ 看上面的两层权限说明',
+                        'no-device': '没有可用麦克风',
+                        busy: '麦克风被其它 App 占用',
+                        unknown: '失败：' + (r.name || '未知')
+                    };
+                    slot.textContent = map[r.code] || map.unknown;
+                    slot.style.color = r.code === 'denied' ? '#ff7a7a' : '#ffb258';
+                    if (r.code === 'denied' || r.code === 'insecure') {
+                        setTimeout(() => notifyMicError(r.code), 300);
+                    }
+                }
+            });
 
             const slot = document.getElementById('vscAsrState');
             if (!slot) return;
@@ -28142,7 +28746,14 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             if (!v.mmKey) throw new Error('未配置 MiniMax Key');
 
             const params = p || {};
-            const emotion = params.emotion && params.emotion !== 'neutral' ? params.emotion : '';
+            // 这里是 TTS 的最后一道闸门：所有调用方（通话 / 聊天语音 / 试听 / 复刻）
+            // 都可能送来非 MiniMax 词表的情绪（'love' / 'shy' / '哄' …），
+            // 服务端不认识就直接报错 → 整句没声音。统一在这里过一遍白名单：
+            //   · 合法值（happy/sad/…）原样保留
+            //   · love/shy/soothe/gentle 等别名 → calm
+            //   · 不认识的 → ''（不传 emotion 字段，走默认语气），绝不把脏值发给服务端
+            const rawEmotion = params.emotion && params.emotion !== 'neutral' ? params.emotion : '';
+            const emotion = rawEmotion ? normalizeVoiceEmotion(rawEmotion) : '';
             const voiceSetting = {
                 voice_id: params.voice || 'male-qn-qingse',
                 speed: Math.min(2, Math.max(0.5, Number(params.speed) || 1.0)),
@@ -28166,7 +28777,10 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                     'Content-Type': 'application/json',
                     'Authorization': 'Bearer ' + v.mmKey
                 },
-                body: JSON.stringify(body)
+                body: JSON.stringify(body),
+                // TTS 按字符计费：网络层一旦失败就去重试，等于把同一段字扣两次钱。
+                // 这里和复刻接口保持同一口径 —— 只允许发一次，失败交给用户去后台核对。
+                billingSafe: true
             });
             if (!resp.ok) throw new Error('HTTP ' + resp.status);
 
@@ -28188,11 +28802,58 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         //   2) Web Audio 默认被路由到「铃声/环境」通道，硬件静音键一拨就哑（iOS 17 前尤其明显），
         //      而 <audio> 走媒体通道不受影响 => 用 navigator.audioSession.type='playback' 切通道。
         //   3) 解锁用的 AudioContext 和播放用的必须是同一个，否则 resume() 唤醒的是没人用的那份。
-        let _vcAudio = null;          // <audio> 兜底：仅在 Web Audio 不可用 / 解码失败时启用
+        let _vcAudio = null;          // 当前在播的 <audio>（= _vcEl 单例，或老兜底临时元素）
         let _vcAudioUrl = '';
         let _vcAudioSrc = null;       // 当前正在播的 AudioBufferSourceNode
         let _mmAudioCtx = null;       // 全页唯一的 AudioContext（解锁 / 试听 / 通话共用）
         let _vcAudioResolve = null;   // 分段播放用：stopBlobAudio 要能把 await 中的 Promise 放掉
+
+        // ---------- 播放通道：为什么"接了还是没声音" ----------
+        // iOS 上 Web Audio 默认走「铃声/环境」通道，硬件静音键一拨就彻底哑掉，而且 start()
+        // 不报任何错 —— 表现就是"字幕在滚、人声全无"。唯一的正规解法是
+        // navigator.audioSession.type='playback' 切到 media 通道，但：
+        //   · 只有 Safari 16.4+ 有这个 API；
+        //   · 微信 / 各家内嵌 WKWebView 一律没有。
+        // 所以没有 audioSession 的 iOS 容器里，Web Audio 是不可救的：一律改走 <audio>，
+        // 它天生就是 media 通道，静音键不影响。Web Audio 退为兜底（桌面 / Safari 16.4+）。
+        function preferMediaElement() {
+            try {
+                if ('audioSession' in navigator) return false;
+                const ua = navigator.userAgent || '';
+                const iOS = /iPhone|iPad|iPod/i.test(ua) ||
+                    (/Macintosh/i.test(ua) && navigator.maxTouchPoints > 1);
+                return iOS;
+            } catch (e) { return false; }
+        }
+
+        // iOS 只认「这一颗 <audio>」的播放授权：每次 new Audio() 都是重新申请，
+        // 在非手势上下文（TTS 请求回来之后）必被静默拒绝。所以全页只留一颗，反复换 src。
+        let _vcEl = null;
+        // 8ms 静音 wav：在接听 / 拨号的手指按下瞬间播一次，把这颗元素"点着"
+        const SILENT_WAV = 'data:audio/wav;base64,UklGRoYAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgATElTVBoAAABJTkZPSVNGVA4AAABMYXZmNjIuMTMuMTAyAGRhdGFAAAAAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgICAgA==';
+
+        function ensureVcEl() {
+            if (_vcEl) return _vcEl;
+            try {
+                const el = new Audio();
+                el.preload = 'auto';
+                el.setAttribute('playsinline', '');
+                el.setAttribute('webkit-playsinline', '');
+                _vcEl = el;
+            } catch (e) { _vcEl = null; }
+            return _vcEl;
+        }
+
+        // 必须在用户手势的同步调用栈里执行
+        function primeMediaElement() {
+            const el = ensureVcEl();
+            if (!el) return;
+            try {
+                el.src = SILENT_WAV;
+                const pr = el.play();
+                if (pr && pr.catch) pr.catch(() => {});
+            } catch (e) {}
+        }
 
         function getCallAudioCtx() {
             if (!_mmAudioCtx) {
@@ -28262,7 +28923,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 try { node.stop(); } catch (e) {}
                 try { node.disconnect(); } catch (e) {}
             }
-            // 兜底路径：<audio> 元素
+            // <audio> 通道
             if (_vcAudio) {
                 const el = _vcAudio;
                 _vcAudio = null;
@@ -28270,8 +28931,9 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                     el.onended = null;
                     el.onerror = null;
                     el.pause();
-                    el.removeAttribute('src');
-                    el.load();     // iOS：不 load() 的话旧 src 的播放权限会一直挂着
+                    // 单例元素不能 removeAttribute('src') + load()，那会把 iOS 的手势授权一起清掉；
+                    // 下次播放直接换 src 即可。临时元素才彻底释放。
+                    if (el !== _vcEl) { el.removeAttribute('src'); el.load(); }
                 } catch (e) {}
             }
             if (_vcAudioUrl) {
@@ -28288,17 +28950,106 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             }
         }
 
-        // 兜底：没有 Web Audio 或解码失败的机器仍然用 <audio>（桌面 / 老 iOS 至少能响）
-        function playElementFallback(blob, finish) {
+        // ===== A-1：录音结束后强制切回 playback（解决"通话没声音"）=====
+        // getUserMedia 会让会话变 playAndRecord（输出走听筒），track.stop() 后
+        // 微信 WebView 里系统不一定自动切回 playback。主动播一段 200ms 静音，
+        // 让系统"看到"有播放活动，从而把会话切回 playback。
+        function kickPlaybackSession(delayMs) {
+            const run = () => {
+                setPlaybackAudioSession();
+                const ctx = getCallAudioCtx();
+                if (!ctx) return;
+                try {
+                    if (ctx.state !== 'running') ctx.resume().catch(() => {});
+                    const len = Math.max(1, Math.round(ctx.sampleRate * 0.2));
+                    const buf = ctx.createBuffer(1, len, ctx.sampleRate);
+                    const src = ctx.createBufferSource();
+                    src.buffer = buf;
+                    src.connect(ctx.destination);
+                    src.start(0);
+                } catch (e) {}
+            };
+            if (delayMs > 0) setTimeout(run, delayMs);
+            else run();
+        }
+
+        // ===== B-1：判断是否在微信内（权限引导文案要分流）=====
+        function isWeChatBrowser() {
+            return /MicroMessenger/i.test(navigator.userAgent || '');
+        }
+
+        // ===== B-2：真正申请一次麦克风，用于自检 =====
+        async function probeMicOnce() {
+            const cap = audioCaptureSupport();
+            if (!cap.secure) return { code: 'insecure' };
+            if (!cap.hasGUM || !cap.hasRec) return { code: 'unsupported' };
+            let stream = null;
             try {
+                stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+                return { ok: true };
+            } catch (e) {
+                const n = (e && e.name) || '';
+                if (/NotAllowed|Security|Permission/i.test(n)) return { code: 'denied', name: n };
+                if (/NotFound|DevicesNotFound/i.test(n)) return { code: 'no-device', name: n };
+                if (/NotReadable|TrackStart|Abort/i.test(n)) return { code: 'busy', name: n };
+                return { code: 'unknown', name: n };
+            } finally {
+                if (stream) stream.getTracks().forEach(t => t.stop());
+            }
+        }
+
+        // ===== A-3：通话保活（ctx 被系统随机挂起时兜底，通话场景可接受耗电）=====
+        function startCallKeepAlive() {
+            if (callState.keepAliveSrc) return;
+            const ctx = getCallAudioCtx();
+            if (!ctx) return;
+            try {
+                if (ctx.state !== 'running') ctx.resume().catch(() => {});
+                // 1 秒全 0 buffer 循环播放：保持 ctx running，不产生可听声音
+                const buf = ctx.createBuffer(1, ctx.sampleRate, ctx.sampleRate);
+                const src = ctx.createBufferSource();
+                src.buffer = buf;
+                src.loop = true;
+                src.connect(ctx.destination);
+                src.start(0);
+                callState.keepAliveSrc = src;
+            } catch (e) {}
+        }
+
+        function stopCallKeepAlive() {
+            if (!callState.keepAliveSrc) return;
+            try { callState.keepAliveSrc.stop(); } catch (e) {}
+            try { callState.keepAliveSrc.disconnect(); } catch (e) {}
+            callState.keepAliveSrc = null;
+        }
+
+        // <audio> 通道：复用单例换 src 播放；开不了就交给 onFail 回退 Web Audio
+        function playElementSource(blob, finish, onFail) {
+            const el = ensureVcEl();
+            if (!el) { if (onFail) onFail(); return false; }
+            try {
+                if (_vcAudioUrl) {
+                    try { URL.revokeObjectURL(_vcAudioUrl); } catch (e) {}
+                    _vcAudioUrl = '';
+                }
                 _vcAudioUrl = URL.createObjectURL(blob);
-                const audio = new Audio(_vcAudioUrl);
-                _vcAudio = audio;
-                audio.onended = finish;
-                audio.onerror = finish;
-                const pr = audio.play();
-                if (pr && pr.catch) pr.catch(e => { console.warn('[tts play]', e); finish(); });
-            } catch (e) { finish(); }
+                _vcAudio = el;
+                el.onended = finish;
+                el.onerror = () => { console.warn('[tts el] 载入或解码失败'); finish(); };
+                el.src = _vcAudioUrl;
+                const pr = el.play();
+                if (pr && pr.catch) {
+                    pr.catch(e => {
+                        console.warn('[tts el play] 被拒：', e);
+                        if (onFail) onFail(); else finish();
+                    });
+                }
+                return true;
+            } catch (e) {
+                console.warn('[tts el]', e);
+                if (onFail) onFail(); else finish();
+                return false;
+            }
         }
 
         // 分段播放用：返回 Promise，播完 / 被打断都会 resolve，不会让 await 悬着
@@ -28318,9 +29069,19 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 };
                 _vcAudioResolve = finish;
 
-                (async () => {
+                const viaBuffer = async () => {
                     const ctx = getCallAudioCtx();
-                    if (!ctx) { playElementFallback(blob, finish); return; }
+                    if (!ctx) { finish(); return; }
+
+                    // 关键：ctx 被挂起时 start() 不会出声也不报错，先确保它是 running
+                    if (ctx.state !== 'running') {
+                        try {
+                            await Promise.race([
+                                Promise.resolve(ctx.resume()).catch(() => {}),
+                                new Promise(r => setTimeout(r, 500))
+                            ]);
+                        } catch (e) {}
+                    }
 
                     let audioBuf;
                     try {
@@ -28328,7 +29089,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                         audioBuf = await decodeAudioDataAsync(ctx, raw);
                     } catch (e) {
                         console.warn('[tts decode]', e);
-                        if (!done) playElementFallback(blob, finish);
+                        if (!done) finish();
                         return;
                     }
 
@@ -28346,9 +29107,16 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                         node.start(0);
                     } catch (e) {
                         console.warn('[tts play]', e);
-                        playElementFallback(blob, finish);
+                        finish();
                     }
-                })();
+                };
+
+                // 没有 audioSession 的 iOS：Web Audio 会被静音键掐死，优先走 <audio>
+                if (preferMediaElement() &&
+                    playElementSource(blob, finish, () => { if (!done) viaBuffer(); })) {
+                    return;
+                }
+                viaBuffer();
             });
         }
 
@@ -28377,6 +29145,9 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             setPlaybackAudioSession();
             getCallAudioCtx();
             mmUnlockAudio();
+            // 顺手把这颗 <audio> 也点着：微信 / 无 audioSession 的容器后面全靠它出声，
+            // 而它只能在手势里获得播放授权。
+            primeMediaElement();
         }
 
         // 切后台 / 来电中断 / 锁屏回来，iOS 会把 AudioContext 挂起，回前台补一次
@@ -28514,6 +29285,94 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         }
 
         // ---------- 试听 ----------
+        // ---------- 音频自检：把「没声音」拆成「播不出来」和「没合成出来」 ----------
+        function selfTestLog() {
+            const out = document.getElementById('vcAudioTestOut');
+            const lines = [];
+            const render = () => {
+                if (!out) return;
+                out.style.display = 'block';
+                out.innerHTML = lines.map(x => escHtml(x)).join('<br>');
+            };
+            return {
+                log: (s) => { lines.push(s); render(); },
+                reset: () => { lines.length = 0; render(); }
+            };
+        }
+
+        function selfTestEnvLine() {
+            const hasAS = ('audioSession' in navigator);
+            const ch = preferMediaElement() ? '<audio> 媒体通道' : 'Web Audio';
+            let ctxState = 'n/a';
+            try { const c = getCallAudioCtx(); ctxState = c ? c.state : '创建失败'; } catch (e) {}
+            return '环境：audioSession ' + (hasAS ? '支持(' + navigator.audioSession.type + ')' : '不支持') +
+                ' · 通道 ' + ch + ' · ctx ' + ctxState;
+        }
+
+        // 本地两声短音：完全离线，只验证"这台机器能不能把音频放出来"
+        async function testCallAudio() {
+            const ui = selfTestLog();
+            ui.reset();
+            ui.log(selfTestEnvLine());
+            ui.log('正在播放两声短音…（请把媒体音量调大）');
+
+            try { unlockIOSAudio(); } catch (e) {}
+
+            const rate = 22050;
+            const pcm = new Float32Array(Math.round(rate * 0.9));
+            for (let i = 0; i < pcm.length; i++) {
+                const t = i / rate;
+                if (t < 0.38) pcm[i] = Math.sin(2 * Math.PI * 440 * t) * 0.3;
+                else if (t > 0.5) pcm[i] = Math.sin(2 * Math.PI * 660 * (t - 0.5)) * 0.3;
+            }
+            const blob = pcmToWav(pcm, rate);
+
+            const t0 = Date.now();
+            await playBlobAudioAsync(blob);
+            const dt = (Date.now() - t0) / 1000;
+
+            if (dt > 0.6) {
+                ui.log('· 播放走完 ' + dt.toFixed(2) + 's（音频本身约 0.9s）→ 这台机器能出声');
+                ui.log('  下一步点「测试合成」，看云端能不能合成。');
+            } else {
+                ui.log('! 只播了 ' + dt.toFixed(2) + 's 就结束，音频被系统拦了');
+                ui.log('  iPhone：把侧边静音开关拨一下再点一次；仍然这样请把这段发我。');
+            }
+        }
+
+        // 云端合成一次：验证 Key / 音色卡 / 额度 / 网络
+        async function testCallTts() {
+            const ui = selfTestLog();
+            ui.reset();
+            const v = mmSettings();
+            ui.log('环境：' + (v.mmKey ? 'Key 已填（末 4 位 ' + String(v.mmKey).slice(-4) + '）' : 'Key 未填'));
+
+            if (!v.mmKey) { ui.log('× 没有填 MiniMax Key，通话只能是字幕。'); return; }
+            const cards = mmCards();
+            if (!cards.length) { ui.log('× 一张音色卡都没有，先在上面「从列表添加卡片」。'); return; }
+            const card = cards[0];
+            ui.log('域名：' + mmHost() + ' · 模型：' + (v.mmModel || 'speech-02-turbo'));
+            ui.log('用卡：' + card.name + ' / ' + card.voiceId);
+            ui.log('正在请求云端合成…（约 10 字，会消耗一点点额度）');
+
+            try {
+                const blob = await ttsRequest('喂，能听到我说话吗？', {
+                    voice: card.voiceId, speed: v.speed, pitch: v.pitch, vol: v.vol, emotion: 'neutral'
+                });
+                ui.log('· 合成成功：' + Math.round(blob.size / 1024) + ' KB，正在播放…');
+                const t0 = Date.now();
+                await playBlobAudioAsync(blob);
+                ui.log('播放结束，用时 ' + ((Date.now() - t0) / 1000).toFixed(2) + 's');
+                ui.log('听到人声 = 整条链路没问题；听不到 = 回到「测试播放」看通道。');
+            } catch (e) {
+                console.warn('[tts probe]', e);
+                ui.log('× 合成失败：' + ttsErrText(e));
+                if (/1004|login fail/i.test(String(e && e.message))) {
+                    ui.log('  → Key 是否复制完整（前后别带空格）；海外账号要把上面的「区域」切到海外(io)。');
+                }
+            }
+        }
+
         async function previewVoiceCard(voiceId) {
             const card = mmCards().find(c => c.voiceId === voiceId);
             if (!card) return;
@@ -28779,6 +29638,31 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             return mmCards().some(c => c && c.source === 'voice_cloning');
         }
 
+        // ---------- 复刻防重：物理锁 ----------
+        // 音色复刻是按次计费的接口，重复提交 = 重复扣费。
+        // 锁放 localStorage（不是内存变量）：连点、请求中刷新页面、失败后立刻重试都能拦住。
+        const CLONE_LOCK_MS = 5 * 60 * 1000;
+
+        function cloneLockKey(voiceId) { return 'minimax_clone_lock_' + voiceId; }
+
+        // 返回剩余锁定秒数，0 表示没锁
+        function cloneLockLeft(voiceId) {
+            let raw = null;
+            try { raw = localStorage.getItem(cloneLockKey(voiceId)); } catch (e) { return 0; }
+            if (!raw) return 0;
+            const age = Date.now() - Number(raw);
+            if (!isFinite(age) || age < 0 || age >= CLONE_LOCK_MS) return 0;
+            return Math.ceil((CLONE_LOCK_MS - age) / 1000);
+        }
+
+        function cloneLockSet(voiceId) {
+            try { localStorage.setItem(cloneLockKey(voiceId), String(Date.now())); } catch (e) {}
+        }
+
+        function cloneLockClear(voiceId) {
+            try { localStorage.removeItem(cloneLockKey(voiceId)); } catch (e) {}
+        }
+
         async function cloneMiniMaxVoice(file, customVoiceId) {
             const v = mmSettings();
             if (!v.mmKey) throw new Error('未配置 Key');
@@ -28787,59 +29671,109 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 throw new Error('voice_id 需以英文字母开头，只含字母/数字/_/-');
             }
 
-            // 1. 上传音频，拿 file_id
-            //    文件名必须带后缀且带 audio/* 类型，服务端是按这个判格式的
-            const fd = new FormData();
-            fd.append('purpose', 'voice_clone');
-            fd.append('file', file, cloneFileName(file));
-            const up = await mmFetch('/v1/files/upload', {
-                method: 'POST',
-                headers: { 'Authorization': 'Bearer ' + v.mmKey },
-                body: fd
-            });
-            if (!up.ok) {
-                let detail = '';
-                try {
-                    const txt = await up.text();
+            // 关键点 3：持久化并发锁，拦住连点 / 刷新重提 / 失败后立刻重试
+            const left = cloneLockLeft(customVoiceId);
+            if (left > 0) {
+                throw new Error('上一次复刻请求仍在处理中（还剩 ' + left + ' 秒），请勿重复提交，以免重复扣费。\n确实已失败的话，请先到 MiniMax 后台确认该音色没有创建成功，再等锁自动释放后重试。');
+            }
+            cloneLockSet(customVoiceId);
+
+            // 歧义失败（请求已发出但没拿到结果）时保留锁：宁可让用户等/去后台核对，也不自动放行重试
+            let keepLock = false;
+
+            try {
+                // 1. 上传音频拿 file_id —— 不扣费，允许重试与 XHR 兜底
+                //    文件名必须带后缀且带 audio/* 类型，服务端是按这个判格式的
+                const up = await mmFetch('/v1/files/upload', {
+                    method: 'POST',
+                    headers: { 'Authorization': 'Bearer ' + v.mmKey },
+                    billingSafe: false,
+                    body: () => {
+                        const fd = new FormData();
+                        fd.append('purpose', 'voice_clone');
+                        // Blob 包装：部分 WebView 对 File 直传会丢 type / 被拦
+                        let safeBlob = file;
+                        try { safeBlob = new Blob([file], { type: file.type || 'audio/mpeg' }); } catch (e) {}
+                        fd.append('file', safeBlob, cloneFileName(file));
+                        return fd;
+                    }
+                });
+                if (!up.ok) {
+                    let detail = '';
                     try {
-                        const ej = JSON.parse(txt);
+                        const txt = await up.text();
+                        try {
+                            const ej = JSON.parse(txt);
+                            detail = (ej.base_resp && ej.base_resp.status_msg) || ej.message || '';
+                        } catch (e) { detail = String(txt || '').slice(0, 120); }
+                    } catch (e) {}
+                    throw new Error('上传失败 HTTP ' + up.status + (detail ? '：' + detail : ''));
+                }
+                const upJson = await up.json();
+                if (upJson.base_resp && upJson.base_resp.status_code !== 0) {
+                    throw new Error('上传失败：' + (upJson.base_resp.status_msg || '未知错误'));
+                }
+                const fileId = (upJson.file && upJson.file.file_id) || upJson.file_id;
+                if (!fileId) throw new Error('没拿到 file_id');
+
+                // 2. 克隆音色 ——【扣费接口】只发一次
+                //    关键点 4：billingSafe 切断所有自动重试（换域名 / XHR 兜底）
+                let cloneResp = null;
+                try {
+                    cloneResp = await mmFetch('/v1/voice_clone', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': 'Bearer ' + v.mmKey
+                        },
+                        billingSafe: true,
+                        body: JSON.stringify({
+                            file_id: fileId,
+                            voice_id: customVoiceId,
+                            model: v.mmModel || 'speech-02-hd'
+                        })
+                    });
+                } catch (netErr) {
+                    // 请求可能已经到达服务端：保留锁，让用户先去后台核对
+                    keepLock = true;
+                    console.warn('[clone] 扣费请求未拿到响应：', netErr);
+                    throw new Error('复刻请求没拿到响应（可能已提交成功）。为避免重复扣费已暂停 5 分钟内重试，请先到 MiniMax 后台确认 voice_id「' + customVoiceId + '」是否已创建。');
+                }
+
+                if (!cloneResp.ok) {
+                    // 5xx / 网关错误：结果不明，留锁；4xx：服务端明确拒绝，放锁
+                    if (cloneResp.status >= 500) {
+                        keepLock = true;
+                        throw new Error('复刻服务返回 HTTP ' + cloneResp.status + '，结果未知。为避免重复扣费已暂停 5 分钟内重试，请先到 MiniMax 后台确认该音色是否已创建。');
+                    }
+                    let detail = '';
+                    try {
+                        const ej = await cloneResp.json();
                         detail = (ej.base_resp && ej.base_resp.status_msg) || ej.message || '';
-                    } catch (e) { detail = String(txt || '').slice(0, 120); }
-                } catch (e) {}
-                throw new Error('上传失败 HTTP ' + up.status + (detail ? '：' + detail : ''));
-            }
-            const upJson = await up.json();
-            if (upJson.base_resp && upJson.base_resp.status_code !== 0) {
-                throw new Error('上传失败：' + (upJson.base_resp.status_msg || '未知错误'));
-            }
-            const fileId = (upJson.file && upJson.file.file_id) || upJson.file_id;
-            if (!fileId) throw new Error('没拿到 file_id');
+                    } catch (e) {}
+                    throw new Error('克隆失败 HTTP ' + cloneResp.status + (detail ? '：' + detail : ''));
+                }
+                const cj = await cloneResp.json();
+                if (cj.base_resp && cj.base_resp.status_code !== 0) {
+                    // 业务层报错 = 服务端已明确拒绝，正常放锁
+                    throw new Error(cj.base_resp.status_msg || '克隆失败');
+                }
 
-            // 2. 克隆
-            const cloneResp = await mmFetch('/v1/voice_clone', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'Authorization': 'Bearer ' + v.mmKey
-                },
-                body: JSON.stringify({
-                    file_id: fileId,
-                    voice_id: customVoiceId,
-                    model: v.mmModel || 'speech-02-hd'
-                })
-            });
-            if (!cloneResp.ok) throw new Error('克隆失败 HTTP ' + cloneResp.status);
-            const cj = await cloneResp.json();
-            if (cj.base_resp && cj.base_resp.status_code !== 0) {
-                throw new Error(cj.base_resp.status_msg || '克隆失败');
+                // 3. 激活：新音色必须先成功合成一次，否则 get_voice 里查不到
+                //    此时钱已经花掉了，激活失败不能算整条流程失败 —— 否则用户重试就是二次扣费
+                try {
+                    await ttsRequest('你好，这是我的声音。', {
+                        voice: customVoiceId, speed: 1, pitch: 0, vol: 1, emotion: 'neutral'
+                    });
+                } catch (actErr) {
+                    console.warn('[clone] 激活试听失败（音色已创建）：', actErr);
+                    toast('音色已复刻成功，激活试听失败，可在通话里再说一句试试', 3200);
+                }
+
+                return customVoiceId;
+            } finally {
+                if (!keepLock) cloneLockClear(customVoiceId);
             }
-
-            // 3. 激活：新音色必须先成功合成一次，否则 get_voice 里查不到
-            await ttsRequest('你好，这是我的声音。', {
-                voice: customVoiceId, speed: 1, pitch: 0, vol: 1, emotion: 'neutral'
-            });
-
-            return customVoiceId;
         }
 
         function startCloneVoiceFlow() {
@@ -29089,8 +30023,10 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 const go = document.getElementById('cloneGo');
                 if (!MM_VOICE_ID_RE.test(vid)) { toast('voice_id 需以字母开头，只含字母/数字/_/-'); return; }
                 if (mmCards().some(c => c.voiceId === vid)) { toast('这个 voice_id 已经有卡片了'); return; }
+                if (go.disabled) return;                       // 双保险：拦住连点
 
                 go.disabled = true;
+                go.textContent = '处理中，请稍候…';            // 视觉上也明确"已经点过了"
                 if (status) { status.className = 'test-result loading'; status.textContent = '⏳ 上传音频…'; }
                 try {
                     if (status) status.textContent = '⏳ 上传 → 克隆 → 激活，大概 20–60 秒…';
@@ -29110,6 +30046,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 } catch (e) {
                     if (status) { status.className = 'test-result fail'; status.textContent = '❌ ' + e.message; }
                     go.disabled = false;
+                    go.textContent = '开始复刻';            // 失败要能再点，文案跟着复位
                 }
             });
         }
@@ -29250,19 +30187,50 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             return out.slice(0, maxSegments);
         }
 
+        // 合成失败必须说人话：手机上根本看不到 console，
+        // 把异常吞掉 = 永远查不出"为什么通话没声音"。
+        // 文案要短：通话界面那行提示是 nowrap 的，长句子会被省略号切掉。
+        function ttsErrText(e) {
+            const msg = String((e && e.message) || e || '');
+            const code = (msg.match(/HTTP \d{3}/) || [])[0] || '';
+            if (/Failed to fetch|NetworkError|Load failed|网络异常|Network request failed/i.test(msg)) {
+                return '网络不通，请求没发出';
+            }
+            if (/HTTP 401|HTTP 403/.test(msg)) return 'Key 无效或过期 ' + code;
+            if (/HTTP 429/.test(msg)) return '请求被限流 ' + code;
+            if (/HTTP 5\d\d/.test(msg)) return '服务端异常 ' + code;
+            if (/login fail|1004/i.test(msg)) return 'Key 校验失败(1004)';
+            if (/insufficient|balance|1008|余额|额度/i.test(msg)) return '余额或额度不足';
+            if (/timeout|超时/i.test(msg)) return '请求超时';
+            if (/返回空音频/.test(msg)) return '服务端返回空音频';
+            return msg.length > 16 ? msg.slice(0, 16) + '…' : (msg || '未知错误');
+        }
+
         async function speakCallReply(rawText, emotionHint) {
-            const v = mmSettings();
-            if (!v.enabled) return;
             if (!callState.active || callState.phase !== 'active') return;
 
-            const card = resolveVoiceCard(callState.personaId);
-            if (!card) return;             // 没绑卡 → 只走字幕，不发声
+            const v = mmSettings();
+            const setTip = (txt, isErr) => {
+                const el = document.getElementById('wxCallTip');
+                if (!el) return;
+                el.textContent = txt;
+                el.classList.toggle('err', !!isErr);
+            };
 
+            // v34 · 没有语音能力时保持静默：只留一行淡色字幕提示。
+            // 绝不用 speechSynthesis 之类的系统音顶替 —— 机械音一响，沉浸感当场归零。
+            if (!v.enabled) {
+                setTip('（语音播报已关闭，仅显示字幕）');
+                return;
+            }
             if (!v.mmKey) {
-                if (!callState._ttsNoKey) {
-                    callState._ttsNoKey = true;   // 每次通话只提示一次，别刷屏
-                    toast('未配置 MiniMax Key，本次通话只显示字幕', 2600);
-                }
+                setTip('（当前未配置语音服务，仅显示字幕）');
+                return;
+            }
+
+            const card = resolveVoiceCard(callState.personaId);
+            if (!card) {
+                setTip('（该角色未绑定音色卡，仅显示字幕）');
                 return;
             }
 
@@ -29294,6 +30262,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 } catch (e) {
                     off();
                     console.warn('[call tts]', e);
+                    setTip('语音合成失败：' + ttsErrText(e) + '（仅显示字幕）', true);
                     return;
                 }
             }
@@ -29317,6 +30286,12 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
 
             const saveBtn = document.getElementById('mmSaveBtn');
             if (saveBtn) saveBtn.addEventListener('click', saveMiniMaxPort);
+
+            // 音频自检：这两个按钮是排查"通话没声音"的入口
+            const atPlay = document.getElementById('vcAudioTestPlay');
+            if (atPlay) atPlay.addEventListener('click', () => { testCallAudio(); });
+            const atTts = document.getElementById('vcAudioTestTts');
+            if (atTts) atTts.addEventListener('click', () => { testCallTts(); });
 
             const libBtn = document.getElementById('vcLibBtn');
             if (libBtn) libBtn.addEventListener('click', () => refreshVoiceLibrary(true));
@@ -29403,6 +30378,11 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         document.getElementById('calNext').addEventListener('click', () => shiftCalendar(1));
 
         document.getElementById('gameLobby').addEventListener('click', (e) => {
+            // 外部小游戏：走内置浏览器，不参与「选对手」流程，也不需要先创建角色
+            if (e.target.closest('[data-game-web]')) {
+                openGameWebview();
+                return;
+            }
             const card = e.target.closest('[data-game]');
             if (!card) return;
             if (!data.personas.length) { toast('还没有联系人，先去微信创建人设'); return; }
@@ -29429,6 +30409,9 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             kind: 'voice',
             personaId: '',
             phase: 'idle',          // calling | active | idle
+            incoming: false,        // true = 对方主动打来（接通后 AI 先开口）
+            openingLine: '',        // 主动来电接通后的第一句
+            openingEmotion: '',
             startedAt: 0,
             timer: null,
             answerTimer: null,
@@ -29446,6 +30429,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             actualMime: '',      // 本次录音的真实容器（iOS = audio/mp4）
             recStart: 0,
             recTimer: null,
+            keepAliveSrc: null,  // 通话保活用的循环 bufferSource（见 startCallKeepAlive）
             ttsToken: 0          // 每次朗读自增：旧的分段循环看到 token 变了就退出
         };
 
@@ -29523,7 +30507,340 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             if (subs) subs.innerHTML = '';
             resetCallTalkBtn();
             updateCallActBtns();
-            overlay.className = 'wx-call-overlay show ' + callState.kind + ' ' + callState.phase;
+            // v34 · incoming 由样式表驱动「接听」按钮的显示：只有来电 + 响铃中才看得见
+            overlay.className = 'wx-call-overlay show ' + callState.kind + ' ' + callState.phase +
+                (callState.incoming ? ' incoming' : '');
+        }
+
+        // ============================================================
+        //  v33 · 主动来电（情感浓度触发）
+        //  连续说"我想你了""好喜欢你""我爱你" → 角色可能主动打来语音/视频电话。
+        //  判定全部在代码层：prompt 里不做任何"你要不要打电话"的暗示，
+        //  否则模型会为了讨好玩家天天打电话。
+        // ============================================================
+        const AFFECTION_CALL_DEF = {
+            enabled: true,
+            triggerStreak: 3,          // 连续命中几条触发评估
+            decayMs: 30 * 60 * 1000,   // 30 分钟没新情感句，计数衰减
+            cooldownMin: 60,           // 两次主动来电最小间隔
+            dailyMax: 2                // 每日最多主动来电次数
+        };
+
+        // 只认语义明确的情感句（保留常见变体，避免"我想起来"这类误伤）
+        const AFFECTION_RE = /我想你了|我想你|想你了|好想你|超想你|好想好想|想你想到|喜欢你|好喜欢你|超喜欢你|最喜欢你|只喜欢你|爱你|好爱你|我爱你|超爱你|离不开你|只想你|宝贝我想|亲爱的我想|嫁给我|娶我/;
+
+        let affectionCallToken = 0;
+        let affectionCallTimer = null;
+
+        // ============================================================
+        //  v35 · 明确来电请求（"给我打个电话吧"）
+        //  和上面的情感来电是两条独立的路：
+        //    情感来电 = streak 累积 + 概率 + 冷却 + 每日上限 + 随机开场白
+        //    明确请求 = 说一次来一次，无冷却、无上限，开场白是预置的
+        //  优先级更高：「打个电话吧」比「我想你了」更明确，应当抢先接管这一轮。
+        // ============================================================
+        const CALL_REQUEST_OPENING = {
+            wlj: '想我了？',
+            fby: '什么事？',
+            wq: '怎么了？'
+        };
+
+        // 否定优先：「别给我打电话」「不用打」是拒绝，不是请求
+        const CALL_REQUEST_NEG_RE = /(不要|不用|别|不想|没必要|甭)[^，。！？\n]{0,8}(电话|打给我|打过来)/;
+        // 必须命中"打电话/打给我/你打过来"这类核心词
+        const CALL_REQUEST_CORE_RE = /(?:打个?电话|打个视频|开个视频|视频通话|语音通话|打给我|电话给我|你打过来|打过来给我)/;
+        // 必须有"给我/帮我/你能/…/吧/呗/吗/？"这类请求语气词，避免"我在打电话"误伤
+        const CALL_REQUEST_HINT_RE = /(给我|帮我|你能|能不能|可以|可不可以|吧|呗|好吗|行吗|好不好|可以吗|[？?])/;
+        const CALL_REQUEST_VIDEO_RE = /(视频电话|视频通话|打个视频|开个视频)/;
+
+        // 返回 'voice' / 'video' / ''（'' = 不是请求）
+        function detectCallRequestKind(text) {
+            const s = String(text || '').trim();
+            if (!s || s.length > 80) return '';
+            if (CALL_REQUEST_NEG_RE.test(s)) return '';
+            if (!CALL_REQUEST_CORE_RE.test(s)) return '';
+            // "开个视频""打个视频" 本身就是祈使句（"个" 已经是量词），
+            // 不需要"吧/吗/给我"来佐证，否则这种最口语的说法反而识别不到
+            const imperative = /(?:开个视频|打个视频)/.test(s);
+            if (!imperative && !CALL_REQUEST_HINT_RE.test(s)) return '';
+            if (CALL_REQUEST_VIDEO_RE.test(s)) return 'video';
+            return 'voice';
+        }
+
+        // 固定角色用预置开场白，自定义角色兜底一句"喂？"
+        function getCallRequestOpening(p) {
+            const key = (p && (p.presetKey || p.fixedKey)) || '';
+            return CALL_REQUEST_OPENING[key] || '喂？';
+        }
+
+        // v34 · 来电接管窗口：personaId → 截止时间戳
+        // clearTimeout 只能拦住"还没开始生成"的回复；如果玩家把「模拟打字延迟」关了（立即生成），
+        // 请求其实已经在飞了，定时器清不掉。所以再加一道"落库前拦截"，
+        // generateReply 在写入聊天记录之前会问一次，保证不会出现「先蹦文字、再响铃」。
+        const affectionReplyHold = Object.create(null);
+
+        function holdAffectionReply(personaId, ms) {
+            if (!personaId) return;
+            affectionReplyHold[personaId] = Date.now() + Math.max(1500, Number(ms) || 0);
+        }
+
+        // 只拦一轮：取走即失效，避免误伤后面正常聊天
+        function consumeAffectionReplyHold(personaId) {
+            const until = affectionReplyHold[personaId];
+            if (!until) return false;
+            delete affectionReplyHold[personaId];
+            return Date.now() <= until;
+        }
+
+        function getAffectionCallCfg() {
+            if (!data.affectionCall || typeof data.affectionCall !== 'object') {
+                data.affectionCall = Object.assign({}, AFFECTION_CALL_DEF);
+            }
+            const c = data.affectionCall;
+            if (typeof c.enabled !== 'boolean') c.enabled = true;
+            const ci = (v, lo, hi, def) => {
+                const n = Math.round(Number(v));
+                return isFinite(n) ? Math.max(lo, Math.min(hi, n)) : def;
+            };
+            c.triggerStreak = ci(c.triggerStreak, 2, 6, 3);
+            c.cooldownMin = ci(c.cooldownMin, 15, 180, 60);
+            c.dailyMax = ci(c.dailyMax, 1, 5, 2);
+            if (typeof c.decayMs !== 'number' || !isFinite(c.decayMs)) c.decayMs = AFFECTION_CALL_DEF.decayMs;
+            return c;
+        }
+
+        function getAffectionCallState(personaId) {
+            if (!data.affectionCallState || typeof data.affectionCallState !== 'object') {
+                data.affectionCallState = {};
+            }
+            if (!data.affectionCallState[personaId] || typeof data.affectionCallState[personaId] !== 'object') {
+                data.affectionCallState[personaId] = {
+                    streak: 0, lastHighAt: 0, lastCallAt: 0, date: '', todayCalls: 0
+                };
+            }
+            return data.affectionCallState[personaId];
+        }
+
+        // 每次玩家发消息后调用：累积 / 衰减 streak，够了就尝试发起来电
+        // 返回值：true = 这次已经成功挂上「来电」，调用方必须放弃本轮的文字回复
+        function trackAffectionCall(personaId, text) {
+            const def = getAffectionCallCfg();
+            if (!def.enabled) return false;
+            const s = String(text || '');
+            if (!s || s.length > 120) return false;
+
+            const st = getAffectionCallState(personaId);
+            const now = Date.now();
+
+            // 过期衰减：超过 decayMs 没新情感句，streak 直接归零
+            if (st.lastHighAt && now - st.lastHighAt > def.decayMs) st.streak = 0;
+
+            if (AFFECTION_RE.test(s)) {
+                st.streak = (st.streak || 0) + 1;
+                st.lastHighAt = now;
+                saveData();
+                if (st.streak >= def.triggerStreak) {
+                    return maybeFireAffectionCall(personaId, s);
+                }
+            } else if (st.streak > 0) {
+                // 插了句别的 → streak 减 1，而不是清零（避免"嗯"一句前功尽弃）
+                st.streak = Math.max(0, st.streak - 1);
+                saveData();
+            }
+            return false;
+        }
+
+        function pickAffectionOpening(personaId, triggerText, kind) {
+            const t = String(triggerText || '');
+            const mood = /爱你|我爱你/.test(t) ? 'love'
+                : /喜欢你/.test(t) ? 'like'
+                : 'miss';
+            const isVideo = kind === 'video';
+
+            const pools = {
+                miss: [
+                    '我也想你',
+                    '我猜有人想要和我打电话了',
+                    '……刚好我也想你了',
+                    isVideo ? '想看看你' : '喂，我是' + (getPersonaName(personaId) || '我') + '。听出来了吗'
+                ],
+                like: [
+                    '巧了，我也喜欢你',
+                    '这种话电话里说给我听',
+                    '我猜有人想要和我打电话了',
+                    '……突然想听听你的声音'
+                ],
+                love: [
+                    '……你再说一遍',
+                    '我也爱你',
+                    '突然想听听你的声音',
+                    isVideo ? '想看看你的脸' : '这种话得当面说才作数'
+                ]
+            };
+            const pool = pools[mood] || pools.miss;
+            return pool[Math.floor(Math.random() * pool.length)];
+        }
+
+        function maybeFireAffectionCall(personaId, triggerText) {
+            const def = getAffectionCallCfg();
+            if (!def.enabled) return false;
+            if (callState.active) return false;                       // 已在通话
+            const p = getPersonaById(personaId);
+            if (!p || personaStatus(p) !== 'active') return false;
+            if (!pickApi()) return false;
+
+            const st = getAffectionCallState(personaId);
+            const now = Date.now();
+            const today = todayKey();
+            if (st.date !== today) { st.date = today; st.todayCalls = 0; }
+            if ((st.todayCalls || 0) >= def.dailyMax) return false;
+            if (now - (st.lastCallAt || 0) < def.cooldownMin * 60000) return false;
+
+            // streak 越高越可能：达到阈值即 80%，之后每多一句 +15%，封顶 100%
+            const chance = Math.min(1, 0.8 + (st.streak - def.triggerStreak) * 0.15);
+            if (Math.random() > chance) return false;
+
+            // ---------- 核心拦截：这一轮的文字回复不许再出现 ----------
+            // ① 还没轮到的：清掉定时器 + 待处理标记，刷新列表（"正在输入"也随之消失）
+            if (replyTimers[personaId]) {
+                clearTimeout(replyTimers[personaId]);
+                delete replyTimers[personaId];
+            }
+            if (data.pendingReplies && data.pendingReplies[personaId]) {
+                delete data.pendingReplies[personaId];
+            }
+            // ② 已经在生成的：给它一个接管窗口，落库前会自我丢弃
+            // ③ 立刻把界面上的「对方正在输入…」抹掉，否则聊天框会一直吊着一口气
+            const chatBox = document.getElementById('chatMessages');
+            if (chatBox && isChatOpenWith(personaId)) {
+                chatBox.querySelectorAll('.typing-row').forEach(el => el.remove());
+            }
+            saveData();
+            renderWechatList();
+
+            const token = ++affectionCallToken;
+            const delay = 3000 + Math.random() * 2000;   // 3–5 秒：聊天框刚安静下来，铃声就到了
+            holdAffectionReply(personaId, delay + 4000);
+
+            clearTimeout(affectionCallTimer);
+            affectionCallTimer = setTimeout(() => {
+                if (token !== affectionCallToken) return;
+                if (callState.active) return;
+                const cur = getPersonaById(personaId);
+                if (!cur || personaStatus(cur) !== 'active') return;
+                if (st.date !== todayKey()) return;              // 跨天了，作废
+
+                // 深夜偏语音（不适合视频），白天七三开
+                const bj = beijingTimeHint();
+                const lateNight = bj.hh >= 22 || bj.hh < 7;
+                const kind = lateNight ? 'voice' : (Math.random() < 0.72 ? 'voice' : 'video');
+                const opening = pickAffectionOpening(personaId, triggerText, kind);
+
+                if (!startIncomingCall(personaId, kind, opening, { emotion: 'love' })) return;
+
+                st.lastCallAt = Date.now();
+                st.todayCalls = (st.todayCalls || 0) + 1;
+                st.streak = 0;
+                saveData();
+            }, delay);
+
+            return true;   // 告诉调用方：这一轮已经被电话接管了
+        }
+
+        // ---------- v35 · 明确请求来电 ----------
+        let callRequestToken = 0;
+        let callRequestTimer = null;
+
+        // 返回值 true = 这轮已经被来电接管，调用方必须放弃文字回复
+        function tryCallRequest(personaId, text) {
+            const kind = detectCallRequestKind(text);
+            if (!kind) return false;
+            if (callState.active) return false;                       // 已在通话
+            const p = getPersonaById(personaId);
+            if (!p || personaStatus(p) !== 'active') return false;    // 被删/被拉黑
+            if (!pickApi()) return false;                             // 没配 API 就别弹了，接通了也没回复
+
+            // ---- 接管这一轮：清掉尚未落地的文字回复 ----
+            if (replyTimers[personaId]) {
+                clearTimeout(replyTimers[personaId]);
+                delete replyTimers[personaId];
+            }
+            if (data.pendingReplies && data.pendingReplies[personaId]) {
+                delete data.pendingReplies[personaId];
+            }
+            // 已经在飞（关闭了模拟打字延迟）的回复，靠 hold 在落库前拦下
+            const chatBox = document.getElementById('chatMessages');
+            if (chatBox && isChatOpenWith(personaId)) {
+                chatBox.querySelectorAll('.typing-row').forEach(el => el.remove());
+            }
+            saveData();
+            renderWechatList();
+
+            const token = ++callRequestToken;
+            const delay = 800 + Math.random() * 800;                  // 0.8–1.6s，别让玩家等太久
+            holdAffectionReply(personaId, delay + 4000);
+
+            clearTimeout(callRequestTimer);
+            callRequestTimer = setTimeout(() => {
+                if (token !== callRequestToken) return;
+                if (callState.active) return;
+                const cur = getPersonaById(personaId);
+                if (!cur || personaStatus(cur) !== 'active') return;
+                // 用预设开场白，不用模型生成；emotion 走 'calm'（合法值）
+                startIncomingCall(personaId, kind, getCallRequestOpening(cur), { emotion: 'calm' });
+            }, delay);
+
+            return true;
+        }
+
+        // 主动来电入口：复用 wxCallOverlay，但文案 / 自动接听 / 开场白都不同
+        function startIncomingCall(personaId, kind, openingLine, opts) {
+            opts = opts || {};
+            if (callState.active) return false;
+            const p = getPersonaById(personaId);
+            if (!p || personaStatus(p) !== 'active') return false;
+
+            Object.assign(callState, {
+                active: true,
+                kind: kind === 'video' ? 'video' : 'voice',
+                personaId: personaId,
+                phase: 'calling',
+                incoming: true,
+                openingLine: openingLine || '',
+                openingEmotion: opts.emotion || '',
+                startedAt: 0,
+                muted: false,
+                speaker: false,
+                replying: false,
+                recording: false,
+                stream: null,
+                recorder: null,
+                chunks: [],
+                recognition: null,
+                transcript: '',
+                interim: '',
+                recStart: 0
+            });
+
+            // iOS：这里不是用户手势，解锁通常无效，但顺手试一次无害
+            try { unlockIOSAudio(); } catch (e) {}
+
+            applyCallVisual();
+            const status = document.getElementById('wxCallStatus');
+            if (status) status.textContent = '邀请你进行' + (callState.kind === 'video' ? '视频' : '语音') + '通话…';
+            const tip = document.getElementById('wxCallTip');
+            if (tip) tip.textContent = '点绿色「接听」或红色「挂断」';
+
+            // v34 · 不再自动接通。iOS / 微信浏览器的音频解锁只认真实用户手势：
+            // 自动接听等于在手势之外开始播放，开场白必然静音。改为等玩家点「接听」。
+            // answerTimer 改作响铃超时：30 秒无人接听 → 按未接来电收场，避免通话状态一直挂着。
+            clearTimeout(callState.answerTimer);
+            callState.answerTimer = setTimeout(() => {
+                if (!callState.active || callState.phase !== 'calling') return;
+                endCall();
+            }, 30000);
+
+            return true;
         }
 
         function startCall(kind) {
@@ -29546,6 +30863,9 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 kind: kind === 'video' ? 'video' : 'voice',
                 personaId: personaId,
                 phase: 'calling',
+                incoming: false,       // 主动去电：不能残留上一次来电的开场白
+                openingLine: '',
+                openingEmotion: '',
                 startedAt: 0,
                 muted: false,
                 speaker: false,
@@ -29557,8 +30877,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 recognition: null,
                 transcript: '',
                 interim: '',
-                recStart: 0,
-                _ttsNoKey: false
+                recStart: 0
             });
 
             // iOS：必须在用户点「通话」的同步调用栈里解锁 —— 切 media 通道 + resume AudioContext，
@@ -29582,6 +30901,9 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         function startCallActive() {
             callState.phase = 'active';
             callState.startedAt = Date.now();
+            // 通话期间让 AudioContext 一直 running：iOS 切后台 / 来电中断会随机把它挂起，
+            // 挂起后 start() 不出声也不报错，表现就是"偶尔能听见、偶尔听不见"。
+            startCallKeepAlive();
             const overlay = document.getElementById('wxCallOverlay');
             if (overlay) {
                 overlay.classList.remove('calling');
@@ -29603,6 +30925,24 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 const t = document.getElementById('wxCallTip');
                 if (t && t.textContent.indexOf('已接通') === 0) t.textContent = '';
             }, 4000);
+
+            // 主动来电：接通后 AI 先开口（普通去电没有 openingLine，这段直接跳过）
+            if (callState.openingLine) {
+                const line = callState.openingLine;
+                const emo = callState.openingEmotion || '';
+                callState.openingLine = '';
+                callState.openingEmotion = '';
+                setTimeout(() => {
+                    if (!callState.active || callState.phase !== 'active') return;
+                    const pid = callState.personaId;
+                    addMessage(pid, 'assistant', 'text', line, { via: 'call' });
+                    appendCallSub(line);
+                    speakCallReply(line, emo);
+                    saveData();
+                    if (isChatOpenWith(pid)) renderMessages(pid);
+                    renderWechatList();
+                }, 600 + Math.random() * 600);
+            }
         }
 
         function callSupportsRecording() {
@@ -29612,6 +30952,21 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
 
         async function startCallRecord() {
             if (callState.phase !== 'active' || !callState.active) return;
+
+            // 和聊天录音同源的兜底：iOS 上 recorder 偶发不触发 onstop，
+            // recording 一直是 true，之后每次按住都被当成"已在进行中"静默丢弃。
+            // 判据必须是「已经有 stream / recorder 且超过 30 秒」：按下瞬间这里 recording
+            // 已经是 true（onStart 先置位），但 stream / recorder 还是 null，不能误判成卡死。
+            if (callState.recording &&
+                (callState.stream || callState.recorder) &&
+                Date.now() - (callState.recStart || 0) > 30000) {
+                console.warn('[call] 检测到卡住的录音状态，强制重置');
+                cancelCallRecord({ silent: true });
+                // cancelCallRecord 会把 recording 置回 false；本次按下是新的，接着往下走
+                callState.recording = true;
+                const ov = document.getElementById('wxCallOverlay');
+                if (ov) ov.classList.add('recording');
+            }
 
             const mic = await acquireMic({ forCall: true });
             if (!mic.ok) {
@@ -29759,6 +31114,9 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 // 显式切回 playback 并唤醒 AudioContext，对方下一句才不会「突然变小」。
                 setPlaybackAudioSession();
                 resumeCallAudio();
+                // 延迟 120ms：track.stop() 是同步的，但系统切换会话是异步的，
+                // 立刻播 200ms 静音会被旧的 playAndRecord 会话吞掉。
+                kickPlaybackSession(120);
                 const mime = (callState.recorder && callState.recorder.mimeType) || callState.actualMime || '';
                 const blob = new Blob(callState.chunks, { type: mime });
 
@@ -29820,6 +31178,8 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             // 麦克风松手/取消后把输出通道拨回媒体，别让下一句走听筒
             setPlaybackAudioSession();
             resumeCallAudio();
+            // 见 finishCallRecord：会话切换是异步的，延迟一点再踢一次
+            kickPlaybackSession(120);
 
             callState.stream = null;
             callState.recorder = null;
@@ -30009,6 +31369,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             callState.recSeq = (callState.recSeq || 0) + 1;   // 挂断后晚到的录音回调一律作废
             callState.ttsToken++;   // 挂断后剩余分段不再合成/播放
             stopBlobAudio();   // 挂断立刻闭嘴，并释放 objectURL
+            stopCallKeepAlive();   // 停掉保活 buffer，别让挂断后还占着音频会话
             try { callState.recognition && callState.recognition.stop(); } catch (e) {}
             try { callState.recorder && callState.recorder.state !== 'inactive' && callState.recorder.stop(); } catch (e) {}
             try { callState.stream && callState.stream.getTracks().forEach(t => t.stop()); } catch (e) {}
@@ -30021,6 +31382,9 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 active: false,
                 phase: 'idle',
                 startedAt: 0,
+                incoming: false,
+                openingLine: '',
+                openingEmotion: '',
                 timer: null,
                 answerTimer: null,
                 replying: false,
@@ -30038,7 +31402,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             const subs = document.getElementById('wxCallSubs');
             if (subs) subs.innerHTML = '';
             const tip = document.getElementById('wxCallTip');
-            if (tip) tip.textContent = '';
+            if (tip) { tip.textContent = ''; tip.classList.remove('err'); }
             resetCallTalkBtn();
 
             if (!wasActive) return;
@@ -30062,6 +31426,21 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
 
             const hang = document.getElementById('wxCallHangup');
             if (hang) hang.addEventListener('click', () => endCall());
+
+            // v34 · 接听：这一下点击是整条来电链路上唯一的"真手势"。
+            // iOS / 微信的音频解锁必须在它的同步调用栈里跑完（切 media 通道 + resume AudioContext），
+            // 一旦拖到 await 之后就不算手势，开场白照样哑。
+            const answer = document.getElementById('wxCallAnswer');
+            if (answer) answer.addEventListener('click', () => {
+                if (!callState.active || callState.phase !== 'calling') return;
+                clearTimeout(callState.answerTimer);
+                callState.answerTimer = null;
+
+                try { unlockIOSAudio(); } catch (e) { console.warn('[call] unlock 失败', e); }
+                resumeCallAudio();          // 不 await：保持同步栈，别让手势"过期"
+
+                startCallActive();          // 接通：开场白与 TTS 在 startCallActive 里接上
+            });
 
             const mute = document.getElementById('wxCallMute');
             if (mute) mute.addEventListener('click', () => {
@@ -31539,12 +32918,12 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         //  改 NOTICE_VERSION 就会对所有人重新弹一次
         // ============================================================
         const NOTICE_KEY = 'aiPhoneNoticeVersion';
-        const NOTICE_VERSION = 'v21-2026-10-31';
+        const NOTICE_VERSION = 'v21-2026-11-1';
         const NOTICE_TITLE = '📢 更新公告';
-        const NOTICE_CONTENT = `· 优化了通话界面，现在点击闭麦键可以直接打字，适合在外面不方便的毛毛
-· 修复了部分bug，增加了语音信息功能，现在他们可以给你发语音啦
-·优化了表情包功能，你可以上传表情包并供所有人使用了
-·优化了记忆功能，现在他们会记得你聊过的东西、你的喜好和你的性格啦
+        const NOTICE_CONTENT = `· 优化了通话功能，现在ios端无法听到声音的bug应该解决了
+· 增加了主动语音电话功能，现在触发关键词可以让他们主动给你打电话了
+·增加了导出存档和导入存档的功能，可以备份与跨设备迁移数据了
+·在游戏界面新增了我个人游戏整合网站的入口
 · 新增了语音模型接入，设置界面在录音中，教程请前往我的微博（花生可可-）查看～
 如有问题欢迎反馈
 by 花生可可`;
