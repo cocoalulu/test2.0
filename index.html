@@ -4019,7 +4019,10 @@
             background-repeat: no-repeat;
             padding: 14px 12px 18px;
             gap: 0;
-            scroll-behavior: smooth;
+            /* 滚动锚点由 JS 统一管理：关闭浏览器自动锚定，避免和补偿逻辑打架 */
+            overflow-anchor: none;
+            /* 程序化 scrollTop 必须瞬时生效，平滑滚动会让补偿"追不上" */
+            scroll-behavior: auto;
         }
         .wx-time {
             text-align: center;
@@ -4099,6 +4102,7 @@
             border-radius: 8px;
             display: block;
             object-fit: cover;
+            background: rgba(255,255,255,.06);   /* 落图前先有占位色块，不闪白 */
         }
         .wx-bubble img.wx-emoji {
             width: 108px; height: 108px;
@@ -7463,6 +7467,38 @@
         @media (prefers-reduced-motion: reduce) {
             .boot-sync-spinner { animation-duration: 2.4s; }
         }
+
+        /* ============================================================
+           设置页 · 折叠卡片
+           长卡片（生活信息 / 长期记忆 / 朋友圈 / 吃醋 / 预设卡 / 违禁词 / API）
+           默认收起，只留标题 + 一句说明；点标题展开。
+           卡片自身 padding 归零，交给 .si-header / .si-body 自己管，
+           这样收起时不会留下一块空白。
+           ============================================================ */
+        .setting-item.foldable { padding: 0; overflow: hidden; }
+        .setting-item.foldable .si-header {
+            position: relative;
+            padding: 14px 16px;
+            cursor: pointer;
+            user-select: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+        .setting-item.foldable .si-header .label { margin-bottom: 4px; }
+        .setting-item.foldable .si-header .desc { padding-right: 22px; }
+        .setting-item.foldable .si-header .fold-icon {
+            position: absolute;
+            right: 16px;
+            top: 16px;
+            font-size: 11px;
+            line-height: 1;
+            color: rgba(255, 255, 255, .38);
+            transition: transform .25s var(--ease);
+        }
+        .setting-item.foldable.open .si-header .fold-icon { transform: rotate(180deg); }
+        .setting-item.foldable .si-body { display: none; padding: 0 16px 16px; }
+        .setting-item.foldable.open .si-body { display: block; padding-top: 12px; animation: fadeUp .2s var(--ease); }
+        /* 展开后标题与内容之间补一条细分割线，视觉上不至于糊成一团 */
+        .setting-item.foldable.open .si-header { border-bottom: 1px solid rgba(255, 255, 255, .06); }
     </style>
 </head>
 <body>
@@ -7643,31 +7679,41 @@
                     <span class="title">设置</span>
                 </div>
                 <div class="settings-list">
-                    <div class="setting-item">
-                        <div class="label">API 配置</div>
-                        <div class="desc">已预设 DeepSeek 的地址与模型（deepseek-flash），填上你的 Key 就能直接用</div>
-                        <div class="api-config" id="apiList"></div>
-                        <button class="btn btn-primary btn-sm mt-8" id="addApiBtn">+ 添加 API</button>
+                    <div class="setting-item foldable" id="apiConfigCard">
+                        <div class="si-header">
+                            <div class="label">API 配置</div>
+                            <div class="desc">已预设 DeepSeek 的地址与模型（deepseek-flash），填上你的 Key 就能直接用</div>
+                            <span class="fold-icon">▼</span>
+                        </div>
+                        <div class="si-body">
+                            <div class="api-config" id="apiList"></div>
+                            <button class="btn btn-primary btn-sm mt-8" id="addApiBtn">+ 添加 API</button>
+                        </div>
                     </div>
-                    <div class="setting-item" id="lifeInfoCard">
-                        <div class="label">生活信息</div>
-                        <div class="desc">这些只影响「聊天时 AI 能不能顺口提一句」，不会写进人设卡。</div>
-                        <div class="ms-row" style="margin-top:8px;">
-                            <span>城市</span>
-                            <button class="btn btn-sm" id="lifeCityBtn" type="button">定位中…</button>
+                    <div class="setting-item foldable" id="lifeInfoCard">
+                        <div class="si-header">
+                            <div class="label">生活信息</div>
+                            <div class="desc">这些只影响「聊天时 AI 能不能顺口提一句」，不会写进人设卡。</div>
+                            <span class="fold-icon">▼</span>
                         </div>
-                        <div class="ms-row"><span>允许提及天气</span><button class="ms-switch" id="msWeather" type="button"></button></div>
-                        <div class="ms-row"><span>允许提及特殊日子</span><button class="ms-switch" id="msCalendar" type="button"></button></div>
-                        <div class="wp-slider-row" style="padding:10px 0 2px;">
-                            <span class="k" style="width:auto;">每天最多</span>
-                            <input type="range" id="msCalMax" min="0" max="5" step="1" value="2" />
-                            <span class="v" id="msCalMaxVal">2 次</span>
+                        <div class="si-body">
+                            <div class="ms-row" style="margin-top:8px;">
+                                <span>城市</span>
+                                <button class="btn btn-sm" id="lifeCityBtn" type="button">定位中…</button>
+                            </div>
+                            <div class="ms-row"><span>允许提及天气</span><button class="ms-switch" id="msWeather" type="button"></button></div>
+                            <div class="ms-row"><span>允许提及特殊日子</span><button class="ms-switch" id="msCalendar" type="button"></button></div>
+                            <div class="wp-slider-row" style="padding:10px 0 2px;">
+                                <span class="k" style="width:auto;">每天最多</span>
+                                <input type="range" id="msCalMax" min="0" max="5" step="1" value="2" />
+                                <span class="v" id="msCalMaxVal">2 次</span>
+                            </div>
+                            <div class="ctx-hint">关掉「允许提及」后，天气和日历都不会进 AI 上下文。</div>
+                            <label style="display:block;margin-top:12px;">网易云代理地址</label>
+                            <input id="neApiBaseInput" placeholder="留空使用内置公共实例" autocomplete="off" />
+                            <button class="btn btn-sm mt-8" id="neApiBaseSave" type="button">保存代理地址</button>
+                            <div class="ctx-hint" id="neApiBaseHint">格式：https://xxx/meting/ ，会自动补上 ?server=netease&type=…</div>
                         </div>
-                        <div class="ctx-hint">关掉「允许提及」后，天气和日历都不会进 AI 上下文。</div>
-                        <label style="display:block;margin-top:12px;">网易云代理地址</label>
-                        <input id="neApiBaseInput" placeholder="留空使用内置公共实例" autocomplete="off" />
-                        <button class="btn btn-sm mt-8" id="neApiBaseSave" type="button">保存代理地址</button>
-                        <div class="ctx-hint" id="neApiBaseHint">格式：https://xxx/meting/ ，会自动补上 ?server=netease&type=…</div>
                     </div>
                     <div class="setting-item" id="ctxMemoryCard">
                         <div class="label">上下文记忆</div>
@@ -7679,31 +7725,36 @@
                         </div>
                         <div class="ctx-hint" id="ctxMemoryHint">约合 10 轮对话</div>
                     </div>
-                    <div class="setting-item" id="longMemoryCard">
-                        <div class="label">长期记忆</div>
-                        <div class="desc">角色会把值得长期记住的事（偏好、约定、重要事件）单独存在记忆库里。清空聊天记录只会清掉对话原文，不会清掉这些记忆。</div>
-                        <div class="ms-row" style="margin-top:8px;">
-                            <span>开启长期记忆</span>
-                            <button class="ms-switch" id="msLongMemory" type="button"></button>
+                    <div class="setting-item foldable" id="longMemoryCard">
+                        <div class="si-header">
+                            <div class="label">长期记忆</div>
+                            <div class="desc">角色会把值得长期记住的事（偏好、约定、重要事件）单独存在记忆库里。清空聊天记录只会清掉对话原文，不会清掉这些记忆。</div>
+                            <span class="fold-icon">▼</span>
                         </div>
-                        <div class="wp-slider-row" style="padding:14px 0 0;">
-                            <span class="k" style="width:auto;">每轮带几条</span>
-                            <input type="range" id="memTopK" min="1" max="8" step="1" value="4" />
-                            <span class="v" id="memTopKVal">4 条</span>
+                        <div class="si-body">
+                            <div class="ms-row" style="margin-top:8px;">
+                                <span>开启长期记忆</span>
+                                <button class="ms-switch" id="msLongMemory" type="button"></button>
+                            </div>
+                            <div class="wp-slider-row" style="padding:14px 0 0;">
+                                <span class="k" style="width:auto;">每轮带几条</span>
+                                <input type="range" id="memTopK" min="1" max="8" step="1" value="4" />
+                                <span class="v" id="memTopKVal">4 条</span>
+                            </div>
+                            <div class="wp-slider-row" style="padding:8px 0 0;">
+                                <span class="k" style="width:auto;">每几条提炼</span>
+                                <input type="range" id="memEveryN" min="4" max="20" step="1" value="8" />
+                                <span class="v" id="memEveryNVal">8 条</span>
+                            </div>
+                            <div class="wp-slider-row" style="padding:8px 0 2px;">
+                                <span class="k" style="width:auto;">遗忘速度</span>
+                                <input type="range" id="memDecay" min="0.5" max="2.5" step="0.1" value="1" />
+                                <span class="v" id="memDecayVal">标准</span>
+                            </div>
+                            <div class="ctx-hint" id="memStatsHint">暂无记忆</div>
+                            <div class="ctx-hint">记忆只存在这台设备的浏览器里；每轮最多注入 300 token 左右，超出的按相关度砍掉。</div>
+                            <button class="btn btn-sm mt-8" id="memClearAllBtn" type="button">清空全部记忆</button>
                         </div>
-                        <div class="wp-slider-row" style="padding:8px 0 0;">
-                            <span class="k" style="width:auto;">每几条提炼</span>
-                            <input type="range" id="memEveryN" min="4" max="20" step="1" value="8" />
-                            <span class="v" id="memEveryNVal">8 条</span>
-                        </div>
-                        <div class="wp-slider-row" style="padding:8px 0 2px;">
-                            <span class="k" style="width:auto;">遗忘速度</span>
-                            <input type="range" id="memDecay" min="0.5" max="2.5" step="0.1" value="1" />
-                            <span class="v" id="memDecayVal">标准</span>
-                        </div>
-                        <div class="ctx-hint" id="memStatsHint">暂无记忆</div>
-                        <div class="ctx-hint">记忆只存在这台设备的浏览器里；每轮最多注入 300 token 左右，超出的按相关度砍掉。</div>
-                        <button class="btn btn-sm mt-8" id="memClearAllBtn" type="button">清空全部记忆</button>
                     </div>
                     <div class="setting-item" id="typingDelayCard">
                         <div class="label">模拟打字延迟</div>
@@ -7719,71 +7770,74 @@
                         <div class="ctx-hint" id="cacheStatsText">暂无数据</div>
                         <button class="btn btn-sm mt-8" id="resetCacheStatsBtn" type="button">重置统计</button>
                     </div>
-                    <div class="setting-item" id="momentSettingsCard">
-                        <div class="label">朋友圈</div>
-                        <div class="desc">玩家发圈后，角色会像好友一样点赞或评论；开启视觉后可让模型直接看图。</div>
-                        <div class="ms-row"><span>自动回应</span><button class="ms-switch" id="msAutoReact" type="button"></button></div>
-                        <div class="wp-slider-row" style="padding:12px 0 0;">
-                            <span class="k" style="width:auto;">最快</span>
-                            <input type="range" id="msDelayMin" min="5" max="90" step="5" />
-                            <span class="v" id="msDelayMinVal">20s</span>
+                    <div class="setting-item foldable" id="momentSettingsCard">
+                        <div class="si-header">
+                            <div class="label">朋友圈</div>
+                            <div class="desc">玩家发圈后，角色会像好友一样点赞或评论；开启视觉后可让模型直接看图。</div>
+                            <span class="fold-icon">▼</span>
                         </div>
-                        <div class="wp-slider-row" style="padding:8px 0 2px;">
-                            <span class="k" style="width:auto;">最慢</span>
-                            <input type="range" id="msDelayMax" min="30" max="300" step="10" />
-                            <span class="v" id="msDelayMaxVal">120s</span>
+                        <div class="si-body">
+                            <div class="ms-row"><span>自动回应</span><button class="ms-switch" id="msAutoReact" type="button"></button></div>
+                            <div class="wp-slider-row" style="padding:12px 0 0;">
+                                <span class="k" style="width:auto;">最快</span>
+                                <input type="range" id="msDelayMin" min="5" max="90" step="5" />
+                                <span class="v" id="msDelayMinVal">20s</span>
+                            </div>
+                            <div class="wp-slider-row" style="padding:8px 0 2px;">
+                                <span class="k" style="width:auto;">最慢</span>
+                                <input type="range" id="msDelayMax" min="30" max="300" step="10" />
+                                <span class="v" id="msDelayMaxVal">120s</span>
+                            </div>
+                            <div class="ms-row" style="margin-top:2px;"><span>图片直传模型</span><button class="ms-switch" id="msVision" type="button"></button></div>
+                            <div class="ctx-hint">模型不支持图片时会自动退回文字描述，不影响发圈。</div>
                         </div>
-                        <div class="ms-row" style="margin-top:2px;"><span>图片直传模型</span><button class="ms-switch" id="msVision" type="button"></button></div>
-                        <div class="ctx-hint">模型不支持图片时会自动退回文字描述，不影响发圈。</div>
                     </div>
 
-                    <div class="setting-item" id="jealousyCard">
-                        <div class="label">吃醋模式</div>
-                        <div class="desc">聊天里提到别的角色时，对方会按概率「在意」起来；同一个名字反复提会逐级加重，换个名字则重新冷却。</div>
-                        <div class="ms-row"><span>开启</span><button class="ms-switch" id="msJealousy" type="button"></button></div>
-                        <div class="wp-slider-row" style="padding:12px 0 0;">
-                            <span class="k" style="width:auto;">概率</span>
-                            <input type="range" id="msJealChance" min="10" max="100" step="5" />
-                            <span class="v" id="msJealChanceVal">70%</span>
+                    <div class="setting-item foldable" id="jealousyCard">
+                        <div class="si-header">
+                            <div class="label">吃醋模式</div>
+                            <div class="desc">聊天里提到别的角色时，对方会按概率「在意」起来；同一个名字反复提会逐级加重，换个名字则重新冷却。</div>
+                            <span class="fold-icon">▼</span>
                         </div>
-                        <div class="wp-slider-row" style="padding:8px 0 2px;">
-                            <span class="k" style="width:auto;">冷却</span>
-                            <input type="range" id="msJealCooldown" min="1" max="60" step="1" />
-                            <span class="v" id="msJealCooldownVal">8 分钟</span>
+                        <div class="si-body">
+                            <div class="ms-row"><span>开启</span><button class="ms-switch" id="msJealousy" type="button"></button></div>
+                            <div class="wp-slider-row" style="padding:12px 0 0;">
+                                <span class="k" style="width:auto;">概率</span>
+                                <input type="range" id="msJealChance" min="10" max="100" step="5" />
+                                <span class="v" id="msJealChanceVal">70%</span>
+                            </div>
+                            <div class="wp-slider-row" style="padding:8px 0 2px;">
+                                <span class="k" style="width:auto;">冷却</span>
+                                <input type="range" id="msJealCooldown" min="1" max="60" step="1" />
+                                <span class="v" id="msJealCooldownVal">8 分钟</span>
+                            </div>
+                            <div class="ctx-hint">同一目标 30 分钟内再被提到会升级；数值只影响"要不要在意"，不影响回复长度。</div>
                         </div>
-                        <div class="ctx-hint">同一目标 30 分钟内再被提到会升级；数值只影响"要不要在意"，不影响回复长度。</div>
                     </div>
 
-                    <div class="setting-item" id="affectionCallCard">
-                        <div class="label">主动来电</div>
-                        <div class="desc">玩家连续说「我想你了」「好喜欢你」「我爱你」这类话时，角色可能主动打来语音/视频电话。</div>
-                        <div class="ms-row"><span>开启</span><button class="ms-switch" id="msAffectionCall" type="button"></button></div>
-                        <div class="wp-slider-row" style="padding:12px 0 0;">
-                            <span class="k" style="width:auto;">连说几条触发</span>
-                            <input type="range" id="msAffectionStreak" min="2" max="6" step="1" value="3" />
-                            <span class="v" id="msAffectionStreakVal">3 条</span>
+                    <div class="setting-item foldable" id="presetSyncCard">
+                        <div class="si-header">
+                            <div class="label">预设角色卡</div>
+                            <div class="desc">没改过的角色卡会随版本自动更新；改过的保留你的版本，想换回预设可以点下面按钮。</div>
+                            <span class="fold-icon">▼</span>
                         </div>
-                        <div class="wp-slider-row" style="padding:8px 0 2px;">
-                            <span class="k" style="width:auto;">冷却</span>
-                            <input type="range" id="msAffectionCooldown" min="15" max="180" step="15" value="60" />
-                            <span class="v" id="msAffectionCooldownVal">60 分钟</span>
+                        <div class="si-body">
+                            <div class="ctx-hint" id="presetSyncText">检查中…</div>
+                            <button class="btn btn-primary btn-sm mt-8" id="presetSyncBtn" type="button">用预设覆盖</button>
                         </div>
-                        <div class="ctx-hint">命中情感句后计数 +1，说点别的会 -1（不会一次清零）；连续超过阈值才评估是否发起。每天最多 2 次。</div>
                     </div>
 
-                    <div class="setting-item" id="presetSyncCard">
-                        <div class="label">预设角色卡</div>
-                        <div class="desc">没改过的角色卡会随版本自动更新；改过的保留你的版本，想换回预设可以点下面按钮。</div>
-                        <div class="ctx-hint" id="presetSyncText">检查中…</div>
-                        <button class="btn btn-primary btn-sm mt-8" id="presetSyncBtn" type="button">用预设覆盖</button>
-                    </div>
-
-                    <div class="setting-item" id="bannedScanCard">
-                        <div class="label">违禁词扫描</div>
-                        <div class="desc">只检查老存档里已有的违禁词（角色、世界书、备忘录、朋友圈、论坛、群聊），只列出来给你看，不会自动改数据。</div>
-                        <button class="btn btn-sm mt-8" id="bannedScanBtn" type="button">扫描违禁词</button>
-                        <div class="ctx-hint" id="bannedScanHint" style="margin-top:8px;">尚未扫描</div>
-                        <div id="bannedScanResult" style="margin-top:6px;"></div>
+                    <div class="setting-item foldable" id="bannedScanCard">
+                        <div class="si-header">
+                            <div class="label">违禁词扫描</div>
+                            <div class="desc">只检查老存档里已有的违禁词（角色、世界书、备忘录、朋友圈、论坛、群聊），只列出来给你看，不会自动改数据。</div>
+                            <span class="fold-icon">▼</span>
+                        </div>
+                        <div class="si-body">
+                            <button class="btn btn-sm" id="bannedScanBtn" type="button">扫描违禁词</button>
+                            <div class="ctx-hint" id="bannedScanHint" style="margin-top:8px;">尚未扫描</div>
+                            <div id="bannedScanResult" style="margin-top:6px;"></div>
+                        </div>
                     </div>
 
                     <div class="setting-item" id="immersiveCard">
@@ -8541,8 +8595,7 @@
                         <div class="setting-item" style="margin-top:14px;">
                             <div class="label">聊天语音消息</div>
                             <div class="desc">角色在单聊里有概率把某句话「用语音说出来」，表现为一条独立语音气泡（带波形、时长、转写）。只有绑了音色卡的角色才有声音。</div>
-                            <div class="ms-row"><span>允许角色发语音</span><button class="ms-switch" id="vcProactiveVoice" type="button"></button></div>
-                            <div class="ctx-hint">关掉后：聊天里不再出现语音，也不会再向模型注入语音规则（省 token）。群聊、通话不受影响。</div>
+                            <div class="ctx-hint" style="margin-top:16px;text-align:center;">「允许角色发语音」「主动来电」已移到「微信 → 我」。</div>
                         </div>
                     </div>
                 </div>
@@ -12519,6 +12572,7 @@ ${tonePrompt}
             renderWechatList();
             const cw = document.getElementById('chatWindow');
             if (cw && cw.classList.contains('open') && cw.dataset.persona) {
+                markChatDirty();          // 预设覆盖可能改了人设/头像
                 renderMessages(cw.dataset.persona);
             }
             toast(applied ? '已用预设覆盖 ' + applied + ' 处' : '已经是最新版');
@@ -12763,7 +12817,6 @@ ${tonePrompt}
             renderCacheStats();
             renderMomentSettingsCard();
             renderJealousyCard();
-            renderAffectionCallCard();
             renderLifeInfoCard();
             syncImmersiveBtn();
             const container = document.getElementById('apiList');
@@ -13187,6 +13240,7 @@ ${tonePrompt}
                     const cw = document.getElementById('chatWindow');
                     if (cw.classList.contains('open') && cw.dataset.persona === id) {
                         document.getElementById('chatHeaderAvatar').innerHTML = avatarHtml(id, 28);
+                        markChatDirty();      // 头像变了，所有气泡要重绘
                         renderMessages(id);
                     }
                     toast('头像已更新');
@@ -14650,7 +14704,7 @@ ${tonePrompt}
             saveData();
 
             applyChatBackground(personaId);
-            renderMessages(personaId);
+            renderMessages(personaId, { forceBottom: true });
             resetInputBar();
             const _inp = document.getElementById('chatInput');
             if (_inp) _inp.placeholder = '发消息…';
@@ -14760,7 +14814,7 @@ ${tonePrompt}
             const moneyHint = moneySolicitHint(personaId);
             if (moneyHint) extraList.push(moneyHint);
 
-            renderMessages(personaId);
+            renderMessages(personaId, { forceBottom: true });
             renderWechatList();
 
             const replyOpts = {};
@@ -17223,6 +17277,28 @@ ${tonePrompt}
                         <span class="arrow">›</span>
                     </div>
                 </div>
+
+                <!-- 控制中心：主动来电 / 角色语音（原来散落在设置页和录音机页，这里统一收口） -->
+                <div class="wx-me-card">
+                    <div class="wx-me-row" style="cursor:default;">
+                        <span class="k">主动来电</span>
+                        <button class="ms-switch" id="wmAffectionCall" type="button" style="margin-left:auto;"></button>
+                    </div>
+                    <div class="wx-me-row" data-wm-behavior="streak">
+                        <span class="k">连说几条触发</span>
+                        <span class="v" id="wmAffectionStreakVal">3 条</span>
+                        <span class="arrow">›</span>
+                    </div>
+                    <div class="wx-me-row" data-wm-behavior="cooldown">
+                        <span class="k">来电冷却</span>
+                        <span class="v" id="wmAffectionCooldownVal">60 分钟</span>
+                        <span class="arrow">›</span>
+                    </div>
+                    <div class="wx-me-row" style="cursor:default;">
+                        <span class="k">允许角色发语音</span>
+                        <button class="ms-switch" id="wmProactiveVoice" type="button" style="margin-left:auto;"></button>
+                    </div>
+                </div>
                 <div class="wx-me-foot">AI 小手机 · 1.0</div>
             `;
 
@@ -17261,6 +17337,95 @@ ${tonePrompt}
 
             const ep = document.getElementById('wxMeEditProfile');
             if (ep) ep.addEventListener('click', () => showPage('profile'));
+
+            bindWxMeBehaviorCards();
+        }
+
+        // ============================================================
+        //  「我」页 · 行为控制卡片（主动来电 / 角色语音）
+        //  每次 renderWechatMe 都会重建 DOM，所以这里每次重新绑定。
+        // ============================================================
+        function bindWxMeBehaviorCards() {
+            const swCall = document.getElementById('wmAffectionCall');
+            if (swCall) {
+                swCall.classList.toggle('on', !!getAffectionCallCfg().enabled);
+                swCall.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const c = getAffectionCallCfg();
+                    c.enabled = !c.enabled;
+                    saveData();
+                    swCall.classList.toggle('on', c.enabled);
+                    toast(c.enabled ? '已开启主动来电' : '已关闭主动来电');
+                });
+            }
+
+            const swVoice = document.getElementById('wmProactiveVoice');
+            if (swVoice) {
+                swVoice.classList.toggle('on', mmSettings().proactiveVoice !== false);
+                swVoice.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    const s = mmSettings();
+                    s.proactiveVoice = s.proactiveVoice === false;
+                    saveData();
+                    swVoice.classList.toggle('on', s.proactiveVoice !== false);
+                    toast(s.proactiveVoice !== false ? '已允许角色发语音' : '已关闭角色语音');
+                });
+            }
+
+            const c = getAffectionCallCfg();
+            const stVal = document.getElementById('wmAffectionStreakVal');
+            if (stVal) stVal.textContent = c.triggerStreak + ' 条';
+            const cdVal = document.getElementById('wmAffectionCooldownVal');
+            if (cdVal) cdVal.textContent = c.cooldownMin + ' 分钟';
+
+            document.querySelectorAll('#wxMeBody [data-wm-behavior]').forEach(row => {
+                row.addEventListener('click', () => {
+                    if (row.dataset.wmBehavior === 'streak') openWmStreakEditor();
+                    else if (row.dataset.wmBehavior === 'cooldown') openWmCooldownEditor();
+                });
+            });
+        }
+
+        function openWmStreakEditor() {
+            const c = getAffectionCallCfg();
+            showModal(`
+                <div class="modal-title">连说几条触发来电</div>
+                <div class="ctx-hint" style="margin:-6px 0 10px;">玩家连续说情感句，累计到这个条数后才会评估是否打来电话。</div>
+                <div class="wp-slider-row" style="padding:8px 0;"><span class="k">条数</span><input type="range" id="wmStreakRange" min="2" max="6" step="1" value="${c.triggerStreak}" /><span class="v" id="wmStreakVal">${c.triggerStreak} 条</span></div>
+                <div class="btn-row"><button class="btn" onclick="closeModal()">取消</button><button class="btn btn-primary" id="wmStreakSave">保存</button></div>
+            `);
+            const range = document.getElementById('wmStreakRange');
+            const val = document.getElementById('wmStreakVal');
+            if (!range || !val) return;
+            range.addEventListener('input', () => { val.textContent = range.value + ' 条'; });
+            document.getElementById('wmStreakSave').addEventListener('click', () => {
+                getAffectionCallCfg().triggerStreak = Math.max(2, Math.min(6, Math.round(Number(range.value) || 3)));
+                saveData();
+                closeModal();
+                renderWechatMe();
+                toast('已保存');
+            });
+        }
+
+        function openWmCooldownEditor() {
+            const c = getAffectionCallCfg();
+            showModal(`
+                <div class="modal-title">来电冷却</div>
+                <div class="ctx-hint" style="margin:-6px 0 10px;">上次来电之后，多久内不会再主动打来。</div>
+                <div class="wp-slider-row" style="padding:8px 0;"><span class="k">分钟</span><input type="range" id="wmCooldownRange" min="15" max="180" step="15" value="${c.cooldownMin}" /><span class="v" id="wmCooldownVal">${c.cooldownMin} 分钟</span></div>
+                <div class="btn-row"><button class="btn" onclick="closeModal()">取消</button><button class="btn btn-primary" id="wmCooldownSave">保存</button></div>
+            `);
+            const range = document.getElementById('wmCooldownRange');
+            const val = document.getElementById('wmCooldownVal');
+            if (!range || !val) return;
+            range.addEventListener('input', () => { val.textContent = range.value + ' 分钟'; });
+            document.getElementById('wmCooldownSave').addEventListener('click', () => {
+                getAffectionCallCfg().cooldownMin = Math.max(15, Math.min(180, Math.round(Number(range.value) || 60)));
+                saveData();
+                closeModal();
+                renderWechatMe();
+                toast('已保存');
+            });
         }
 
         function pickMyAvatar() {
@@ -17277,7 +17442,7 @@ ${tonePrompt}
                 renderWechatList();
                 renderMoments();
                 const cw = document.getElementById('chatWindow');
-                if (cw.classList.contains('open') && cw.dataset.persona) renderMessages(cw.dataset.persona);
+                if (cw.classList.contains('open') && cw.dataset.persona) { markChatDirty(); renderMessages(cw.dataset.persona); }
                 toast('头像已更新');
             });
         }
@@ -17313,7 +17478,7 @@ ${tonePrompt}
                 renderMoments();
                 renderProfileAvatar();
                 const cw = document.getElementById('chatWindow');
-                if (cw.classList.contains('open') && cw.dataset.persona) renderMessages(cw.dataset.persona);
+                if (cw.classList.contains('open') && cw.dataset.persona) { markChatDirty(); renderMessages(cw.dataset.persona); }
                 toast('已保存');
             };
             document.getElementById('meFieldSave').addEventListener('click', save);
@@ -18726,6 +18891,7 @@ ${tonePrompt}
                     renderProfile();
                     const cw = document.getElementById('chatWindow');
                     if (cw.classList.contains('open')) {
+                        markChatDirty();      // 我的头像变了，气泡要重绘
                         renderMessages(cw.dataset.persona);
                         document.getElementById('chatHeaderAvatar').innerHTML = avatarHtml(cw.dataset.persona, 28);
                     }
@@ -22418,11 +22584,17 @@ ${tonePrompt}
                     parts.push(
                         '你有一条声音（可以发语音消息），当前声线是「' + (voiceCard.name || '默认音色') + '」。\n' +
                         '【语音使用规则】\n' +
-                        '- 默认不发语音，绝大多数回复都是纯文字，这是常态。\n' +
-                        '- 只有在撒娇、哄人、调情、情绪强烈，或者对方明确要你发语音时，才考虑发。\n' +
-                        '- 一条回复最多 1 条语音；语音内容不超过 40 字，必须是完整的一句人话。\n' +
-                        '- 语音内容不能和你的文字重复：文字说过的，语音里就换一种说法，或者干脆只发语音不发文字。\n' +
-                        '- 道歉、吵架、坏消息、严肃话题时不要发语音。\n' +
+                        '- 文字是默认。但有情感浓度的话，语音往往比打字更合适。\n' +
+                        '- 这几种场景优先考虑发语音：\n' +
+                        '  ① 撒娇：喊对方"姐姐""宝宝""宝贝""老婆""妈妈"这类亲昵称呼，或者用"嘛/呀/好不好嘛"结尾、说"不要嘛""陪我一下""就一次嘛"\n' +
+                        '  ② 调情：说"想你""想我了吗""梦到你了""心动""脸红""亲亲你""抱抱你"\n' +
+                        '  ③ 哄人：对方难受时，说"别哭""我在""有我呢""摸摸头""乖""心疼你"\n' +
+                        '  ④ 强情感：直白说"我爱你""好喜欢你""离不开你""想见你"\n' +
+                        '  ⑤ 对方明确要你发语音\n' +
+                        '- 以下场合不要发语音：道歉、吵架、坏消息、生病、严肃话题、单纯陈述事实、长段分析、抱怨/吐槽。\n' +
+                        '- 一条回复最多 1 条语音；语音内容不超过 40 字，是完整的一句人话，要能"被听见"。\n' +
+                        '- 语音内容不能和文字重复：文字说过的，语音里就换一种说法，或者只发语音不发文字。\n' +
+                        '- 拍板原则：这句话如果换你自己嘴里说出来会更有温度，那就发语音；如果只是在传递信息，就打字。\n' +
                         '- 发的时候，在回复的最后单独一行写：\n' +
                         '  [voice] 要说的话\n' +
                         '  （可选情绪：[voice:happy] / [voice:shy] / [voice:soothe] / [voice:love]，不写则用默认语气）'
@@ -22637,20 +22809,29 @@ ${tonePrompt}
             const cw = document.getElementById('chatWindow');
             if (!cw || !cw.classList.contains('open') || cw.dataset.persona !== personaId) return null;
             container.querySelectorAll('.typing-row').forEach(el => el.remove());
+
+            const wasNearBottom = isChatNearBottom(container, CHAT_NEAR_BOTTOM_PX);
+
             const row = document.createElement('div');
             row.className = 'wx-msg-row them typing-row';
             row.innerHTML = avatarHtml(personaId, 32, 'wx-avatar-sm') +
                 '<div class="wx-typing"><i></i><i></i><i></i></div>';
             container.appendChild(row);
-            container.scrollTop = container.scrollHeight;
+            // 用户正在翻历史 → 不把他拽回底部
+            if (wasNearBottom) container.scrollTop = container.scrollHeight;
             return row;
         }
 
+        // 模型偶尔会写成 [pic：1] / [PIC: 1] / [ pic : 1 ]，全部按标记处理，
+        // 否则这种小差异会原样落进气泡，变成玩家眼里的 "[pic:1]" 裸代码。
+        const PIC_TAG_RE = /\[\s*pic\s*[:：]\s*(\d+)\s*\]/gi;
+
         function splitPicTag(reply) {
-            const m = String(reply || '').match(/\[pic:(\d+)\]/);
-            if (!m) return { text: reply, photoIndex: null };
-            const idx = parseInt(m[1], 10) - 1;
-            const text = reply.replace(/\[pic:\d+\]/g, '').trim();
+            const s = String(reply == null ? '' : reply);
+            const m = s.match(PIC_TAG_RE);
+            if (!m) return { text: s, photoIndex: null };
+            const idx = parseInt(String(m[0]).replace(/\D/g, ''), 10) - 1;
+            const text = s.replace(PIC_TAG_RE, '').trim();
             return { text, photoIndex: idx };
         }
 
@@ -22713,12 +22894,16 @@ ${tonePrompt}
             return (e && e.name) || '';
         }
 
+        const STICKER_TAG_PARSE_RE = /\[\s*sticker\s*[:：]\s*(\d+)\s*\]/gi;
+        const STICKER_TAG_STRIP_RE = /\[\s*sticker\s*[:：]\s*\d+\s*\]/gi;
+
         function splitStickerTag(reply) {
-            const m = String(reply || '').match(/\[sticker:(\d+)\]/);
-            if (!m) return { text: reply, stickerIndex: null };
+            const s = String(reply == null ? '' : reply);
+            const m = s.match(STICKER_TAG_PARSE_RE);
+            if (!m) return { text: s, stickerIndex: null };
             return {
-                text: String(reply).replace(/\[sticker:\d+\]/g, '').trim(),
-                stickerIndex: parseInt(m[1], 10) - 1
+                text: s.replace(STICKER_TAG_STRIP_RE, '').trim(),
+                stickerIndex: parseInt(String(m[0]).replace(/\D/g, ''), 10) - 1
             };
         }
 
@@ -22797,19 +22982,119 @@ ${tonePrompt}
         //  [pic] 决定发不发图，[sticker] 决定发不发表情包，[voice] 决定发不发语音。
         //  模型只写标记 + 原文，能不能发、发多长、什么时候发，全在下面这几道闸门里。
         // ------------------------------------------------------------
-        const VOICE_MIN_GAP_TURNS = 6;      // 最近 6 轮（按 user 消息计）发过就不再发
         const VOICE_MAX_CHARS = 40;         // 一条语音最多 40 字
         const VOICE_REQUEST_RE = /发(条|个)?语音|语音(消息|回复|说)|说句话(给我)?(听|听听)|让我听听|用语音|发个声音|说给我听/;
         // 否定优先：「别发语音」「不用语音」是拒绝，不是请求
         const VOICE_REQUEST_NEG_RE = /(不要|不用|别|不想|免了|没必要)[^，。！？\n]{0,6}语音/;
-        // 和 STICKER_EMOTION_WORDS 并列：命中情感语义才值得抬高概率
-        const VOICE_EMOTION_WORDS = {
-            shy:    /想你|抱抱|亲亲|贴贴|哼|嘛|人家|陪我|不要走|理理我|想你啦/,
-            soothe: /别难过|我在|没事的|对不起|别哭|有我呢|乖/,
-            love:   /喜欢|爱你|心动|想见你|宝贝|想你了/,
-            happy:  /哈哈|开心|太好|终于|太好了|耶/
-        };
-        const VOICE_TAG_RE = /\[\s*voice\s*(?::\s*([A-Za-z_]+))?\s*\]/i;
+        // ------------------------------------------------------------
+        //  语音触发词表 · 分层权重
+        //  旧版是"命中任意情感词 = 35% 起步"，结果两类问题：
+        //    ① 说"哈哈"这种没浓度的词也照发，语音显得莫名其妙；
+        //    ② 说"宝宝我想你了"却可能被 6 轮冷却直接吃掉。
+        //  这里按"这句话有多想说出口"分五档，权重即基础概率，
+        //  再叠加关系加成、玩家情绪、长度、节奏、主动消息折扣。
+        // ------------------------------------------------------------
+        const VOICE_MOOD_TIERS = [
+            // ① 直白的情感宣告：几乎每句都值得被听见
+            {
+                tier: 'strong',
+                weight: 0.65,
+                re: /我爱你|好爱你|真的爱你|超爱你|好喜欢你|真的喜欢你|超喜欢你|只喜欢你|最喜欢你|离不开你|想你想得|想你想疯|想见你|想立刻见你|奔向你|想抱你|想亲你|好想你|太想你了|想你想得睡不着/
+            },
+            // ② 撒娇：称呼 + 语气词，语音比打字有温度得多
+            //    "妈妈" 要排除"我妈说""你妈做的"这类叙述，只留呼语用法。
+            //    注意：后行断言（lookbehind）只在 iOS 16.4+ 支持，老 WebView 里
+            //    new RegExp 会直接抛异常 —— 这里必须兜底，否则整段脚本挂掉。
+            {
+                tier: 'coquettish',
+                weight: 0.52,
+                re: (function () {
+                    const parts = [
+                        '宝宝', '姐姐', '宝贝', '老婆', '(?<![我你他她爸的])妈妈(?![说教骂做买病走了])',
+                        '干嘛呀', '好不好嘛', '就一下', '就一次', '不要', '嗯哼', '哼',
+                        '不理你了', '凶我', '欺负我', '你是不是不喜欢我', '你是不是不想我',
+                        '陪我', '陪我[嘛嘛呀]', '贴贴', '蹭蹭', '要抱抱', '要亲亲', '求你了', '你都不', '你好坏', '坏蛋'
+                    ];
+                    try {
+                        return new RegExp(parts.join('|'));
+                    } catch (e) {
+                        // 老引擎：去掉带 lookbehind 的那一条，其余照常
+                        return new RegExp(parts.filter(p => p.indexOf('(?<!') === -1).join('|'));
+                    }
+                })()
+            },
+            // ③ 调情：暧昧但还没到"我爱你"的程度
+            {
+                tier: 'flirt',
+                weight: 0.48,
+                re: /想你|想我了吗|有没有想我|偷偷想你|做梦梦到你|梦到你了|心动|心跳|脸红|耳朵红|害羞|亲一个|亲亲你|抱抱你|想吻|想亲|想牵手|想搂你|抱着你/
+            },
+            // ④ 哄人：对方难受时，语气比内容更重要
+            {
+                tier: 'soothe',
+                weight: 0.40,
+                re: /别难过|别哭|我在|有我在|有我呢|我陪你|我一直在|乖|摸摸头|抱抱|不哭不哭|没事的|会好的|别怕|不怕|哄哄|心疼|担心你|牵挂你/
+            },
+            // ⑤ 单纯的情绪起伏：有点想发，但浓度不够，概率压低
+            {
+                tier: 'emotional',
+                weight: 0.22,
+                re: /哈哈|开心|笑死|太好了|终于|终于等到|好开心|激动|气死|烦死|崩溃|难受|委屈|想哭|无语/
+            }
+        ];
+        // 撒娇收尾（嘛/呀/啦/呗/哼/吧）—— 语音里这句尾音最抓人
+        const COQUETTISH_TAIL_RE = /(嘛|呀|啦|呗|哼|吧)[！!。.~～]?\s*$/;
+        const EMOTION_PUNCT_RE = /[！!]/;
+
+        // 一句话的"语音浓度"：取命中的最高档权重，多档叠加小幅加成
+        function voiceMoodScore(text) {
+            const s = String(text || '').trim();
+            if (!s) return { score: 0, tier: '' };
+            let best = 0;
+            let topTier = '';
+            let hitCount = 0;
+            VOICE_MOOD_TIERS.forEach(m => {
+                if (!m.re.test(s)) return;
+                hitCount++;
+                if (m.weight > best) { best = m.weight; topTier = m.tier; }
+            });
+            if (!hitCount) return { score: 0, tier: '' };
+            if (hitCount > 1) best = Math.min(0.95, best + 0.03 * (hitCount - 1));
+            if (topTier === 'coquettish' && COQUETTISH_TAIL_RE.test(s)) best = Math.min(0.95, best + 0.08);
+            if (EMOTION_PUNCT_RE.test(s)) best = Math.min(0.95, best + 0.04);
+            return { score: best, tier: topTier };
+        }
+
+        // 玩家自己刚说过动情的话 → 角色更容易"用声音接住"
+        function playerMoodBoost(personaId) {
+            const arr = data.chats[personaId] || [];
+            let lastUser = '';
+            for (let i = arr.length - 1; i >= 0; i--) {
+                const m = arr[i];
+                if (m && m.sender === 'user' && (m.type === 'text' || !m.type)) {
+                    lastUser = String(m.content || '');
+                    break;
+                }
+            }
+            if (!lastUser) return 0;
+            const sc = voiceMoodScore(lastUser).score;
+            return sc ? Math.min(0.12, sc * 0.2) : 0;
+        }
+
+        // 距离上一条 AI 语音过了几个"玩家轮次"（一条回复会拆成多个气泡，按 user 消息计才准）
+        function userRoundsSinceLastAIVoice(personaId) {
+            const msgs = data.chats[personaId] || [];
+            let userRounds = 0;
+            for (let i = msgs.length - 1; i >= 0; i--) {
+                const m = msgs[i];
+                if (!m) continue;
+                if (m.sender === 'assistant' && m.type === 'voice' && m.via === 'aiVoice') return userRounds;
+                if (m.sender === 'user') userRounds++;
+            }
+            return userRounds;
+        }
+
+        const VOICE_TAG_RE = /\[\s*voice\s*(?:\s*[:：]\s*([A-Za-z_]+))?\s*\]/i;
         const VOICE_EMOTIONS = ['happy', 'sad', 'angry', 'fearful', 'disgusted', 'surprised', 'calm', 'fluent', 'whisper'];
 
         // speech-02 只认下面这几个 emotion；[voice:shy]/[voice:soothe]/[voice:love]
@@ -22849,7 +23134,7 @@ ${tonePrompt}
         // 只认第一条：同轮吐两条，第二条的标记剥掉、剩下的字降级为文字。
         function splitVoiceTag(reply) {
             const s = String(reply == null ? '' : reply);
-            if (s.toLowerCase().indexOf('[voice') === -1) return { text: s, voice: null };
+            if (!/\[\s*voice/i.test(s)) return { text: s, voice: null };
 
             let voice = null;
             const kept = [];
@@ -22885,26 +23170,8 @@ ${tonePrompt}
             return VOICE_REQUEST_RE.test(s);
         }
 
-        // 同样是「按 user 消息计轮」：一条回复会拆成多个气泡，按条数算会失真
-        function recentAIVoiceCount(personaId, windowSize) {
-            const msgs = data.chats[personaId] || [];
-            const limit = Math.max(1, windowSize || VOICE_MIN_GAP_TURNS);
-            let users = 0;
-            let n = 0;
-            for (let i = msgs.length - 1; i >= 0; i--) {
-                const m = msgs[i];
-                if (!m) continue;
-                if (m.sender === 'user') {
-                    users++;
-                    if (users > limit) break;
-                } else if (m.sender === 'assistant' && m.type === 'voice' && m.via === 'aiVoice') {
-                    n++;
-                }
-            }
-            return n;
-        }
-
         // 发不发语音，最终由这里说了算（prompt 只负责"想不想"）
+        // 三道闸门：硬前提（音色卡/服务开着/开关打开）→ 冷却节奏 → 概率
         function canSendVoice(personaId, text, opts) {
             opts = opts || {};
             if (!personaId) return false;
@@ -22919,21 +23186,46 @@ ${tonePrompt}
             // 4. 玩家强请求 → 直接放行（连发也照发，不然"发条语音听听"会被上一轮的语音挡掉）
             if (opts.force) return true;
 
-            // 5. 最近 6 轮已经发过 → 拒发
-            if (recentAIVoiceCount(personaId, VOICE_MIN_GAP_TURNS) > 0) return false;
-
-            const body = String(text || '').trim();
+            // 纯语音回复（只发语音、不发文字）也要能判：文字为空时退回语音内容本身打分，
+            // 否则 prompt 里"或者只发语音不发文字"这条永远发不出来。
+            const spoken = String(opts.voiceContent || '').trim();
+            const body = String(text || '').trim() || spoken;
             if (!body) return false;
-            // 6. 严肃语境不发：道歉/吵架/坏消息里冒出语音最出戏
+            // 5. 严肃语境不发：道歉/吵架/坏消息里冒出语音最出戏
             if (SERIOUS_RE.test(body)) return false;
 
-            // 7. 概率：命中情感词按关系加成，没命中只留"随手发一条"的余量
-            let p = 0.06;
-            const hit = Object.keys(VOICE_EMOTION_WORDS).some(k => VOICE_EMOTION_WORDS[k].test(body));
-            if (hit) p = Math.min(0.8, 0.35 + relationTier(personaId) * 0.15);
-            if (opts.proactive) p *= 0.6;   // 主动消息再打六折，别一上来就甩语音
-            if (Math.random() > p) return false;
-            return true;
+            const mood = voiceMoodScore(body);
+            const sinceLast = userRoundsSinceLastAIVoice(personaId);
+
+            // 6. 冷却：按这句的浓度决定"最短间隔"
+            //    浓度越高越允许密一点（2 轮），普通情绪词 4 轮。
+            //    这比原来"一刀切 6 轮"合理：说"我爱你"等 6 轮太久了。
+            const baseGap = mood.tier === 'strong' ? 2
+                : (mood.tier === 'coquettish' || mood.tier === 'flirt') ? 3
+                : 4;
+            if (sinceLast < baseGap) return false;
+
+            // 7. 保底：太久没发语音了（12 轮以上），只要这句有点情感就发一条，
+            //    不然语音功能会"存在感为零"，玩家以为坏了。
+            if (sinceLast >= 12 && mood.score > 0) return true;
+
+            // 8. 概率：浓度为基础，叠加关系档 / 玩家情绪 / 长度 / 节奏
+            let p = mood.score > 0 ? mood.score : 0.12;
+            p += [0, 0.05, 0.10, 0.18][relationTier(personaId)] || 0;
+            p += playerMoodBoost(personaId);
+
+            // 太长念着累、太短又撑不起一条语音：>30 字打七折，≤15 字且带情绪补一点
+            const voiceBody = String(opts.voiceContent || body);
+            if (voiceBody.length > 30) p *= 0.65;
+            else if (voiceBody.length <= 15 && mood.score > 0) p += 0.04;
+
+            // 节奏补偿：拖得越久越该发（最多 +15%）
+            const rhythmFactor = Math.min(1.15, 1.0 + Math.max(0, sinceLast - baseGap) * 0.05);
+            p *= rhythmFactor;
+            // 主动消息再打八五折：别一上来就甩语音
+            if (opts.proactive) p *= 0.85;
+
+            return Math.random() < Math.min(0.95, p);
         }
 
         // readAudioDuration(file) 只吃 File，这里补一个吃 Blob 的轻量版
@@ -23127,6 +23419,17 @@ ${tonePrompt}
             return lines;
         }
 
+        // 最后一道网：四个 splitter 都走完之后，仍可能剩下模型写歪的标记
+        // （"（发张图）[pic:1]。" 之类）。这些绝不能进气泡——玩家看到的是裸代码。
+        const RESIDUAL_TAG_RE = /\[\s*(?:pic|sticker|voice|hongbao|transfer)\s*[^\]\n]{0,40}\]/gi;
+
+        function stripResidualTags(text) {
+            return String(text == null ? '' : text)
+                .replace(RESIDUAL_TAG_RE, '')
+                .replace(/[ \t]{2,}/g, ' ')
+                .replace(/[ \t]+$/gm, '');
+        }
+
         async function applyReply(personaId, reply, opts) {
             opts = opts || {};
             // 主动消息也走这里：气泡要打上 isProactive 标记，通知由调用方统一发（语音别重复弹）
@@ -23147,6 +23450,8 @@ ${tonePrompt}
             const vt = splitVoiceTag(st.text);
             const voicePlan = vt.voice;
             const parsed = splitPicTag(vt.text);
+            // 标记清理的兜底：脏标记不许混进正文
+            parsed.text = stripResidualTags(parsed.text);
             const pubs = (data.photos || []).filter(p => p.isPublic && p.desc);
 
             // 表情包：模型只负责"想发哪个"，发不发由代码闸门说了算
@@ -23229,7 +23534,7 @@ ${tonePrompt}
             if (voicePlan) {
                 const force = !!opts.forceVoice;
                 // proactive 传给 canSendVoice：主动消息场景概率再打 6 折
-                if (canSendVoice(personaId, parsed.text, { force, proactive: !!opts.proactive })) {
+                if (canSendVoice(personaId, parsed.text, { force, proactive: !!opts.proactive, voiceContent: voicePlan.content })) {
                     willAddVoice = true;
                     synthesizeAndAppendVoice(personaId, voicePlan, {
                         force,
@@ -23242,6 +23547,13 @@ ${tonePrompt}
                 } else {
                     console.debug('[voice] 已拦截不发', { content: voicePlan.content, force });
                 }
+            }
+
+            // 全部路径都没落地（比如只写了 [pic:3] 但相册里没这张、表情包被概率拦掉）：
+            // 也别让这一轮彻底消失，留一个省略号，玩家至少知道对方"吭了一声"。
+            if (!added && !willAddVoice && stripResidualTags(raw.replace(/\[\[BLOCK_THREAT\]\]/g, '')).trim()) {
+                addMessage(personaId, 'assistant', 'text', '…', proactiveExtra);
+                added = true;
             }
 
             if (hasThreat) handleBlockThreat(personaId);
@@ -23987,6 +24299,7 @@ ${tonePrompt}
         }
 
         function refreshMoneyCard(personaId, mid) {
+            markChatDirty();          // 卡片状态变了但消息条数没变 → 必须全量刷新这一条
             renderMessages(personaId);
             renderWechatList();
             const card = document.querySelector('.wx-msg-row[data-msg-id="' + mid + '"] .money-card');
@@ -24327,39 +24640,214 @@ ${tonePrompt}
             return String(m.content || '');
         }
 
-        function renderMessages(personaId) {
-            const container = document.getElementById('chatMessages');
+        /* ============================================================
+           v40 · 聊天列表：滚动与渲染窗口配置
+           ============================================================ */
+        const CHAT_NEAR_BOTTOM_PX = 120;   // 距底 <= 此值视为"在底部附近"
+        const CHAT_STICK_PX       = 200;   // 异步水合后补偿的"黏底"阈值
+        const CHAT_LOAD_OLDER_PX  = 60;    // 距顶 <= 此值触发加载更早消息
+        const CHAT_WINDOW_INITIAL = 80;    // 首次渲染最近多少条
+        const CHAT_WINDOW_STEP    = 40;    // 每次上滚加载多少条
+
+        /* ============================================================
+           滚动工具：所有"滚到底 / 粘底 / 保持锚点"的唯一入口
+           ============================================================ */
+
+        function isChatNearBottom(container, threshold) {
+            if (!container) return false;
+            // 尚未布局（如切到别的 tab）→ 视作在底部，打开时才会真正贴底
+            if (container.clientHeight === 0) return true;
+            const t = threshold == null ? CHAT_NEAR_BOTTOM_PX : threshold;
+            return container.scrollHeight - container.scrollTop - container.clientHeight <= t;
+        }
+
+        /** 记录"用户当前看的那一行"在可视区内的相对位置 */
+        function captureChatAnchor(container) {
+            if (!container) return null;
+            const nodes = container.children;
+            for (let i = 0; i < nodes.length; i++) {
+                const el = nodes[i];
+                if (el.offsetTop + el.offsetHeight > container.scrollTop) {
+                    return {
+                        el: el,
+                        index: i,
+                        id: (el.dataset && el.dataset.msgId) ? el.dataset.msgId : '',
+                        offset: el.offsetTop - container.scrollTop
+                    };
+                }
+            }
+            return null;
+        }
+
+        function restoreChatAnchor(container, anchor) {
+            if (!container || !anchor) return;
+            let el = anchor.el;
+            if (!el || !el.isConnected) {
+                el = null;
+                if (anchor.id) {
+                    const list = container.querySelectorAll('.wx-msg-row[data-msg-id]');
+                    for (let i = 0; i < list.length; i++) {
+                        if (list[i].dataset.msgId === anchor.id) { el = list[i]; break; }
+                    }
+                }
+                if (!el && anchor.index != null) el = container.children[anchor.index] || null;
+            }
+            if (!el) return;
+            container.scrollTop = el.offsetTop - anchor.offset;
+        }
+
+        /**
+         * 异步水合（图片 / 表情包）会撑高内容。
+         * 一旦撑高：还在底部附近就贴底；已在看历史，则只在"图片位于可视区上方"时按增量补偿。
+         * 只监听尚未加载完成的 img，加载完就解绑，避免长期累积。
+         */
+        function stickChatScrollToBottom(container) {
+            armChatImageFix(container, (img, beforeH) => {
+                // 落图事件里布局可能还没更新，等一帧再量才准
+                requestAnimationFrame(() => {
+                    if (!container.isConnected) return;
+                    const grown = Math.max(0, (img.offsetHeight || 0) - beforeH);
+                    const gapNow = container.scrollHeight - container.scrollTop - container.clientHeight;
+                    // 用"撑高之前"的间距判断：这一下增长发生时，用户本来就在底部附近 → 补底
+                    if (gapNow - grown <= CHAT_STICK_PX) {
+                        container.scrollTop = container.scrollHeight;
+                        // 个别图片（SVG / 自定义字体）会在下一帧再微调一次高度，补一次兜底
+                        requestAnimationFrame(() => {
+                            if (container.isConnected) container.scrollTop = container.scrollHeight;
+                        });
+                        return;
+                    }
+                    // 否则用户正在翻历史：只有图片在可视区上方撑高，才按增量补偿
+                    if (grown <= 0) return;
+                    const box = container.getBoundingClientRect();
+                    if (img.getBoundingClientRect().bottom - grown <= box.top) container.scrollTop += grown;
+                });
+            });
+        }
+
+        /**
+         * 给容器里"还没真正落图"的 img 挂 load / error 监听，落图后回调 onGrow(img, beforeHeight)。
+         * 注意：占位图（1×1 gif）本身也会触发 load，不能当成落图，否则监听会被白白消耗掉。
+         */
+        function armChatImageFix(container, onGrow) {
             if (!container) return;
-            updateChatBlockBar(personaId);
-            const msgs = data.chats[personaId] || [];
-            if (!msgs.length) {
-                container.innerHTML = '<div class="empty" style="margin:auto;padding:40px 0;font-size:13px;color:rgba(255,255,255,.3);">开始聊天吧</div>';
-                applyChatBackground(personaId);
+            const imgs = container.querySelectorAll('img[data-img]');
+            for (let i = 0; i < imgs.length; i++) {
+                const img = imgs[i];
+                if (img.dataset.chatFixArmed === '1') continue;
+                if (isImgHydrated(img)) continue;
+
+                img.dataset.chatFixArmed = '1';
+                const beforeH = img.offsetHeight || 0;
+                const detach = () => {
+                    img.removeEventListener('load', onLoad);
+                    img.removeEventListener('error', onLoad);
+                    img.dataset.chatFixArmed = '';
+                };
+                const onLoad = () => {
+                    if (!container.isConnected || !img.isConnected) { detach(); return; }
+                    if (!isImgHydrated(img)) return;   // 占位图自己的 load / 加载失败 → 继续等真图
+                    detach();
+                    onGrow(img, beforeH);
+                };
+                img.addEventListener('load', onLoad);
+                img.addEventListener('error', onLoad);
+            }
+        }
+
+        /** 这张图是不是已经真的落图了（而不是还停在 1×1 占位） */
+        function isImgHydrated(img) {
+            if (!img) return false;
+            const token = img.getAttribute('data-img') || '';
+            if (img.dataset.imgApplied !== token) return false;   // 还没开始水合
+            return img.complete && img.naturalHeight > 1;
+        }
+
+        /** 立刻滚到底 + 后续图片加载补偿（打开聊天 / 玩家发消息） */
+        function scrollChatToBottom(container) {
+            if (!container) return;
+            container.scrollTop = container.scrollHeight;
+            stickChatScrollToBottom(container);
+        }
+
+        /**
+         * prepend 更早的消息，并锚定用户当前看的那一行。
+         * 后续图片加载再撑高时，按同一公式重算，不会跳。
+         */
+        function prependChatMessages(container, html) {
+            if (!container || !html) return;
+            if (!container.firstElementChild) {
+                container.innerHTML = html;
+                container.scrollTop = container.scrollHeight;
                 return;
             }
+            const anchor = captureChatAnchor(container);
+            const beforeHeight = container.scrollHeight;
+
+            container.insertAdjacentHTML('afterbegin', html);
+
+            if (anchor) restoreChatAnchor(container, anchor);
+            else container.scrollTop += container.scrollHeight - beforeHeight;
+
+            let lastSet = container.scrollTop;
+            const apply = () => {
+                restoreChatAnchor(container, anchor);
+                lastSet = container.scrollTop;
+            };
+
+            // 图片加载后重新应用（用户若已手动滚动则停止补偿）
+            armChatImageFix(container, () => {
+                if (!container.isConnected) return;
+                if (Math.abs(container.scrollTop - lastSet) > 8) return;   // 用户已经滚走 → 不再打扰
+                apply();
+            });
+        }
+
+        /**
+         * 撤回 / 删除 / 内容变更等"非尾部追加"的场景必须显式标记，触发一次全量重建。
+         * 增量策略只看"尾部是否新增"，认不出中间某条被改了内容。
+         */
+        function markChatDirty() {
+            const container = document.getElementById('chatMessages');
+            if (container) container.dataset.needFullRender = '1';
+        }
+
+        /**
+         * 生成"从 start 到 end（不含）"这段消息的 HTML（全量 / 增量 / prepend 三处共用）。
+         * @param {string} personaId
+         * @param {Array}  msgs  data.chats[personaId]
+         * @param {number} start
+         * @param {number} end
+         * @param {object} prev  start 之前一条消息（用于判断时间分隔符）；可为 null
+         */
+        function buildMessageRangeHtml(personaId, msgs, start, end, prev) {
             let html = '';
-            let prev = null;
-            msgs.forEach((m) => {
+            let prevMsg = prev || null;
+            for (let i = start; i < end; i++) {
+                const m = msgs[i];
+                if (!m) continue;
                 if (m.recalled) {
                     html += `<div class="wx-sys wx-recall"><span>${m.sender === 'user' ? '你' : '对方'}撤回了一条消息</span></div>`;
-                    prev = m;
-                    return;
+                    prevMsg = m;
+                    continue;
                 }
                 if (m.type === 'system') {
                     html += `<div class="wx-sys"><span>${escHtml(m.content)}</span></div>`;
-                    prev = m;
-                    return;
+                    prevMsg = m;
+                    continue;
                 }
-                const isUser = m.sender === 'user';
-                const gap = prev ? (m.timestamp - prev.timestamp) : 1e9;
+                // 时间分隔符（> 15 分钟）
+                const gap = prevMsg ? (m.timestamp - prevMsg.timestamp) : 1e9;
                 if (gap > 15 * 60 * 1000) {
                     const d = new Date(m.timestamp);
                     const today = new Date();
                     const sameDay = d.toDateString() === today.toDateString();
                     html += '<div class="wx-time">' +
-                        (sameDay ? formatTime(m.timestamp) : ((d.getMonth() + 1) + '月' + d.getDate() + '日 ' + formatTime(m.timestamp))) +
+                        (sameDay ? formatTime(m.timestamp)
+                                 : ((d.getMonth() + 1) + '月' + d.getDate() + '日 ' + formatTime(m.timestamp))) +
                         '</div>';
                 }
+                const isUser = m.sender === 'user';
                 const isMedia = m.type === 'image' || m.type === 'emoji' ||
                     m.type === 'music' || m.type === 'netEase' || m.type === 'takeout' || m.type === 'taobao' ||
                     m.type === 'redPacket' || m.type === 'transfer';
@@ -24372,11 +24860,108 @@ ${tonePrompt}
                     avatarHtml(who, 32, 'wx-avatar-sm') +
                     `<div class="${cls}">${quoteHtml}${msgBodyHtml(m, personaId)}</div>` +
                     `</div>`;
-                prev = m;
-            });
-            container.innerHTML = html;
-            applyChatBackground(personaId);
-            container.scrollTop = container.scrollHeight;
+                prevMsg = m;
+            }
+            return html;
+        }
+
+        function renderMessages(personaId, opts) {
+            opts = opts || {};
+            const container = document.getElementById('chatMessages');
+            if (!container) return;
+            updateChatBlockBar(personaId);
+
+            const msgs = data.chats[personaId] || [];
+            if (!msgs.length) {
+                container.innerHTML = '<div class="empty" style="margin:auto;padding:40px 0;font-size:13px;color:rgba(255,255,255,.3);">开始聊天吧</div>';
+                container.dataset.renderKey = 'p:' + personaId;
+                container.dataset.windowStart = '0';
+                container.dataset.renderCount = '0';
+                container.dataset.renderLastId = '';
+                container.dataset.needFullRender = '';
+                applyChatBackground(personaId);
+                return;
+            }
+
+            const renderKey = 'p:' + personaId;
+            const isDirty = container.dataset.needFullRender === '1';
+            const prevKey = container.dataset.renderKey || '';
+            const prevCount = Number(container.dataset.renderCount) || 0;
+            const prevLastId = container.dataset.renderLastId || '';
+            let windowStart = Number(container.dataset.windowStart);
+            if (!Number.isFinite(windowStart) || windowStart < 0) windowStart = 0;
+
+            // ---------- 判断是否只能走全量 ----------
+            const mustFull =
+                isDirty ||
+                prevKey !== renderKey ||                                    // 切人 / 首渲
+                prevCount === 0 ||                                          // 之前是空
+                msgs.length < prevCount ||                                  // 中间被删（少条）
+                (prevCount > 0 && (msgs[prevCount - 1].id || '') !== prevLastId);   // 尾部对不上
+
+            // ---------- 全量：决定 windowStart，重建整表 ----------
+            if (mustFull) {
+                const sameChat = prevKey === renderKey && prevCount > 0;
+                if (sameChat) {
+                    // 同一个人只是内容变了（撤回 / 删除 / 收款）：保留已经展开的历史窗口
+                    // 但如果消息被大量删掉（比如换存档），窗口要回收到"最近 N 条"以内
+                    windowStart = Math.max(0, Math.min(windowStart, msgs.length - CHAT_WINDOW_INITIAL));
+                } else {
+                    // 切人 / 首开：只渲染最近 CHAT_WINDOW_INITIAL 条
+                    windowStart = Math.max(0, msgs.length - CHAT_WINDOW_INITIAL);
+                }
+
+                const shouldStick = opts.forceBottom === true ||
+                    prevKey !== renderKey ||
+                    isChatNearBottom(container, CHAT_NEAR_BOTTOM_PX);
+                const anchor = shouldStick ? null : captureChatAnchor(container);
+
+                const prev = windowStart > 0 ? msgs[windowStart - 1] : null;
+                container.innerHTML = buildMessageRangeHtml(personaId, msgs, windowStart, msgs.length, prev);
+
+                container.dataset.renderKey = renderKey;
+                container.dataset.windowStart = String(windowStart);
+                container.dataset.renderCount = String(msgs.length);
+                container.dataset.renderLastId = msgs[msgs.length - 1].id || '';
+                container.dataset.needFullRender = '';
+
+                applyChatBackground(personaId);
+
+                if (shouldStick) scrollChatToBottom(container);
+                else restoreChatAnchor(container, anchor);
+                return;
+            }
+
+            // ---------- 增量：尾部有新增，append ----------
+            // 先判断"之前是否在底部附近"，决定 append 后要不要补底
+            const shouldStick = opts.forceBottom === true || isChatNearBottom(container, CHAT_NEAR_BOTTOM_PX);
+
+            if (msgs.length > prevCount) {
+                const prev = msgs[prevCount - 1] || null;
+                const html = buildMessageRangeHtml(personaId, msgs, prevCount, msgs.length, prev);
+
+                // 正在输入那一行是独立的 .typing-row，先摘掉，append 完再放回最后
+                const typingRow = container.querySelector('.typing-row');
+                if (typingRow) typingRow.remove();
+
+                container.insertAdjacentHTML('beforeend', html);
+
+                if (typingRow) container.appendChild(typingRow);
+
+                container.dataset.renderCount = String(msgs.length);
+                container.dataset.renderLastId = msgs[msgs.length - 1].id || '';
+
+                if (shouldStick) scrollChatToBottom(container);
+                return;
+            }
+
+            // ---------- 无变化：可能只是 typing 状态变了，不重建 ----------
+            // 但"重新打开同一个会话"必须重新落到最新一条
+            if (!(data.pendingReplies || {})[personaId] && !replying[personaId]) {
+                const stale = container.querySelectorAll('.typing-row');
+                for (let i = 0; i < stale.length; i++) stale[i].remove();
+            }
+            if (opts.forceBottom === true) scrollChatToBottom(container);
         }
 
         // ============================================================
@@ -24687,6 +25272,7 @@ ${tonePrompt}
                 try { VoiceDB.del(m.audioId); } catch (e) {}
                 m.audioId = '';
             }
+            markChatDirty();
             saveData();
             renderMessages(personaId);
             renderWechatList();
@@ -24702,6 +25288,7 @@ ${tonePrompt}
                 try { VoiceDB.del(m.audioId); } catch (e) {}
             }
             arr.splice(idx, 1);
+            markChatDirty();
             saveData();
             renderMessages(personaId);
             renderWechatList();
@@ -24905,55 +25492,8 @@ ${tonePrompt}
             }
         })();
 
-        // ---- 主动来电 ----
-        function renderAffectionCallCard() {
-            const c = getAffectionCallCfg();
-            const sw = document.getElementById('msAffectionCall');
-            if (!sw) return;
-            sw.classList.toggle('on', !!c.enabled);
-            const stEl = document.getElementById('msAffectionStreak');
-            const stVal = document.getElementById('msAffectionStreakVal');
-            if (stEl) { stEl.value = String(c.triggerStreak); if (stVal) stVal.textContent = c.triggerStreak + ' 条'; }
-            const cdEl = document.getElementById('msAffectionCooldown');
-            const cdVal = document.getElementById('msAffectionCooldownVal');
-            if (cdEl) { cdEl.value = String(c.cooldownMin); if (cdVal) cdVal.textContent = c.cooldownMin + ' 分钟'; }
-        }
-
-        (function initAffectionCallCard() {
-            const sw = document.getElementById('msAffectionCall');
-            if (!sw) return;
-            sw.addEventListener('click', () => {
-                const c = getAffectionCallCfg();
-                c.enabled = !c.enabled;
-                saveData();
-                renderAffectionCallCard();
-                toast(c.enabled ? '已开启主动来电' : '已关闭主动来电');
-            });
-            const stEl = document.getElementById('msAffectionStreak');
-            if (stEl) {
-                const apply = (persist) => {
-                    const c = getAffectionCallCfg();
-                    c.triggerStreak = Math.max(2, Math.min(6, Math.round(Number(stEl.value) || 3)));
-                    const v = document.getElementById('msAffectionStreakVal');
-                    if (v) v.textContent = c.triggerStreak + ' 条';
-                    if (persist) saveData();
-                };
-                stEl.addEventListener('input', () => apply(false));
-                stEl.addEventListener('change', () => apply(true));
-            }
-            const cdEl = document.getElementById('msAffectionCooldown');
-            if (cdEl) {
-                const apply = (persist) => {
-                    const c = getAffectionCallCfg();
-                    c.cooldownMin = Math.max(15, Math.min(180, Math.round(Number(cdEl.value) || 60)));
-                    const v = document.getElementById('msAffectionCooldownVal');
-                    if (v) v.textContent = c.cooldownMin + ' 分钟';
-                    if (persist) saveData();
-                };
-                cdEl.addEventListener('input', () => apply(false));
-                cdEl.addEventListener('change', () => apply(true));
-            }
-        })();
+        // ---- 主动来电 / 角色语音：控制入口已迁移到「微信 → 我」----
+        // （设置页不再重复放开关，避免两处状态各说各话）
 
         // ---- 模拟打字延迟开关 ----
         function renderTypingDelayCard() {
@@ -25595,6 +26135,7 @@ ${tonePrompt}
             delete data.chats[pid];
             delete data.pendingReplies[pid];
             data.unreadCounts[pid] = 0;
+            markChatDirty();
             saveData();
             renderMessages(pid);
             renderWechatList();
@@ -26246,6 +26787,7 @@ ${tonePrompt}
                     text = '';
                     msg.content = '';
                     msg.noTranscript = true;
+                    markChatDirty();
                     saveData();
                     renderMessages(personaId);
                     renderWechatList();
@@ -26253,6 +26795,7 @@ ${tonePrompt}
                 if (text) {
                     msg.content = text;
                     msg.noTranscript = false;
+                    markChatDirty();
                     saveData();
                     renderMessages(personaId);
                     renderWechatList();
@@ -29258,8 +29801,6 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             set('gPitch', v.pitch);
             set('gVol', v.vol);
             paintVoiceParamLabels();
-            const pvSw = document.getElementById('vcProactiveVoice');
-            if (pvSw) pvSw.classList.toggle('on', v.proactiveVoice !== false);
 
             if (mmVoiceLib.length) {
                 const c = { system: 0, voice_cloning: 0, voice_generation: 0 };
@@ -30324,16 +30865,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 el.addEventListener('change', () => saveData());
             });
 
-            // 聊天语音消息总开关（关掉 → canSendVoice 直接 false，prompt 也不再注入语音规则）
-            const pvSw = document.getElementById('vcProactiveVoice');
-            if (pvSw) {
-                pvSw.addEventListener('click', () => {
-                    const s = mmSettings();
-                    s.proactiveVoice = s.proactiveVoice === false;
-                    pvSw.classList.toggle('on', s.proactiveVoice !== false);
-                    saveData();
-                });
-            }
+            // 聊天语音消息总开关已迁移到「微信 → 我」，这里不再重复绑定
 
             // 设置页入口
             const entry = document.getElementById('voiceCenterEntry');
@@ -31733,7 +32265,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             saveData();
 
             applyChatBackground(gid);
-            renderGroupMessages(gid);
+            renderGroupMessages(gid, { forceBottom: true });
             resetInputBar();
             updateChatBlockBarForGroup();
             updateWxTabBadge();
@@ -31753,38 +32285,34 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         }
 
         // ---- 渲染 ----
-        function renderGroupMessages(gid) {
-            const container = document.getElementById('chatMessages');
-            if (!container) return;
-            const g = getGroup(gid);
-            if (!g) return;
-            const msgs = data.groupChats[gid] || [];
-
-            if (!msgs.length) {
-                container.innerHTML = '<div class="empty" style="margin:auto;padding:40px 0;font-size:13px;color:rgba(255,255,255,.3);">群聊已创建，说点什么吧</div>';
-                applyChatBackground(gid);
-                return;
-            }
-
+        /**
+         * 生成群聊"从 start 到 end（不含）"这段消息的 HTML。
+         * 同一个人连续发言（5 分钟内且没被别人打断）→ 不重复头像和名字，
+         * 所以 prev 之前那一条的发言人也必须传进来（由 prev 自动推导）。
+         */
+        function buildGroupMessageRangeHtml(gid, msgs, start, end, prev) {
             let html = '';
-            let prev = null;
-            let prevSpeaker = '';
-            msgs.forEach(m => {
+            let prevMsg = prev || null;
+            let prevSpeaker = (prevMsg && !prevMsg.recalled && prevMsg.type !== 'system' && prevMsg.speakerId)
+                ? prevMsg.speakerId : '';
+            for (let i = start; i < end; i++) {
+                const m = msgs[i];
+                if (!m) continue;
                 if (m.recalled) {
                     const who = m.speakerId === 'user' ? '你' : (m.speakerName || getPersonaName(m.speakerId));
                     html += `<div class="wx-sys wx-recall"><span>${escHtml(who)}撤回了一条消息</span></div>`;
-                    prev = m;
+                    prevMsg = m;
                     prevSpeaker = '';
-                    return;
+                    continue;
                 }
                 if (m.type === 'system') {
                     html += `<div class="wx-sys"><span>${escHtml(m.content)}</span></div>`;
-                    prev = m;
+                    prevMsg = m;
                     prevSpeaker = '';
-                    return;
+                    continue;
                 }
                 const isUser = m.speakerId === 'user';
-                const gap = prev ? (m.timestamp - prev.timestamp) : 1e9;
+                const gap = prevMsg ? (m.timestamp - prevMsg.timestamp) : 1e9;
                 if (gap > 15 * 60 * 1000) {
                     html += '<div class="wx-time">' + groupTimeSep(m.timestamp) + '</div>';
                 }
@@ -31794,9 +32322,8 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 if (m.type === 'voice') cls += ' voice';
                 const speaker = m.speakerId || '';
                 const quoteHtml = m.quoted ? quoteBlockHtml(m.quoted, speaker) : '';
-                // 同一个人连续发言（5 分钟内且没被别人打断）→ 不重复头像和名字
-                const sameAsPrev = !isUser && prevSpeaker === speaker && prev &&
-                    (m.timestamp - (prev.timestamp || 0)) < 5 * 60 * 1000;
+                const sameAsPrev = !isUser && prevSpeaker === speaker && prevMsg &&
+                    (m.timestamp - (prevMsg.timestamp || 0)) < 5 * 60 * 1000;
                 const nameHtml = (isUser || sameAsPrev) ? '' :
                     `<div class="wx-speaker-name">${escHtml(m.speakerName || getPersonaName(speaker))}</div>`;
                 const avHtml = sameAsPrev
@@ -31806,11 +32333,15 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                     avHtml +
                     `<div class="wx-bubble-wrap">${nameHtml}<div class="${cls}">${quoteHtml}${msgBodyHtml(m, speaker)}</div></div>` +
                     `</div>`;
-                prev = m;
+                prevMsg = m;
                 prevSpeaker = speaker;
-            });
+            }
+            return html;
+        }
 
-            // 待回复成员 → "正在输入"
+        /** 待回复成员 → "正在输入" */
+        function groupTypingRowsHtml(gid) {
+            let html = '';
             const pending = Object.keys((data.groupPendingReplies || {})[gid] || {});
             pending.forEach(pid => {
                 if (!getPersonaById(pid)) return;
@@ -31819,11 +32350,101 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                     `<div class="wx-bubble-wrap"><div class="wx-speaker-name">${escHtml(getPersonaName(pid))}</div>` +
                     `<div class="wx-typing"><i></i><i></i><i></i></div></div></div>`;
             });
-
-            container.innerHTML = html;
-            applyChatBackground(gid);
-            container.scrollTop = container.scrollHeight;
+            return html;
         }
+
+        function renderGroupMessages(gid, opts) {
+            opts = opts || {};
+            const container = document.getElementById('chatMessages');
+            if (!container) return;
+            const g = getGroup(gid);
+            if (!g) return;
+            const msgs = data.groupChats[gid] || [];
+
+            const renderKey = 'g:' + gid;
+            const prevKey = container.dataset.renderKey || '';
+            const isSwitch = prevKey !== renderKey;
+
+            if (!msgs.length) {
+                container.innerHTML = '<div class="empty" style="margin:auto;padding:40px 0;font-size:13px;color:rgba(255,255,255,.3);">群聊已创建，说点什么吧</div>';
+                container.dataset.renderKey = renderKey;
+                container.dataset.windowStart = '0';
+                container.dataset.renderCount = '0';
+                container.dataset.renderLastId = '';
+                container.dataset.needFullRender = '';
+                applyChatBackground(gid);
+                return;
+            }
+
+            // 决定 windowStart：切换群 / 首开时截断，其余沿用已展开的窗口
+            let windowStart = Number(container.dataset.windowStart);
+            if (isSwitch || !Number.isFinite(windowStart) || windowStart < 0) {
+                windowStart = Math.max(0, msgs.length - CHAT_WINDOW_INITIAL);
+            }
+            windowStart = Math.max(0, Math.min(windowStart, msgs.length - CHAT_WINDOW_INITIAL));
+
+            const shouldStick = opts.forceBottom === true ||
+                isSwitch ||
+                isChatNearBottom(container, CHAT_NEAR_BOTTOM_PX);
+            const anchor = shouldStick ? null : captureChatAnchor(container);
+
+            const prev = windowStart > 0 ? msgs[windowStart - 1] : null;
+            container.innerHTML = buildGroupMessageRangeHtml(gid, msgs, windowStart, msgs.length, prev) +
+                groupTypingRowsHtml(gid);
+
+            container.dataset.renderKey = renderKey;
+            container.dataset.windowStart = String(windowStart);
+            container.dataset.renderCount = String(msgs.length);
+            container.dataset.renderLastId = msgs[msgs.length - 1].id || '';
+            container.dataset.needFullRender = '';
+
+            applyChatBackground(gid);
+
+            if (shouldStick) scrollChatToBottom(container);
+            else restoreChatAnchor(container, anchor);
+        }
+
+        /* ============================================================
+           v40 · 上滚加载更早消息（只挂一次）
+           ============================================================ */
+        (function initChatLoadOlder() {
+            const container = document.getElementById('chatMessages');
+            if (!container) return;
+
+            const loadOlder = () => {
+                if (container.dataset.loadingOlder === '1') return;
+                if (container.scrollTop > CHAT_LOAD_OLDER_PX) return;
+
+                const key = container.dataset.renderKey || '';
+                if (key.length < 3) return;
+
+                const isGroup = key.indexOf('g:') === 0;
+                const id = key.slice(2);
+                if (!id || typeof data === 'undefined' || !data) return;
+                const msgs = isGroup ? ((data.groupChats || {})[id] || []) : ((data.chats || {})[id] || []);
+                const start = Number(container.dataset.windowStart) || 0;
+                if (start <= 0 || !msgs.length) return;      // 已到顶
+
+                container.dataset.loadingOlder = '1';
+
+                const newStart = Math.max(0, start - CHAT_WINDOW_STEP);
+                const prev = newStart > 0 ? msgs[newStart - 1] : null;
+                let html = '';
+                if (isGroup) {
+                    if (!getGroup(id)) { container.dataset.loadingOlder = ''; return; }
+                    html = buildGroupMessageRangeHtml(id, msgs, newStart, start, prev);
+                } else {
+                    html = buildMessageRangeHtml(id, msgs, newStart, start, prev);
+                }
+                prependChatMessages(container, html);
+
+                container.dataset.windowStart = String(newStart);
+                // 一帧之后再清锁，避免 prepend 引起的 scroll 事件递归
+                requestAnimationFrame(() => { container.dataset.loadingOlder = ''; });
+            };
+
+            container.addEventListener('scroll', loadOlder, { passive: true });
+        })();
 
         // ---- 玩家发言 ----
         function sendGroupUserMessage(gid, content) {
@@ -31844,7 +32465,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             renderQuoteBar();
 
             addGroupMessage(gid, 'user', 'text', text, quote ? { quoted: quote } : undefined);
-            renderGroupMessages(gid);
+            renderGroupMessages(gid, { forceBottom: true });
             renderWechatList();
             scheduleGroupRepliesAfterUser(gid, text);
         }
@@ -32361,6 +32982,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             m.recalled = true;
             m.recalledAt = Date.now();
             m.content = '';
+            markChatDirty();
             saveData();
             if (isGroupChatOpenWith(gid)) renderGroupMessages(gid);
             renderWechatList();
@@ -32762,6 +33384,30 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         //  migrateImagesToDB() 是异步的：先把历史 base64 图片搬进 IndexedDB，
         //  再渲染首屏，避免"先渲染出老图、再被洗掉"的闪烁。
         // ============================================================
+        // ============================================================
+        //  设置页 · 折叠卡片初始化
+        //  用事件委托挂在容器上：以后设置页若被整块重绘，也不用重新绑。
+        //  只认 .si-header —— 展开后的输入框、滑块点了不能收起来。
+        // ============================================================
+        function initFoldableSettings() {
+            const list = document.querySelector('#pageSettings .settings-list');
+            if (!list || list.dataset.foldBound === '1') return;
+            list.dataset.foldBound = '1';
+            list.addEventListener('click', (e) => {
+                const header = e.target.closest('.setting-item.foldable > .si-header');
+                if (!header) return;
+                if (e.target.closest('button, input, a')) return;
+                header.closest('.setting-item').classList.toggle('open');
+            });
+            list.addEventListener('keydown', (e) => {
+                if (e.key !== 'Enter' && e.key !== ' ') return;
+                const header = e.target.closest('.si-header');
+                if (!header) return;
+                e.preventDefault();
+                header.closest('.setting-item').classList.toggle('open');
+            });
+        }
+
         (async function boot() {
             const bootSync = document.getElementById('bootSync');
             const hideBootSync = () => {
@@ -32850,6 +33496,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
 
             renderWechatList();
             renderSettings();
+            initFoldableSettings();
             renderWorldbooks();
             renderForumWbConfig();
             renderForumList();
