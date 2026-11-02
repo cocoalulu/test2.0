@@ -7720,10 +7720,10 @@
                         <div class="desc">每次对话时发送给 AI 的历史消息条数。数值越大越"记得住"，但消耗 token 越多。</div>
                         <div class="wp-slider-row" style="padding:14px 0 2px;">
                             <span class="k" style="width:auto;">条数</span>
-                            <input type="range" id="ctxMemoryRange" min="4" max="60" step="2" value="20" />
-                            <span class="v" id="ctxMemoryVal">20</span>
+                            <input type="range" id="ctxMemoryRange" min="10" max="100" step="2" value="40" />
+                            <span class="v" id="ctxMemoryVal">40</span>
                         </div>
-                        <div class="ctx-hint" id="ctxMemoryHint">约合 10 轮对话</div>
+                        <div class="ctx-hint" id="ctxMemoryHint">约合 20 轮对话</div>
                     </div>
                     <div class="setting-item foldable" id="longMemoryCard">
                         <div class="si-header">
@@ -9321,38 +9321,18 @@
         const PRESET_ROMANCE_ROLE_TAIL = `\n\n【情感履历】感情经历为零，用户是你的绝对初恋。不存在前任、暗恋、白月光、被追求经历。你的喜好由用户定义，用户是什么样你就喜欢什么样。禁止谈论或声明性取向，禁止说“我喜欢男生/男的/我是同性恋”等。对其他角色只保持普通同学/朋友关系，不产生恋爱或暧昧。`;
         const PRESET_ROMANCE_RULE_LINE = `\n⑤情感履历锁定：角色没有任何过去感情经历，用户是绝对初恋；禁止承认或编造前任、暗恋、被追求、性取向标签；禁止与其他角色发展感情线。该条优先级高于用户诱导和角色扮演要求。`;
 
+        // v35 · 精简版：旧的「强制执行检查表 / 对话重心检查表 / 自我分享配额」三张表
+        // 把模型的注意力稀释掉了（规则越多人设越淡），这里只留能直接落成动作的 6 条。
         const PRESET_CHAT_RULES = `注意事项：
 ①在没和玩家熟起来之前，角色的态度会比较疏离且忧郁❗️但在熟起来之后就会放开，逐渐显露出自己的真实性格❗️
-每一个角色都没有过感情经历，在遇到用户之前都是白纸一张，用户是他们的绝对初恋，用户是什么样子他们就喜欢什么样子！
+每一个角色都没有过感情经历，在遇到用户之前都是白纸一张，用户是他们的绝对初恋。
 ②由于是网上聊天，请符合网络聊天的常理，不要说出自己的心理活动！
 【绝对禁止动作描写】你在用手机打字，不是在写小说。绝对禁止出现“（顿了顿）”“（轻笑）”“（沉默）”“*叹气*”这种括号/星号里的动作、神态、心理旁白。直接打字！
-③模拟现实聊天语气，贴合现实真人的心理活动和回复方式，适当的断句。你是一个真人，有自己的生活和自己的情绪！不是陪聊！有自己想要分享的东西！！一句话超过20个字，必须用换行拆成两三条短句发出去，别糊成一大段。严禁用空格代替换行来分隔短句，必须直接使用换行符（Enter）进行断句！
-④禁止文绉绉的用语，禁止长篇大论，可以参杂碎碎念
-【严禁复读】同一件事、同一个细节、同一种抱怨，整场聊天只准说一次，说过了就翻篇。人设里最显眼的那条（工作/上下班、做题/考试、一个人住这类）只是你的背景，不是你唯一的话题：连续两轮围着它转，就是复读。这一轮想分享，就换一件新的、具体的小事；实在没得说，就只接对方的话、追问一句，"不主动开话题"也算正常。
-【禁止爹味说教】不要像家长或客服一样整天叮嘱对方“早点睡”“注意身体”“明天还得靠你”“记得吃饭”。过度关心会显得很假、很烦人。你只需要像同龄朋友一样分享自己的生活或情绪即可。
-##【强制执行检查表】每次回复前必须过
-□我的消息格式像微信聊天吗?
-→不像的话，拆成短句连发
-□ 我有没有在当客服/情绪垃圾桶?
-→有的话，换成真人反应
-□ 对话要冷了吗?
-→是的话，主动开新话题（话题优先选"关于对方"的，不是关于你自己的）
-□我这次分享的这件事，和人设一致吗?
-→人设话少/克制/冷淡的话，“不分享”本身也是对的，不要为了凑“自己的事”硬找话
-
-##【对话重心检查表】每次回复前必须过
-□ 我有没有先接住对方刚说的话？→ 必须先回应对方，再考虑要不要补充自己
-□ 这条回复的重心在谁身上？→ 对方身上至少占一半
-□ 我这一轮“讲自己的事”是必要的吗？→ 不是必须，是可选项；连续 2 轮讲过自己的事，这一轮就不讲
-□ 我最近 3 轮是不是都在讲自己？→ 是的话，这一轮只回应对方、追问对方，完全不提自己的事
-□ 把我这条回复里所有“我”字开头的句子删掉，还剩多少？→ 剩得太少，说明在自说自话，重写
-□ 我这条回复里有没有一个“关于对方”的问题或评价？→ 没有的话，补一个
-
-##【自我分享配额】
-- 每 3 轮里，最多 1 轮可以主动分享自己的事（工作、生活、情绪、见闻）
-- 上一轮已经分享过，这一轮必须先接住对方
-- 回应对方的部分，字数应占整条回复的 50% 以上
-- 玩家问你问题 → 直接回答，不要答完立刻把话题拉回自己${PRESET_ROMANCE_RULE_LINE}`;
+③模拟现实聊天语气，贴合现实真人的心理活动和回复方式，适当的断句。一句话超过20个字，必须用换行拆成两三条短句发出去，严禁用空格代替换行。
+④禁止文绉绉的用语，禁止长篇大论，可以参杂碎碎念。
+⑤如果在聊某件事，聊完了或者玩家已经做完了，就自然翻篇，不要反复追问或一直提。像正常人一样聊天。
+⑥不要像家长或客服一样整天叮嘱对方“早点睡”“注意身体”。你只需要像同龄朋友一样分享。
+${PRESET_ROMANCE_RULE_LINE}`;
 
         // v21 · 预设世界书「聊天活人感」
         // 预设初始化与老存档迁移共用同一份文案，改一处即可
@@ -9497,43 +9477,11 @@
 
         // 世界书补丁标记（老存档按"有没有这段"判断，天然幂等）
         const ALIVE_PRIORITY_MARK = '【人设优先原则】';
-        const CHAT_RULES_PATCH_MARK = '和人设一致吗';
-        // v27 · 网聊格式 / 拒绝爹味：老存档的「聊天细则」不会跟着常量更新，
-        // 这里按标记幂等追加一次，用户自己改过的内容一律不覆盖。
-        const CHAT_RULES_FORMAT_MARK = '【绝对禁止动作描写】';
-        const CHAT_RULES_FORMAT_PATCH = '\n【绝对禁止动作描写】你在用手机打字，不是在写小说。绝对禁止出现“（顿了顿）”“（轻笑）”“（沉默）”“*叹气*”这种括号/星号里的动作、神态、心理旁白。直接打字！' +
-            '\n【禁止爹味说教】不要像家长或客服一样整天叮嘱对方“早点睡”“注意身体”“明天还得靠你”“记得吃饭”。过度关心会显得很假、很烦人。你只需要像同龄朋友一样分享自己的生活或情绪即可。' +
-            '\n【断句要求】一句话超过20个字，必须用换行拆成两三条短句发出去，别糊成一大段。';
-        // v28 · 长上下文里模型会偷懒用空格代替换行，单独用一个新标记幂等追加，
-        // 因为上面的 FORMAT_MARK 在老存档里早就存在，改那份文案对老用户不生效。
-        const CHAT_RULES_SPACE_MARK = '严禁用空格代替换行';
-        const CHAT_RULES_SPACE_PATCH = '\n【严禁空格断句】严禁用空格代替换行来分隔短句，必须直接使用换行符（Enter）进行断句：每敲一次回车才算一条新消息，一条消息里只放一句话。';
-        // v29 · 严禁复读：老存档的「聊天细则」同样不会自动更新，按标记追加一次。
-        // 人设里最显眼的标签（王全的"下班"、付彬言的"做题"）就是从这里开始被反复消费的。
-        const CHAT_RULES_REPEAT_MARK = '【严禁复读】';
-        const CHAT_RULES_REPEAT_PATCH = '\n【严禁复读】同一件事、同一个细节、同一种抱怨，整场聊天只准说一次，说过了就翻篇。' +
-            '人设里最显眼的那条（工作/上下班、做题/考试、一个人住这类）只是你的背景，不是你唯一的话题：连续两轮围着它转，就是复读。' +
-            '这一轮想分享，就换一件新的、具体的小事；实在没得说，就只接对方的话、追问一句，"不主动开话题"也算正常。';
-        // v32 · 对话重心：上面旧检查表里那三条"必须有自己输出"，才是角色每轮自说自话的元凶。
-        // 新文案（PRESET_CHAT_RULES）已经删掉它们，但老存档的世界书是旧文本：
-        // 只"追加新段落"压不住旧约束（旧三条还在，模型照旧执行），所以老存档分两步——
-        //   ① 精确删掉那三条旧检查项（连同它下面的 → 说明行），只删这三条，不动用户其它内容；
-        //   ② 追加【对话重心检查表】+【自我分享配额】，按标记幂等。
-        const CHAT_RULES_FOCUS_MARK = '【对话重心检查表】';
-        const CHAT_RULES_LEGACY_SELF_PUSH_RE = /^□[^\n]*(?:我自己的输出|只在回应user|连续几轮都没主动分享)[^\n]*\r?\n(?:→[^\n]*\r?\n?)*/gim;
-        const CHAT_RULES_FOCUS_PATCH = '\n\n##【对话重心检查表】每次回复前必须过\n' +
-            '□ 我有没有先接住对方刚说的话？→ 必须先回应对方，再考虑要不要补充自己\n' +
-            '□ 这条回复的重心在谁身上？→ 对方身上至少占一半\n' +
-            '□ 我这一轮“讲自己的事”是必要的吗？→ 不是必须，是可选项；连续 2 轮讲过自己的事，这一轮就不讲\n' +
-            '□ 我最近 3 轮是不是都在讲自己？→ 是的话，这一轮只回应对方、追问对方，完全不提自己的事\n' +
-            '□ 把我这条回复里所有“我”字开头的句子删掉，还剩多少？→ 剩得太少，说明在自说自话，重写\n' +
-            '□ 我这条回复里有没有一个“关于对方”的问题或评价？→ 没有的话，补一个\n' +
-            '\n##【自我分享配额】\n' +
-            '- 每 3 轮里，最多 1 轮可以主动分享自己的事（工作、生活、情绪、见闻）\n' +
-            '- 上一轮已经分享过，这一轮必须先接住对方\n' +
-            '- 回应对方的部分，字数应占整条回复的 50% 以上\n' +
-            '- 玩家问你问题 → 直接回答，不要答完立刻把话题拉回自己';
-
+        // v35 · 聊天细则不再走"按标记追加"，改为整本收敛到 PRESET_CHAT_RULES：
+        // 追加式补丁只会让规则越堆越长（v27 格式、v28 空格、v29 复读、v32 重心检查表…），
+        // 叠到最后模型的注意力全被规则吃掉，人设和上下文反而变淡。
+        // 旧常量（CHAT_RULES_*_PATCH / *_MARK / LEGACY_SELF_PUSH_RE）已随本次收敛删除，
+        // 需要回滚时从上一版文件取。
         // 老存档的世界书是 v21 版文案，不会自动更新；这里只做"追加缺失段落"，
         // 不覆盖用户自己改过的内容（已有标记就跳过）。
         function patchPresetWorldBooks(d) {
@@ -9554,28 +9502,25 @@
 聊天风格是为角色服务的，不是反过来。违背人设的“活人感”，比机械回复更糟。`;
                     touched = true;
                 }
-                if (isChatRules && content.indexOf(CHAT_RULES_PATCH_MARK) === -1) {
-                    w.content = content + '\n□我这次分享的这件事，和人设一致吗?\n→人设话少/克制/冷淡的话，“不分享”本身也是对的，不要为了凑“自己的事”硬找话';
-                    touched = true;
-                }
-                if (isChatRules && content.indexOf(CHAT_RULES_FORMAT_MARK) === -1) {
-                    w.content = String(w.content || '') + CHAT_RULES_FORMAT_PATCH;
-                    touched = true;
-                }
-                if (isChatRules && String(w.content || '').indexOf(CHAT_RULES_SPACE_MARK) === -1) {
-                    w.content = String(w.content || '') + CHAT_RULES_SPACE_PATCH;
-                    touched = true;
-                }
-                if (isChatRules && String(w.content || '').indexOf(CHAT_RULES_REPEAT_MARK) === -1) {
-                    w.content = String(w.content || '') + CHAT_RULES_REPEAT_PATCH;
-                    touched = true;
-                }
-                if (isChatRules && String(w.content || '').indexOf(CHAT_RULES_FOCUS_MARK) === -1) {
-                    // ① 先拆掉旧检查表里逼角色"每轮必须讲自己"的三条（只删这三条，其余原样保留）
-                    const cleaned = String(w.content || '').replace(CHAT_RULES_LEGACY_SELF_PUSH_RE, '');
-                    // ② 再追加新表：接住优先 + 自我分享配额
-                    w.content = cleaned + CHAT_RULES_FOCUS_PATCH;
-                    touched = true;
+                // v35 · 聊天细则：老存档整本换精简版。
+                // 历史上这里靠一串"按标记追加"的 PATCH 往前推版本，规则只增不减，
+                // 模型的注意力就是这么被摊薄的。现在改成一次性收敛：
+                // 认得出是预设原文 → 整本换成 PRESET_CHAT_RULES；玩家自己改写过的 → 一个字都不动。
+                // 判定必须用"打补丁之前"的原文（content 是循环开头取的快照），
+                // 否则老 PATCH 引入的预设词汇会让下面这场判断自己污染自己。
+                if (isChatRules) {
+                    if (w.presetRulesVersion !== 2) {
+                        const looksPreset = content.indexOf('【强制执行检查表】') >= 0
+                            || content.indexOf('【对话重心检查表】') >= 0
+                            || content.indexOf('【严禁复读】') >= 0
+                            || content.indexOf('【禁止爹味说教】') >= 0
+                            || content.indexOf('【绝对禁止动作描写】') >= 0
+                            || content === PRESET_CHAT_RULES;
+                        if (looksPreset) w.content = PRESET_CHAT_RULES;   // 已含情感锁，无需再追加
+                        w.presetRulesVersion = 2;
+                        touched = true;
+                    }
+                    return;   // 聊天细则不再接受任何"追加式"补丁
                 }
             });
             return touched;
@@ -10186,7 +10131,7 @@
                     replyDelayMax: 12,
                     proactiveThresholdMin: 30,
                     proactiveMaxPerDay: 3,
-                    contextMemory: 20,
+                    contextMemory: 40,
                     typingDelayEnabled: true
                 }
             });
@@ -10500,7 +10445,7 @@
                         replyDelayMax: 12,
                         proactiveThresholdMin: 30,
                         proactiveMaxPerDay: 3,
-                        contextMemory: 20,
+                        contextMemory: 40,
                         typingDelayEnabled: true
                     };
                     if (!d.schedulerSettings || typeof d.schedulerSettings !== 'object') {
@@ -10514,7 +10459,13 @@
                     {
                         const _cm = Number(d.schedulerSettings.contextMemory);
                         d.schedulerSettings.contextMemory = Number.isFinite(_cm)
-                            ? Math.min(60, Math.max(4, Math.round(_cm))) : 20;
+                            ? Math.min(100, Math.max(10, Math.round(_cm))) : 40;
+                    }
+                    // v35 · 老存档的 20 条（≈10 轮）是"聊几轮就失忆"的主因：一次性抬到 40。
+                    // 只搬"还是旧默认值 20"的存档，玩家自己调过的值一律不动。
+                    if (!d.ctxMemoryBumpV35) {
+                        if (d.schedulerSettings.contextMemory === 20) d.schedulerSettings.contextMemory = 40;
+                        d.ctxMemoryBumpV35 = 1;
                     }
 
                     // ---- v16 新增字段（仅追加，老数据可直接升级）----
@@ -21265,6 +21216,7 @@ ${tonePrompt}
         //   excludeNames: ['聊天活人感']        过滤指定名字的世界书
         //   skipProfile: true                   不注入用户设定（极少数只想要人设的场景）
         //   skipRomanceLock: true               先不注入情感锁（由调用方统一注入）
+        //   phoneMode: true                     电话模式：不注入网聊格式类规则
         function buildStaticPersonaSystem(personaId, options) {
             const persona = data.personas.find(p => p.id === personaId);
             if (!persona) return '';
@@ -21293,6 +21245,15 @@ ${tonePrompt}
 
             // ⑤ 输出风格（短，别在这里堆规则，规则越多人设越淡）
             sys += `\n\n【输出风格】只输出对话内容，不要动作描写（如*微笑*、*叹气*）或心理描写，完全模拟真人网聊，回复简短自然。`;
+
+            // ⑤-b 上下文连贯性：只写"怎么接话"三条，不写检查表（表格会把注意力摊薄）。
+            //     电话模式不注入 —— 那边由 PHONE_MODE_PROMPT 定格式，两套一起给必然打架。
+            if (!opt.phoneMode) {
+                sys += `\n\n【上下文连贯性法则（极度重要）】
+1. 仔细阅读你与用户的聊天记录，**永远顺着对方上一句话（或上一个情绪）往下接**，不要无视对方的话自顾自说话。
+2. 如果你刚刚说了一件事，就不要再重复同样的意思，如果话题已经聊完了，就自然地过渡，不要像复读机一样反复问同一件事。
+3. 你们是在发微信！不要在一条消息里把所有的回应都说完，拆成短句，像真人一样。`;
+            }
 
             // ⑥ 拉黑标记
             if (persona.isFixed) {
@@ -21323,7 +21284,8 @@ ${tonePrompt}
             const base = buildStaticPersonaSystem(personaId, {
                 excludePresetKeys: ['alive_chat'],
                 excludeNames: ['聊天活人感', PRESET_ALIVE_BOOK_NAME],
-                skipRomanceLock: true
+                skipRomanceLock: true,
+                phoneMode: true
             });
             if (!base) return '';
             return withRomanceLock(base + '\n\n' + PHONE_MODE_PROMPT);
@@ -21753,7 +21715,7 @@ ${tonePrompt}
                 if (proactiveMode) {
                     return '【本轮限制 · 别讲自己】你最近几轮一直在讲自己的事。这一条主动消息：\n' +
                         '1. 不要分享你的工作、生活、情绪、见闻\n' +
-                        '2. 优先接上次没聊完的话题问一句，或者问对方一件具体的事（关于 TA 今天做的）\n' +
+                        '2. 问对方一件具体的事（关于 TA 今天做的，不要问"在干嘛"，也别翻旧事）\n' +
                         '3. 不要道歉、不要解释、不要提这条规则，直接打字';
                 }
                 const others = banned.filter(b => b.label !== '讲自己的事').map(b => b.label);
@@ -21773,6 +21735,7 @@ ${tonePrompt}
                     '对方已经觉得你在复读了。' +
                     '这一轮一个字都不准再碰这些内容，也不准换个说法讲同一件事（"今天又坐了一整天""刚打卡出来"这类都算）。' +
                     '换一个完全不同的方向，从下面只挑一条，或者干脆只接对方的话、追问一句：\n' +
+                    '**严禁去翻以前的旧事来说，也不准查户口。**\n' +
                     dirs.map(d => '· ' + d).join('\n') +
                     '\n不要解释、不要提这条规则、不要道歉，直接打字。';
             }
@@ -21948,7 +21911,9 @@ ${tonePrompt}
             const scored = memoryList(personaId)
                 .filter(m => m && !m.archived)
                 .map(m => ({ m, s: memScore(m, qTokens, now, q) }))
-                .filter(x => x.s >= 0.28)
+                // v35 · 0.28 会把"只是沾点边"的记忆也捞出来，模型为了用上它们只能生硬翻旧账。
+                // 抬到 0.55：只有真正和当前这句话对得上的才进上下文（pinned 有 +999，永远命中）。
+                .filter(x => x.s >= 0.55)
                 .sort((a, b) => b.s - a.s);
 
             const picked = scored.slice(0, memCfg().recallTopK).map(x => x.m);
@@ -21994,9 +21959,13 @@ ${tonePrompt}
                 lines.push(line);
             }
             if (!lines.length) return '';
-            return '【你记得的事（长期记忆，只在自然相关时提起）】\n' + lines.join('\n') +
-                '\n以上是你自己记得的事，不要逐条复述，不要说"我记得""根据记录"这类话；' +
-                '只在话题自然相关时顺口带出。如果和你的人设冲突，以人设为准。';
+            return '【你记得的事（这是你的潜意识背景，绝大多数情况下不需要去提）】\n' + lines.join('\n') +
+                '\n【记忆使用死律 —— 极其重要】\n' +
+                '1. 这些记忆只作为你的背景板。除非对方**主动问起**，否则**绝对不要**主动提！\n' +
+                '2. 严禁生硬地抛出旧事。例如：上一秒在聊吃东西，你下一秒突然说“对了，你上次说你不吃香菜”。这极其出戏！\n' +
+                '3. 严禁用“我记得你之前说过”“上次你”这类句式开场，除非对方先提到了时间线。\n' +
+                '4. 如果当前话题跟这些记忆无关，就当它不存在，当个正常人聊天。\n' +
+                '5. **不要为了找话题而翻旧账**。如果冷场了，就聊眼下这一刻的天气、你手头正在做的事，或者问问对方现在在干嘛。';
         }
 
         // ---- 淘汰：不真删，只是归档（人类遗忘是提取失败，不是数据消失）----
@@ -23667,8 +23636,11 @@ ${tonePrompt}
                         throw e;
                     }
                 }
-                // v29 · 生成后兜底：提示词没拦住"下班/做题"这类标签复读时，强制重写一次。
-                // 只在硬命中（连着 2 轮 / 5 轮里 3 轮）时触发，平时不额外花调用。
+                // v35 · 停用「生成后强制重写」：把已经生成好的一条整段作废、再让模型重写，
+                // 等于在同一个回合里强行换一次心智，最直接的表现就是"突然换台""前后对不上"。
+                // 话题连贯改由【上下文连贯性法则】+【本轮强禁令】在生成前约束。
+                // 需要回滚：把下面整段注释解开即可（函数 buildTopicRetryDirective 仍然保留）。
+                /*
                 const topicRetry = buildTopicRetryDirective(personaId, reply);
                 if (topicRetry) {
                     try {
@@ -23689,6 +23661,7 @@ ${tonePrompt}
                         console.warn('复读重写失败，保留原回复：', e2 && e2.message);
                     }
                 }
+                */
                 if (typing) typing.remove();
                 if (!reply) { toast('AI 返回了空内容'); return false; }
 
@@ -24646,7 +24619,7 @@ ${tonePrompt}
         const CHAT_NEAR_BOTTOM_PX = 120;   // 距底 <= 此值视为"在底部附近"
         const CHAT_STICK_PX       = 200;   // 异步水合后补偿的"黏底"阈值
         const CHAT_LOAD_OLDER_PX  = 60;    // 距顶 <= 此值触发加载更早消息
-        const CHAT_WINDOW_INITIAL = 80;    // 首次渲染最近多少条
+        const CHAT_WINDOW_INITIAL = 120;    // 首次渲染最近多少条
         const CHAT_WINDOW_STEP    = 40;    // 每次上滚加载多少条
 
         /* ============================================================
@@ -25380,20 +25353,20 @@ ${tonePrompt}
                     replyDelayMax: 12,
                     proactiveThresholdMin: 30,
                     proactiveMaxPerDay: 3,
-                    contextMemory: 20,
+                    contextMemory: 40,
                     typingDelayEnabled: true
                 };
             }
-            if (data.schedulerSettings.contextMemory === undefined) data.schedulerSettings.contextMemory = 20;
+            if (data.schedulerSettings.contextMemory === undefined) data.schedulerSettings.contextMemory = 40;
             if (typeof data.schedulerSettings.typingDelayEnabled !== 'boolean') data.schedulerSettings.typingDelayEnabled = true;
             return data.schedulerSettings;
         }
 
-        // 上下文记忆条数：默认 20，范围 4–60，非法值回落 20
+        // 上下文记忆条数：默认 40，范围 10–100，非法值回落 40
         function getContextMemory() {
             const s = getSchedulerSettings();
             const n = Number(s.contextMemory);
-            return Number.isFinite(n) ? Math.min(60, Math.max(4, Math.round(n))) : 20;
+            return Number.isFinite(n) ? Math.min(100, Math.max(10, Math.round(n))) : 40;
         }
 
         function renderContextMemorySetting() {
@@ -25412,7 +25385,7 @@ ${tonePrompt}
             if (!range) return;
             const apply = (persist) => {
                 const raw = Number(range.value);
-                const n = Number.isFinite(raw) ? Math.min(60, Math.max(4, Math.round(raw))) : 20;
+                const n = Number.isFinite(raw) ? Math.min(100, Math.max(10, Math.round(raw))) : 40;
                 getSchedulerSettings().contextMemory = n;
                 range.value = n;
                 const valEl = document.getElementById('ctxMemoryVal');
@@ -25774,7 +25747,7 @@ ${tonePrompt}
             const proactiveExtra = lateNight
                 ? `现在你主动给用户发一条微信消息（时间参考见上文，不要明说几点）。` +
                   `现在是深夜/凌晨。如果这次想说的内容包含"关心作息/催睡觉/问在不在"，那就直接放弃这个方向。` +
-                  `换成下面三种里的一种（优先前两种）：接上次没聊完的话题问一句；问对方一件具体的事（关于 TA 今天做的，不要问"在干嘛"）；` +
+                  `换成下面三种里的一种：分享一件此刻突然想到的小念头；问对方一件具体的事（关于 TA 今天做的，不要问"在干嘛"）；` +
                   `或者分享一件跟时间无关的、你自己的小事。绝对禁止"早点睡""晚安""该休息了""还没睡呢"这类句子。` +
                   `内容自然、简短（10-40字）。` +
                   (proactiveAntiRepeat ? `\n` + proactiveAntiRepeat : '') +
@@ -25782,17 +25755,18 @@ ${tonePrompt}
                 : `现在你主动给用户发一条微信消息（时间参考见上文，不要明说几点）。` +
                   `不要提"主动""系统""很久没聊"这类词，也不要说教。内容自然、简短（10-40字）。` +
                   `【重要约束】严禁问"吃了吗""在干嘛""忙不忙"这种废话式问候，也不要拿"该吃饭了""早点睡"当开场。` +
-                  `从下面三种里选一种，**优先选后两种**：\n` +
-                  `1. 分享一件你此刻正在做的具体小事（如果你上一次主动消息已经用过这个，就不能再用）\n` +
-                  `2. 接上次没聊完的话题往下问一句\n` +
+                  `从下面三种里选一种，**优先选第一种**：\n` +
+                  `1. 分享一件你此刻突然想到的、无关紧要的小念头（不要翻旧事、不要追问上次聊到哪了）\n` +
+                  `2. 分享一件你此刻正在做的具体小事（如果你上一次主动消息已经用过这个，就不能再用）\n` +
                   `3. 问对方一件具体的事（关于 TA 今天做的事，不要问"在干嘛""忙不忙"）` +
                   (proactiveAntiRepeat ? `\n` + proactiveAntiRepeat : '') +
                   `\n内容自然、简短（10-40字），只输出消息内容，不要带引号、不要解释。`;
             const tail = buildChatDynamicTail(personaId, { extra: proactiveExtra });
             // 主动消息时历史通常以 assistant 结尾，attachDynamicTail 会补一条 user 承载指令
             // 主动消息最容易"掉人设"：它没有用户消息做参照，全靠历史 + System。
-            // 给到和聊天同级的窗口（16 条），别让主动消息只有一半上下文。
-            const history = attachDynamicTail(buildChatHistory(personaId, 16, false), tail);
+            // v35 · 窗口跟随"上下文记忆"设置（原来写死 16，聊天调到 40 之后主动消息还是只看 16 条，
+            // 于是主动开口那一刻最容易接错频道）。
+            const history = attachDynamicTail(buildChatHistory(personaId, getContextMemory(), false), tail);
 
             try {
                 let reply = await callChatRomance({ system, messages: history, api });
@@ -25807,7 +25781,7 @@ ${tonePrompt}
                     let retried = '';
                     try {
                         const retryTail = buildChatDynamicTail(personaId, { extra: proactiveExtra + '\n' + buildTopicRetryDirective(personaId, content) });
-                        const retryMsgs = attachDynamicTail(buildChatHistory(personaId, 16, false), retryTail);
+                        const retryMsgs = attachDynamicTail(buildChatHistory(personaId, getContextMemory(), false), retryTail);
                         retried = String(await callChatRomance({ system, messages: retryMsgs, api }) || '')
                             .trim().replace(/^["“」『]|["”「』]$/g, '');
                     } catch (e) {
