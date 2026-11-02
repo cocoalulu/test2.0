@@ -9332,6 +9332,9 @@
 ④禁止文绉绉的用语，禁止长篇大论，可以参杂碎碎念。
 ⑤如果在聊某件事，聊完了或者玩家已经做完了，就自然翻篇，不要反复追问或一直提。像正常人一样聊天。
 ⑥不要像家长或客服一样整天叮嘱对方“早点睡”“注意身体”。你只需要像同龄朋友一样分享。
+⑦【防失忆与防查户口】每次回复前，【必须】仔细阅读历史聊天记录：
+   1. 绝对不要把已经发生过、或你已经告诉过对方的事情，当成刚刚发生的“新鲜事”再分享一遍！
+   2. 绝对不要反复问同一个问题！如果你发现对方已经回答过类似的问题，就不要再问了。如果是互动，问过一次就够了，对方回答后立刻接话并翻篇，不要一直抓着一个梗薅。
 ${PRESET_ROMANCE_RULE_LINE}`;
 
         // v21 · 预设世界书「聊天活人感」
@@ -9509,7 +9512,9 @@ ${PRESET_ROMANCE_RULE_LINE}`;
                 // 判定必须用"打补丁之前"的原文（content 是循环开头取的快照），
                 // 否则老 PATCH 引入的预设词汇会让下面这场判断自己污染自己。
                 if (isChatRules) {
-                    if (w.presetRulesVersion !== 2) {
+                    // v36 · 规则文案新增⑦防失忆/防查户口，版本号 +1，
+                    // 否则老存档停在 v2 会一直沿用没有⑦的旧文案。
+                    if (w.presetRulesVersion !== 3) {
                         const looksPreset = content.indexOf('【强制执行检查表】') >= 0
                             || content.indexOf('【对话重心检查表】') >= 0
                             || content.indexOf('【严禁复读】') >= 0
@@ -9517,7 +9522,7 @@ ${PRESET_ROMANCE_RULE_LINE}`;
                             || content.indexOf('【绝对禁止动作描写】') >= 0
                             || content === PRESET_CHAT_RULES;
                         if (looksPreset) w.content = PRESET_CHAT_RULES;   // 已含情感锁，无需再追加
-                        w.presetRulesVersion = 2;
+                        w.presetRulesVersion = 3;
                         touched = true;
                     }
                     return;   // 聊天细则不再接受任何"追加式"补丁
@@ -9909,6 +9914,7 @@ ${PRESET_ROMANCE_RULE_LINE}`;
                     id: genId(),
                     name: '聊天细则',
                     content: PRESET_CHAT_RULES,
+                    presetRulesVersion: 3,
                     scope: 'global',
                     group: '预设',
                     forumExcluded: true
@@ -21315,9 +21321,11 @@ ${tonePrompt}
             // 注意：这里只保留"一句状态 + 一句禁令"，不举例、不复述被禁的问句，
             // 免得模型把示例当成话题种子（越说别问，越容易问）。
             return `现在是北京时间 ${bj.timeStr}（${bj.period}）。你此刻的状态：${state}。` +
+                `【极其重要】请仔细观察历史消息中的【时间前缀】。如果上面的对话是昨天或更早发生的，请不要再顺着昨天的话题直接聊（比如不要再问对方早上7点起没起），而是根据当前时间自然地开启新话题。` +
                 `这个时间只用来决定你的语气和话的多少，它不是话题：不要报时间，也别拿三餐、上下班当由头，` +
                 `更不要用打卡式的问候开场。` +
-                `接着上文说：先回应对方刚说的话、延续正在聊的话题；只有这一轮轮到你分享，才说一件你此刻正在做的具体小事。`;
+                `接着上文说：先回应对方刚说的话、延续正在聊的话题；只有这一轮轮到你分享，才说一件你此刻正在做的具体事。` +
+                `（注意：历史消息开头的【时间】是系统标注，不属于消息内容；你打字时绝对不要自己加时间标记。）`;
         }
 
         // ------------------------------------------------------------
@@ -21667,6 +21675,56 @@ ${tonePrompt}
                 if (label && !banned.some(b => b.label === label)) banned.push({ label: label });
             };
 
+            // ==========================================
+            // 【新增 1：提取最近 AI 分享过的旧事（防记忆断片）】
+            // ==========================================
+            const recentFacts = [];
+            const msgs = data.chats[personaId] || [];
+            msgs.filter(m => m.sender === 'assistant' && !m.recalled && (!m.type || m.type === 'text')).slice(-15).forEach(m => {
+                // 按句切开、保留句末标点：否则问句被切掉"？"后会被当成陈述句塞进"旧事"里
+                String(m.content).split(/(?<=[。！!？?\n])/).forEach(seg => {
+                    const cleanS = String(seg || '').trim();
+                    // 问句不是"旧事"：模型打字常常不带问号，所以不能只看标点，
+                    // 还要看"问你 + 疑问词"（"你今天干嘛了呀""你猜我今天遇到谁了"）
+                    const isQuestion = /[？?]\s*$/.test(cleanS)
+                        || /(吗|呢|吧|么)\s*[。！!]?\s*$/.test(cleanS)
+                        || (/你/.test(cleanS) && /什么|怎么|为什么|干嘛|干啥|做什么|哪儿|哪里|谁|几点|多久|是不是|要不要|有没有|猜|多少/.test(cleanS));
+                    if (isQuestion) return;
+                    // 只要句子有长度，且包含动作/完成词，就当成“旧事”提取
+                    if (cleanS.length > 4 && cleanS.length < 35 && /我|今天|刚才|已经|到了|买了|拆了|吃了|去了|看了|做完/.test(cleanS)) {
+                        if (!recentFacts.includes(cleanS)) recentFacts.push(cleanS);
+                    }
+                });
+            });
+
+            let forcedBlock = '';
+
+            if (recentFacts.length > 0 && !proactiveMode) {
+                // 只取最近 4 条，避免上下文太长
+                const factStr = recentFacts.slice(-4).map(f => '· ' + f).join('\n');
+                forcedBlock += `【强制警告：记忆校准】\n注意！以下这些事，你在前面的聊天中【已经告诉过对方】或者【已经发生过了】。\n这一轮回复，绝对禁止把它们当成“刚刚发生的新鲜事”再分享一遍，也不许用“我今天去干嘛了”这种句式把旧事包装成新发生的。\n（如果你这一轮要分享，只能是上面没出现过的、真正新发生的事。）\n这些旧事是：\n${factStr}\n\n`;
+            }
+
+            // ==========================================
+            // 【新增 2：统计最近 AI 的问句（防连环发问/查户口）】
+            // ==========================================
+            // 只看"信息索取型"疑问（什么/怎么/干嘛/谁…），"真的吗""好呀"这类语气词不算，
+            // 否则正常聊天会被误判成查户口，把角色的好奇心也一起禁掉。
+            // 模型打字常常不带问号，所以不能只按"？"切句。
+            const Q_ASK_RE = /什么|怎么|为什么|干嘛|干啥|做什么|哪儿|哪里|谁|几点|多久|多少|是不是|要不要|有没有|猜/;
+            let qCount = 0;
+            msgs.filter(m => m.sender === 'assistant' && !m.recalled && (!m.type || m.type === 'text')).slice(-10).forEach(m => {
+                String(m.content).split(/[。！!？?\n]/).forEach(s => {
+                    const t = String(s || '').trim();
+                    if (t.length > 1 && Q_ASK_RE.test(t)) qCount++;
+                });
+            });
+
+            // 主动消息本来就要"开个头"，和"禁止发问"冲突，这条只对正常回复生效
+            if (qCount >= 4 && !proactiveMode) {
+                forcedBlock += `【强制约束：停止连环发问】\n你最近已经连续问了太多问题了。\n这会让对方觉得像在查户口。\n这一轮回复：**绝对禁止**再向玩家抛出新问题！只回应对方刚才的话，或者顺着对方的话往下接。\n\n`;
+            }
+
             // ① 催睡：日级累积（当天已被说教 ≥2 次）→ 硬禁。玩家自己在聊睡觉时放行。
             const today = todayKey();
             const nag = (data.sleepNagState || {})[personaId];
@@ -21709,29 +21767,36 @@ ${tonePrompt}
                 notes.push('你上一轮主要在讲自己');
             }
 
+            // ==========================================
+            // 【组装输出】先算本轮主指令（重心/换台/提醒），再把"记忆校准"叠在最前面，
+            // 而不是提前 return —— 否则记忆校准每轮都命中，会把换台、别讲自己这些规则全吞掉。
+            // ==========================================
+            let main = '';
+
             // 对话重心命中 → 单独一条禁令，优先级高于"换台"：
             // 换台的去处仍然是"你的事"，等于换个话题继续自说自话。
             if (focusBlocked) {
                 if (proactiveMode) {
-                    return '【本轮限制 · 别讲自己】你最近几轮一直在讲自己的事。这一条主动消息：\n' +
+                    main = '【本轮限制 · 别讲自己】你最近几轮一直在讲自己的事。这一条主动消息：\n' +
                         '1. 不要分享你的工作、生活、情绪、见闻\n' +
                         '2. 问对方一件具体的事（关于 TA 今天做的，不要问"在干嘛"，也别翻旧事）\n' +
                         '3. 不要道歉、不要解释、不要提这条规则，直接打字';
+                } else {
+                    const others = banned.filter(b => b.label !== '讲自己的事').map(b => b.label);
+                    main = '【本轮强禁令 · 只回应对方】你最近几轮一直在讲自己的事，对方几乎插不上话。' +
+                        '这一轮：\n' +
+                        '1. 先回应对方刚说的那句话，至少占回复的一半\n' +
+                        '2. 不要提你自己的事（工作、生活、情绪、见闻都别主动讲）\n' +
+                        '3. 可以问对方一个具体的问题（关于 TA 刚才提到的东西）\n' +
+                        '4. 如果实在没话说，就只回应 + 追问，不要硬找话题\n' +
+                        (others.length ? '5. 另外这些也别碰：' + others.join('、') + '\n' : '') +
+                        '不要解释、不要提这条规则，直接打字。';
                 }
-                const others = banned.filter(b => b.label !== '讲自己的事').map(b => b.label);
-                return '【本轮强禁令 · 只回应对方】你最近几轮一直在讲自己的事，对方几乎插不上话。' +
-                    '这一轮：\n' +
-                    '1. 先回应对方刚说的那句话，至少占回复的一半\n' +
-                    '2. 不要提你自己的事（工作、生活、情绪、见闻都别主动讲）\n' +
-                    '3. 可以问对方一个具体的问题（关于 TA 刚才提到的东西）\n' +
-                    '4. 如果实在没话说，就只回应 + 追问，不要硬找话题\n' +
-                    (others.length ? '5. 另外这些也别碰：' + others.join('、') + '\n' : '') +
-                    '不要解释、不要提这条规则，直接打字。';
             }
 
-            if (banned.length) {
+            if (!main && banned.length) {
                 const dirs = pickFreshDirections(personaId, 2);
-                return '【本轮强禁令 · 换台】你最近几轮一直在重复同一件事：' + banned.map(b => b.label).join('、') + '。' +
+                main = '【本轮强禁令 · 换台】你最近几轮一直在重复同一件事：' + banned.map(b => b.label).join('、') + '。' +
                     '对方已经觉得你在复读了。' +
                     '这一轮一个字都不准再碰这些内容，也不准换个说法讲同一件事（"今天又坐了一整天""刚打卡出来"这类都算）。' +
                     '换一个完全不同的方向，从下面只挑一条，或者干脆只接对方的话、追问一句：\n' +
@@ -21739,10 +21804,17 @@ ${tonePrompt}
                     dirs.map(d => '· ' + d).join('\n') +
                     '\n不要解释、不要提这条规则、不要道歉，直接打字。';
             }
-            if (notes.length) {
-                return '（提醒：' + notes.join('；') + '。这一轮换个别的具体的事说，别绕回去。）';
+
+            if (!main && notes.length) {
+                main = '（提醒：' + notes.join('；') + '。这一轮换个别的具体的事说，别绕回去。）';
             }
-            return '';
+
+            if (forcedBlock) {
+                return forcedBlock + (main || (proactiveMode
+                    ? '直接接上次没聊完的话题往下说，不要再问问题，也不要旧事重提。'
+                    : '请直接顺着对方上一句话回复，不要再找新话题，不要旧事重提。'));
+            }
+            return main;
         }
 
         // 生成后兜底：提示词没拦住时，重写一次把这一轮拉回来。
@@ -22666,6 +22738,9 @@ ${tonePrompt}
                 return `[引用 ${getPersonaName(m.quoted.senderId)}：${m.quoted.preview || ''}]\n`;
             };
 
+            // 时间锚点：上一次真正打过时间点的消息时间（用来判断"隔了多久"）
+            let anchorTs = null;
+
             const mapped = msgs.map((m, i) => {
                 let out;
                 const fromUser = m.sender === 'user';
@@ -22741,6 +22816,27 @@ ${tonePrompt}
                     // 历史里残留的"（顿了顿）"会诱导模型照着模仿，喂给模型前先洗掉
                     let text = String(m.content == null ? '' : m.content);
                     if (m.type === 'text' || !m.type) text = stripActionStage(text);
+
+                    // 【新增：智能注入时间锚点，解决跨天失忆】
+                    // 只给"隔了 2 小时以上"或"窗口里的第一句"打点：既让模型知道
+                    // "这句是昨天说的"，又不会每行都顶一个时间把上下文撑爆。
+                    // anchorTs 只在真正打点时更新，图片/表情这类不打点的消息不会吃掉这次打点机会。
+                    const tsCur = Number(m.timestamp);
+                    if (isFinite(tsCur) && tsCur > 0) {
+                        const needStamp = (anchorTs === null) || (tsCur < anchorTs) || (tsCur - anchorTs > 2 * 3600 * 1000);
+                        if (needStamp) {
+                            const d = new Date(tsCur);
+                            // 只要"这一条不在今天"或"跟上一条不是同一天"，就必须带日期，
+                            // 否则昨天下午 → 今天晚上这种跳转只显示 19:17，模型还是看不出换了天。
+                            const crossDay = anchorTs !== null && new Date(anchorTs).toDateString() !== d.toDateString();
+                            const showDate = (d.toDateString() !== new Date().toDateString()) || crossDay;
+                            const timeStr = showDate
+                                ? ((d.getMonth() + 1) + '月' + d.getDate() + '日 ' + formatTime(tsCur))
+                                : formatTime(tsCur);
+                            text = `【${timeStr}】${text}`;
+                            anchorTs = tsCur;
+                        }
+                    }
                     out = { role: m.sender === 'user' ? 'user' : 'assistant', content: text };
                 }
 
