@@ -7638,6 +7638,104 @@
         .sms-empty span { display: block; margin-top: 8px; font-size: 12.5px; color: #a9a9b0; }
         .sms-empty-chat { margin: auto; padding: 40px 0; min-height: 0; }
 
+        /* ---------- v37 · 短信通讯录 ---------- */
+        #pageSms .wx-nav-acts button { color: var(--sms-blue); }
+        #pageSms .wx-nav-acts button:active { background: rgba(11, 132, 255, .10); }
+        #pageSms .wx-nav-acts button.active { background: rgba(11, 132, 255, .10); }
+
+        .sms-contacts {
+            flex: 1;
+            overflow-y: auto;
+            background: var(--sms-bg);
+            padding: 4px 0 24px;
+        }
+        .sms-contact-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px 16px;
+            position: relative;
+            cursor: pointer;
+            transition: background .12s;
+        }
+        .sms-contact-item:active { background: #f2f2f7; }
+        .sms-contact-item::after {
+            content: '';
+            position: absolute;
+            left: 72px; right: 0; bottom: 0;
+            height: 1px;
+            background: var(--sms-line);
+        }
+        .sms-contact-item:last-child::after { display: none; }
+        #pageSms .sms-contact-item .avatar {
+            width: 44px; height: 44px;
+            background: #e3e3e8 !important;
+            border: 1px solid var(--sms-line) !important;
+            color: #b0b0b7 !important;
+        }
+        #pageSms .sms-contact-item .avatar img { filter: grayscale(.4); }
+        .sms-contact-info { flex: 1; min-width: 0; }
+        .sms-contact-name {
+            font-size: 15.5px;
+            font-weight: 600;
+            color: var(--sms-ink);
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            line-height: 1.3;
+            min-width: 0;
+        }
+        .sms-contact-name .nm {
+            min-width: 0;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .sms-contact-sub {
+            font-size: 12px;
+            color: var(--sms-sub);
+            margin-top: 3px;
+            white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+        }
+        .sms-tag {
+            font-size: 10.5px;
+            padding: 1px 6px;
+            border-radius: 4px;
+            font-weight: 500;
+            flex-shrink: 0;
+            line-height: 1.5;
+        }
+        .sms-tag.ok     { background: rgba(7, 193, 96, .12);  color: #2f9e44; }
+        .sms-tag.warn   { background: rgba(255, 159, 10, .14); color: #c77a06; }
+        .sms-tag.danger { background: rgba(255, 59, 48, .12);  color: #d03a30; }
+
+        .sms-contact-actions { display: flex; gap: 8px; flex-shrink: 0; }
+        .sms-contact-btn {
+            width: 34px; height: 34px;
+            padding: 0;
+            border: 1px solid var(--sms-line);
+            background: #f7f7fa;
+            color: var(--sms-ink);
+            border-radius: 50%;
+            cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: transform .12s, background .12s;
+        }
+        .sms-contact-btn svg {
+            width: 17px; height: 17px;
+            stroke: currentColor; stroke-width: 1.9;
+            fill: none; stroke-linecap: round; stroke-linejoin: round;
+        }
+        .sms-contact-btn:active { transform: scale(.92); background: #ececf1; }
+        .sms-contact-btn.primary { background: var(--sms-blue); border-color: var(--sms-blue); color: #fff; }
+        .sms-contact-btn.primary:active { background: #0a76e6; }
+        .sms-contact-btn.off { opacity: .35; }
+        .sms-contacts-hint {
+            padding: 12px 16px 6px;
+            font-size: 11.5px;
+            color: #a9a9b0;
+            letter-spacing: .2px;
+        }
+        .sms-contacts-hint b { color: #d03a30; font-weight: 600; }
+
         /* ---------- 聊天页 ---------- */
         #smsChatWindow { background: var(--sms-bg); }
         #smsChatWindow .wx-chat-nav {
@@ -7672,8 +7770,10 @@
             padding: 14px 14px 10px;
             gap: 0;
         }
-        /* 消息少的时候贴着输入框落底，和真机一致 */
-        #smsChatWindow .messages > *:first-child { margin-top: auto; }
+        /* v39 · 消息从上往下排：去掉"贴底"对齐。
+           原来用 margin-top:auto 把首条顶到输入框上方，消息少的时候整屏下半截，
+           上面一大片空白，看起来像加载失败。 */
+        #smsChatWindow .messages > *:first-child { margin-top: 0; }
         /* 真实短信不逐条显示头像 */
         #smsChatWindow .wx-avatar-sm { display: none !important; }
         #smsChatWindow .wx-msg-row { margin-bottom: 8px; gap: 0; }
@@ -8023,12 +8123,24 @@
                         </button>
                         <span class="wx-nav-title">短信</span>
                     </div>
-                    <div class="wx-nav-acts"></div>
+                    <div class="wx-nav-acts">
+                        <button id="smsContactsBtn" title="通讯录">
+                            <svg viewBox="0 0 24 24">
+                                <circle cx="12" cy="8" r="3.6"/>
+                                <path d="M4.8 20.5c0-3.9 3.2-6.2 7.2-6.2s7.2 2.3 7.2 6.2"/>
+                                <path d="M17.2 4.6a3.6 3.6 0 0 1 0 6.8"/>
+                                <path d="M18.5 15c2.1.7 3.3 2.4 3.3 4.5"/>
+                            </svg>
+                        </button>
+                    </div>
                 </div>
 
                 <div class="wechat-content">
-                    <div class="wechat-panel active" style="padding:0;">
+                    <div class="wechat-panel active" id="smsMessagesPanel" style="padding:0;">
                         <div id="smsList" class="wx-chat-list sms-list"></div>
+                    </div>
+                    <div class="wechat-panel" id="smsContactsPanel" style="padding:0;">
+                        <div id="smsContacts" class="sms-contacts"></div>
                     </div>
                 </div>
 
@@ -15008,6 +15120,9 @@ ${tonePrompt}
             const p = getPersonaById(id);
             if (!p) return;
             if (personaStatus(p) !== 'active') return;
+            // v37 · 角色拉黑玩家这一刻也要抓一次吵架原因（状态切换后消息会被清），
+            // 否则后面玩家来哄 / 角色再开口时，角色说不出"到底是因为哪件事"。
+            captureConflict(id, 'blocked_me');
             p.friendStatus = 'blocked_me';
             p.blockedAt = Date.now();
             p.blockCooldownUntil = Date.now() + (blockCfg().cooldownMs || 3600000);
@@ -21835,11 +21950,11 @@ ${tonePrompt}
             // 注意：这里只保留"一句状态 + 一句禁令"，不举例、不复述被禁的问句，
             // 免得模型把示例当成话题种子（越说别问，越容易问）。
             return `现在是北京时间 ${bj.timeStr}（${bj.period}）。你此刻的状态：${state}。` +
-                `【极其重要】请仔细观察历史消息中的【时间前缀】。如果上面的对话是昨天或更早发生的，请不要再顺着昨天的话题直接聊（比如不要再问对方早上7点起没起），而是根据当前时间自然地开启新话题。` +
+                `【极其重要】请仔细观察历史消息中的 [时间]。如果上面的对话是昨天或更早发生的，请不要再顺着昨天的话题直接聊（比如不要再问对方早上7点起没起），而是根据当前时间自然地开启新话题。` +
                 `这个时间只用来决定你的语气和话的多少，它不是话题：不要报时间，也别拿三餐、上下班当由头，` +
                 `更不要用打卡式的问候开场。` +
                 `接着上文说：先回应对方刚说的话、延续正在聊的话题；只有这一轮轮到你分享，才说一件你此刻正在做的具体事。` +
-                `（注意：历史消息开头的【时间】是系统标注，不属于消息内容；你打字时绝对不要自己加时间标记。）`;
+                `（注意：历史消息开头的 [时间] 是系统标注，不属于消息内容；你打字时绝对不要自己加时间标记。）`;
         }
 
         // ------------------------------------------------------------
@@ -23403,7 +23518,8 @@ ${tonePrompt}
                             const timeStr = showDate
                                 ? ((d.getMonth() + 1) + '月' + d.getDate() + '日 ' + formatTime(tsCur))
                                 : formatTime(tsCur);
-                            text = `【${timeStr}】${text}`;
+                            // 改成 [时间] 格式，不容易被模型模仿成对话内容
+                            text = `[${timeStr}] ${text}`;
                             anchorTs = tsCur;
                         }
                     }
@@ -24111,9 +24227,8 @@ ${tonePrompt}
                 .replace(/[ \t]+$/gm, '');
         }
 
-        // v36 · 历史消息里注入的【12:05】【11月15日 12:05】是系统标注，
-        // 模型会把它当成自己的语气复述出来，必须在出口清掉。
-        const TIME_PREFIX_RE = /^【\s*\d{1,2}(?::\d{2}|月\d{1,2}日(?:\s+\d{1,2}:\d{2})?)\s*】\s*/;
+        // v40 · 强化时间前缀清理：兼容全角/半角括号、冒号，以及没有括号的纯时间
+        const TIME_PREFIX_RE = /^\s*(?:[【\[［]\s*(?:\d{1,2}月\d{1,2}日\s*)?\d{1,2}[：:]\d{2}\s*[】\]］]|\d{1,2}[：:]\d{2})\s*/;
 
         async function applyReply(personaId, reply, opts) {
             opts = opts || {};
@@ -31948,6 +32063,8 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             kind: 'voice',
             personaId: '',
             channel: 'wechat',      // v36 · wechat | sms（短信通道打来的电话，落点回短信）
+            smsEscalated: false,    // v37 · true = 拉黑阶梯里角色自己打出来的电话（不是玩家拨的）
+            openingSpoken: false,   // v37 · 接通后的第一句是否已经说过（避免和自动开场白撞车）
             phase: 'idle',          // calling | active | idle
             incoming: false,        // true = 对方主动打来（接通后 AI 先开口）
             openingLine: '',        // 主动来电接通后的第一句
@@ -32366,6 +32483,11 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 recStart: 0
             });
 
+            // v37 · 标记这次来电是不是"拉黑阶梯"里自己打出来的
+            // （玩家在通讯录/短信里主动拨的电话不带这个标记）
+            callState.smsEscalated = !!(opts && opts.smsReason === 'escalate');
+            callState.openingSpoken = false;
+
             // iOS：这里不是用户手势，解锁通常无效，但顺手试一次无害
             try { unlockIOSAudio(); } catch (e) {}
 
@@ -32411,6 +32533,8 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 kind: kind === 'video' ? 'video' : 'voice',
                 personaId: personaId,
                 channel: opts.channel === 'sms' ? 'sms' : 'wechat',
+                smsEscalated: false,   // v37 · 玩家自己拨的，不带"你等不下去了"那段
+                openingSpoken: false,
                 phase: 'calling',
                 incoming: false,       // 主动去电：不能残留上一次来电的开场白
                 openingLine: '',
@@ -32534,6 +32658,54 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 // 刚释放过麦克风就多等 300ms：会话从 playAndRecord 切回 playback 是异步的，
                 // 切早了第一句会被旧的录音会话吞掉（听起来就是"接通了没声音"）。
                 }, (micReleased ? 900 : 600) + Math.random() * 600);
+            } else if (callState.incoming && callState.smsEscalated && callState.channel === 'sms') {
+                // v37 · 「拉黑阶梯」打出来的电话没有预设开场白：接通后让角色自己先开口。
+                // 否则玩家不说话，通话就一直静着，"第一句能不能带到那件事"也永远测不到。
+                setTimeout(() => {
+                    if (!callState.active || callState.phase !== 'active') return;
+                    speakEscalatedCallOpening(callState.personaId);
+                }, (micReleased ? 1400 : 1000) + Math.random() * 400);
+            }
+        }
+
+        // v37 · 拉黑阶梯来电的第一句：不是寒暄，是"我忍不住了 + 那件事"
+        async function speakEscalatedCallOpening(pid) {
+            if (!pid || !callState.active || callState.phase !== 'active') return;
+            if (callState.openingSpoken || callState.replying) return;
+            const api = pickApi();
+            if (!api) return;
+            const rec = getReconciliation(pid, false);
+            const note = rec ? buildCallConflictNote(rec, { escalated: true }) : '';
+            callState.openingSpoken = true;
+            callState.replying = true;
+            try {
+                const system = buildCallStaticSystem(pid) +
+                    (note ? '\n\n' + note : '') +
+                    `\n\n【现在这一刻】电话刚接通，是**你**打过去的，对方还没开口。
+- 你先开口，一到两句，30 字以内，口语，带正常标点。
+- 不要寒暄"喂，在吗"，直接把"你放不下这件事"露一点点出来，但不要兴师问罪。
+- 分寸参考："……是我。你还在为那件事生气吧" —— 有具体的事，但没逼供。`;
+                const reply = await callChatRomance({
+                    system,
+                    messages: [{ role: 'user', content: '（电话接通了，对方还没开口。你先说第一句。）' }],
+                    api,
+                    vision: false
+                });
+                if (!callState.active || callState.phase !== 'active') return;
+                const clean = String(reply || '').replace(/\[\s*voice\s*(?::\s*[A-Za-z_]+)?\s*\]/ig, '');
+                const emotion = extractEmotionTag(clean).emotion;
+                let line = normalizeCallText(clean).slice(0, 120).trim();
+                if (!line) line = '……是我。';
+                callChannelAdd(pid, 'assistant', 'text', line, { via: 'call' });
+                appendCallSub(line);
+                speakCallReply(line, emotion);
+                saveData();
+                callChannelRender(pid);
+                renderWechatList();
+            } catch (e) {
+                console.warn('[call] 阶梯开场白失败', e && e.message);
+            } finally {
+                callState.replying = false;
             }
         }
 
@@ -32876,7 +33048,8 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 // v36 · 短信通道打来的电话：把冲突焦点带上（不带短信的分寸细则）
                 if (callState.channel === 'sms') {
                     const recCall = getReconciliation(personaId, false);
-                    const note = recCall ? buildCallConflictNote(recCall) : '';
+                    // v37 · 从"拉黑阶梯"打出来的电话，标记 escalated；玩家自己拨的不带
+                    const note = recCall ? buildCallConflictNote(recCall, { escalated: !!callState.smsEscalated }) : '';
                     if (note) system += '\n\n' + note;
                 }
                 // 通话里同样禁止"吃了吗"打卡（一张嘴就问吃饭最出戏）
@@ -33017,6 +33190,8 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             Object.assign(callState, {
                 active: false,
                 phase: 'idle',
+                smsEscalated: false,
+                openingSpoken: false,
                 startedAt: 0,
                 incoming: false,
                 openingLine: '',
@@ -34602,6 +34777,14 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
 - 对方如果回了，哪怕只是"嗯"，也说明 ta 没完全关上门。语气可以稍微松一点。
 - 对方如果没回，不要追问"在吗""看到了吗"。等。`;
 
+        // v39 · 关系正常时发短信：上面那段 SMS_MODE_PROMPT 整段是"微信被切断、你是来求和的"，
+        // 用在没吵架的场景会让角色说出"微信被切断了"这种莫名其妙的话。
+        const SMS_MODE_CASUAL = `【当前通道：短信】
+- 你们平时都在微信里聊，这次对方用的是短信。
+- 短信比微信更短、更随意。一句话不超过 30 字，不要连发。
+- 语气就跟平时一样，不用刻意客气，也不用煽情、不用道歉。
+- 你可以觉得有点奇怪（好端端的怎么发短信），但只值得随口一问，不值得追问。`;
+
         const CONFLICT_SUMMARY_SYSTEM = `你是一个中立的观察者。下面是一段聊天记录，玩家在这段对话之后选择删除了角色的好友。
 请你提取"他们之间到底为什么会产生矛盾"。
 
@@ -34647,6 +34830,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         const smsReplyTimers = {};
         const escalationTimers = {};
         const smsReplying = {};
+        var smsViewMode = 'messages';   // v37 · 短信页当前视图：messages | contacts
 
         function smsCfg() {
             if (!data.smsSettings || typeof data.smsSettings !== 'object') data.smsSettings = {};
@@ -34731,7 +34915,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             if (st === 'active') return 'wechat';
             if (st === 'deleted') return 'sms';
             if (st === 'blocked_by_me') return 'sms';
-            if (st === 'blocked_me') return 'none';  // 对方拉黑你，短信也发不出去
+            if (st === 'blocked_me') return 'sms';  // v38 · 被拉黑后短信是唯一还送得到的通道
             return 'none';
         }
 
@@ -34870,8 +35054,46 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                 const neutralLast = /^(嗯|恩|哦|喔|好|行|ok|OK|知道了|随便|没事)$/.test(lastUser);
                 const noEmotion = keywords.length === 0;
 
+                // v37 · 本地兜底也必须是"有具体的事"。
+                // 原来的"你们之间有些说不清的事"会让角色在主动短信里说不出焦点，
+                // 玩家看到的反应是"ta 好像忘了为什么生气" —— 出戏。
+                const localFocus = (function () {
+                    const lu = String(ctx.playerLastWords || '').trim();
+                    const la = String(ctx.aiLastWords || '').trim();
+                    // 三件事要对准：谁说、谁动手、删还是拉黑。
+                    // 这段是"旁观者口吻"（你=玩家、ta=角色），方向写反了模型就会认错账。
+                    const tailAct = trigger === 'blocked_me'
+                        ? '把你拉黑了'
+                        : (trigger === 'block' ? '你把 ta 拉黑了' : '你把 ta 删了');
+                    if (neutralLast && noEmotion) {
+                        if (trigger === 'blocked_me') return '你们之间有些说不清的事，ta 先把你拉黑了';
+                        if (trigger === 'block') return '没有明确矛盾，你可能只是一时情绪把 ta 拉黑了';
+                        return '没有明确矛盾，玩家可能情绪化删除';
+                    }
+                    if (lu && la) return `你说了「${lu.slice(0, 18)}」，ta 回了「${la.slice(0, 18)}」，然后${tailAct}`;
+                    if (lu)       return `你说了「${lu.slice(0, 22)}」，然后${tailAct}`;
+                    if (la)       return `ta 最后一句是「${la.slice(0, 22)}」，然后${tailAct}`;
+                    // 有 keywords 但没抓到原话 → 用关键词拼
+                    if (keywords.length) {
+                        const kwMap = {
+                            late:  '没守时',
+                            lie:   '没说真话',
+                            cold:  '态度太冷',
+                            hurt:  '说话伤人',
+                            other: '提到了别人'
+                        };
+                        return '你可能' + keywords.slice(0, 2).map(k => kwMap[k]).filter(Boolean).join('、');
+                    }
+                    if (trigger === 'blocked_me') return '你们之间有些说不清的事，ta 先把你拉黑了';
+                    if (trigger === 'block') return '你可能只是一时情绪把 ta 拉黑了';
+                    return '';
+                })();
+
                 rec.conflict = {
-                    summary: (neutralLast && noEmotion) ? '没有明确矛盾，玩家可能情绪化删除' : '',
+                    summary: localFocus,
+                    // v37 · focus：从 summary 里切出来的"一句话焦点"（≤20 字）
+                    // 给 prompt 一个短锚点，模型不容易跑偏
+                    focus: localFocus.slice(0, 20),
                     severity: 2,
                     kind: 'action',
                     playerLastWords: ctx.playerLastWords,
@@ -34903,6 +35125,7 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
                     // 玩家已经澄清过 → AI 摘要不许把玩家的说法冲掉
                     if (cur.conflict.playerCorrected && cur.conflict.correctedNote) return;
                     cur.conflict.summary = String(parsed.summary || '').slice(0, 60);
+                    cur.conflict.focus = cur.conflict.summary.slice(0, 20);   // v37 · 同步更新焦点
                     cur.conflict.severity = Math.max(1, Math.min(3, Number(parsed.severity) || 2));
                     const kinds = ['action', 'omission', 'attitude', 'misunderstanding', 'cumulative'];
                     cur.conflict.kind = kinds.indexOf(parsed.kind) >= 0 ? parsed.kind : 'action';
@@ -34932,43 +35155,93 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
             return parts.length ? parts.slice(0, 2).join('，') : '我不太确定具体哪里出了问题';
         }
 
-        function buildSmsConflictPrompt(rec) {
+        function buildSmsConflictPrompt(rec, opts) {
+            opts = opts || {};
             const c = rec && rec.conflict;
             if (!c) return '';
             const summary = effectiveConflictSummary(rec);
             if (!summary) return '';
-            const tone = c.severity === 3 ? '很严重' : (c.severity === 2 ? '不小' : '不大');
+            const focus = String(c.focus || summary).slice(0, 24);
+            // v37 · 本地兜底是"旁观者口吻"（你=玩家、ta=你），AI 摘要却是"你=角色"。
+            // 两种来源挤在同一个槽位，必须给模型一句视角提示，否则它会站错边。
+            const who = (c.source === 'local' && !c.playerCorrected)
+                ? '\n（下面是旁观者口吻：「你」指玩家，「ta」指你自己。）'
+                : '';
 
-            let prompt = `【你们为什么吵架】
+            let prompt = `【你们为什么吵架 —— 你心里那句话】${who}
 ${summary}
-这件事对玩家来说${tone}。
+
+【你记得的焦点】${focus}
+（这是你心里的那句话。你**不会忘**，也不会装傻。但要不要说出来、什么时候说，由你判断。）`;
+
+            // v37 · 通用节奏（原来"5 条之后不提"太死，改成"不再主动提，但被问一定要答"）
+            prompt += `
 
 【短信里的分寸】
-- 你**知道**是这件事，但**不要**一上来就把这件事复述一遍。太刻意了。
-- 第一两条短信可以试探性地碰一下这件事（"还在为那件事生气吧"），如果玩家没接，就不要再提。
-- 如果玩家主动说了这件事，你就顺着聊，态度要软，但不要卑微到底 —— 你还是你。
+- 你**知道**是这件事，但**不要**一上来就把整段话复述一遍。太刻意了。
+- 前 1–2 条短信可以试探性地碰一下（"还在为那件事生气吧"），如果玩家没接，就不要再追问。
+- 如果玩家明确说"那件事过去了"，之后就不再主动提，转成正常关心。
+- 但**永远不要假装没发生过**：后续聊天里如果话题自然聊到那里，你就顺着聊，不要绕开。
+- 玩家问"你还在生气吗""你能原谅我吗"这类话时，你必须能一句话说清"是因为哪件事让你难受"。
 - 不要编造"我做错了什么"来迎合玩家。摘要里说了什么，你就认什么，没说的事不要瞎认。
-- 如果你们已经聊了超过 5 条短信，这件事就不要再主动提了。`;
+- 上面那条"不要翻旧账"指**不要拿拉黑/删好友这件事去指责对方**；你们之间那件具体的事，是可以碰的。`;
+
+            // v37 · 角色主动发短信的独立分支：这次是你忍不住发的
+            if (opts.escalated) {
+                prompt += `
+
+【这次是你主动发的】
+- 你等了很久，等不下去了。
+- 你发这条短信不是为了吵赢，是因为你受不了这个沉默。
+- 你心里有具体的事（就是上面那件），**不要绕开它，也不要装作忘了**。
+- 但也不要一上来就翻旧账：先试探性地让 ta 知道你在意，看 ta 的反应再决定要不要展开。`;
+            }
 
             if (c.kind === 'misunderstanding') {
-                prompt += `\n- 这是一个**误会**：玩家以为你做了某事，但你没有。你可以解释，但**不要辩解**，解释要短、要轻，一句就够。解释完就不再提。`;
+                prompt += `\n\n- 这是一个**误会**：玩家以为你做了某事，但你没有。你可以解释，但**不要辩解**，解释要短、要轻，一句就够。解释完就不再提。`;
             } else if (c.kind === 'cumulative') {
-                prompt += `\n- 这不是某一件事，而是**长期累积**的不满。不要逐条回顾，只说"我知道我不止一次让你失望"这类话。`;
+                prompt += `\n\n- 这不是某一件事，而是**长期累积**的不满。不要逐条回顾，只说"我知道我不止一次让你失望"这类话。`;
             } else if (c.kind === 'omission') {
-                prompt += `\n- 问题是你**该做没做**。认的时候要说"我应该……"而不是"我做了……"。`;
+                prompt += `\n\n- 问题是你**该做没做**。认的时候要说"我应该……"而不是"我做了……"。`;
             }
             return prompt;
         }
 
         // 通话里只带"冲突焦点"，不带短信的分寸细则（电话有自己的说话规则）
-        function buildCallConflictNote(rec) {
+        function buildCallConflictNote(rec, opts) {
+            opts = opts || {};
             const c = rec && rec.conflict;
             if (!c) return '';
             const summary = effectiveConflictSummary(rec);
             if (!summary) return '';
-            return `【你们为什么吵架】${summary}
-- 你心里知道这件事，但不要主动复述，也不要翻旧账。
-- 如果对方提起，先认下来，不要辩解。`;
+            const focus = String(c.focus || summary).slice(0, 24);
+            const who = (c.source === 'local' && !c.playerCorrected)
+                ? '\n（下面是旁观者口吻：「你」指玩家，「ta」指你自己。）'
+                : '';
+
+            let note = `【你们为什么吵架 —— 你心里清楚，具体是因为这件事】${who}
+${summary}
+
+【你心里那句话】${focus}
+（这是你打这个电话 / 发这条短信的原因。你**不会忘**。）
+- 但不要一接通就复述，太刻意。先听 ta 怎么说。`;
+
+            // v37 · 从"拉黑阶梯"主动打出来的电话
+            if (opts.escalated) {
+                note += `
+
+【这次是你主动打的】
+- 你等了很久，等不下去了。
+- 你打电话不是为了吵赢，是因为你受不了这个沉默。
+- 接通后先听 ta 怎么说，如果 ta 愿意聊这件事，你就把心里话摊开，但不要咄咄逼人。
+- 如果 ta 一接通就开始道歉，你也不要立刻接受 —— 先听 ta 说完，再决定态度。`;
+            }
+
+            note += `
+
+- 如果对方提起这件事，先认下来，不要辩解。
+- 如果对方试图解释或澄清（"其实不是因为这个"），不要争辩，顺着 ta 说的方向重新认一遍。`;
+            return note;
         }
 
         function buildClarifyPrompt(playerText) {            return `【玩家刚澄清了】
@@ -35184,6 +35457,8 @@ ${summary}
             if (!rec || rec.reconciledAt || rec.readyAt) return false;
             const p = getPersonaById(pid);
             if (!p) return false;
+            // v38 · 关系正常的人之间发短信，不该被算成"哄好了"
+            if (personaStatus(p) === 'active') return false;
             if (!force) {
                 const severity = (rec.conflict && rec.conflict.severity) || 2;
                 const need = (SEVERITY_EFFORT[severity] || SEVERITY_EFFORT[2]).reconcile;
@@ -35210,6 +35485,11 @@ ${summary}
             const p = getPersonaById(pid);
             const rec = getReconciliation(pid, false);
             if (!p || !rec) return null;
+            // v38 · blocked_me 是「ta 拉黑了你」，这里弹"要原谅 ta 吗"是反的：
+            // 该不该消气由 ta 决定，玩家这边只负责哄。所以不出这张卡。
+            if (personaStatus(p) === 'blocked_me') return null;
+            // v38 · 关系正常的人发短信，聊几句就弹"要原谅 ta 吗"同样荒谬
+            if (personaStatus(p) === 'active') return null;
             if (rec.reconciledAt) {
                 return personaStatus(p) === 'active' ? null : { mode: 'readd' };
             }
@@ -35315,14 +35595,19 @@ ${summary}
         });
 
         // ---------- 短信 prompt / 上下文 ----------
-        function buildSmsSystem(pid) {
+        function buildSmsSystem(pid, opts) {
+            opts = opts || {};
             const p = getPersonaById(pid);
             if (!p) return '';
             const rec = getReconciliation(pid, false);
             const st = personaStatus(p);
+            // v39 · 三条路：还在断联里（吵架） / 已经和好 / 本来就没事
+            const _broken = st === 'blocked_by_me' || st === 'deleted' || st === 'blocked_me';
+            const _activeConflict = !!(rec && rec.conflict && effectiveConflictSummary(rec) && !rec.reconciledAt);
+            const _normalSms = !_broken && !_activeConflict;
 
             let sys = buildStaticPersonaSystem(pid, { skipRomanceLock: true, smsMode: true });
-            sys += '\n\n' + SMS_MODE_PROMPT;
+            sys += '\n\n' + (_normalSms ? SMS_MODE_CASUAL : SMS_MODE_PROMPT);
 
             if (st === 'blocked_by_me') {
                 sys += '\n\n【补充】对方把你拉黑了，微信发不出去，短信是唯一还能送达的通道。';
@@ -35337,12 +35622,37 @@ ${summary}
                     sys += '\n\n【补充】你们已经把那次不愉快说开了，现在是正常关系。不要再翻旧账、不要再道歉，像平常发短信一样说话。';
                     sys += '\n\n【场景】对方在微信里也能找到你，但此刻 ta 选择了发短信，你就像平时一样回。';
                 } else {
-                    const c = buildSmsConflictPrompt(rec);
+                    const c = buildSmsConflictPrompt(rec, { escalated: !!opts.escalated });
                     if (c) sys += '\n\n' + c;
                     if (phase === 'tired') sys += '\n\n【节奏】你已经发了几条都没回。这一条更短、更收敛，不要连续追问。';
                     if (phase === 'low') sys += '\n\n【节奏】现在是低谷期。只说一句极短的话，不要试图把话聊开。';
                     if (phase === 'silent') sys += '\n\n【节奏】你决定不再发了，这一条是最后一句话，越短越好。';
                     if (rec.clarifyPrompt) sys += '\n\n' + rec.clarifyPrompt;
+
+                    // v37 · 把"焦点"顶到高注意力区，模型不会因为其他 prompt 太长而淡忘。
+                    // 沉默期要的是"最后一句极短的话"，这一刻不往上叠焦点，免得又开一轮。
+                    const _cf = rec.conflict;
+                    const _focus = _cf
+                        ? String((_cf.playerCorrected && _cf.correctedNote) ? _cf.correctedNote : (_cf.focus || _cf.summary || '')).slice(0, 24)
+                        : '';
+                    if (_focus && phase !== 'silent') {
+                        sys += `\n\n【你心里那句话】${_focus}
+每次开口前，先在心里默念一遍这句话。它决定了你语气里的委屈，也决定了你会不会主动碰这件事。`;
+                    }
+                }
+            }
+
+            // v39 · 平时都在微信里聊，突然发短信：角色的第一反应该是"怎么跑这儿来了"。
+            // 不写这段，模型会把短信当微信接着聊，玩家看到的反应是"ta 一点都不觉得奇怪"。
+            if (st === 'active' && !(rec && rec.reconciledAt)) {
+                const _firstSms = !getSmsMessages(pid).some(m => m.sender === 'assistant');
+                if (_firstSms) {
+                    sys += `\n\n【场景】你们平时都在微信里说话，这是对方**第一次**给你发短信。
+- 你会有点意外：好端端的，怎么跑这儿来了？
+- 第一句先自然地问一下（"怎么突然发短信""微信出问题了？"这类），随口一问，不是审问。
+- 问过就翻篇，接着正常聊，不要再提第二次。`;
+                } else {
+                    sys += `\n\n【场景】你们平时都在微信里说话，对方这次用的是短信。你已经问过一回了，不要再问。`;
                 }
             }
             return withRomanceLock(sys);
@@ -35358,9 +35668,14 @@ ${summary}
                     const who = m.sender === 'user' ? '玩家' : '你';
                     return who + '：' + String(m.content || '').slice(0, 80);
                 }).join('\n');
+                // v39 · 关系正常时不是"被切断之前的最后对话"，是"你们刚在微信上聊过"
+                const _pWx = getPersonaById(pid);
+                const _normal = _pWx && personaStatus(_pWx) === 'active';
                 out.push({
                     role: 'user',
-                    content: '【微信背景：你们被切断之前，在微信上最后的对话】\n' + lines
+                    content: (_normal
+                        ? '【微信背景：你们刚才在微信上的对话，ta 说完这些就发了条短信】\n'
+                        : '【微信背景：你们被切断之前，在微信上最后的对话】\n') + lines
                 });
             }
 
@@ -35433,9 +35748,23 @@ ${summary}
 
         function localSmsFallback(pid) {
             const rec = getReconciliation(pid, false);
+            // v38 · 正常好友之间发短信：没有吵架上下文，别用"……""我等你"这种断联语气
+            if (!rec || (!rec.conflict && !rec.reconciledAt)) {
+                const pool = ['在的', '怎么啦', '刚看到', '嗯，我在'];
+                return pool[Math.floor(Math.random() * pool.length)];
+            }
             const phase = rec ? smsPhaseOf(rec) : 'active';
             const pool = phase === 'silent' ? SMS_FALLBACK.late : (phase === 'active' ? SMS_FALLBACK.early : SMS_FALLBACK.mid);
             const idx = Math.min(pool.length - 1, rec ? (rec.attempts && rec.attempts.sms || 0) : 0);
+            // v37 · 没有 API 时别让第一句退化成"在吗" —— 角色是记得那件事的
+            if (rec && rec.conflict && idx === 0 && phase !== 'silent') {
+                const c = rec.conflict;
+                const sev = Number(c.severity) || 2;
+                if (c.kind === 'misunderstanding') return '那件事……其实不是你想的那样';
+                if (c.kind === 'omission') return '那件事是我没做到';
+                if (c.kind === 'cumulative') return '我知道我不止一次让你失望了';
+                return sev >= 3 ? '……那天的事，是我不对' : '还在为那件事生气吧';
+            }
             return pool[idx];
         }
 
@@ -35444,8 +35773,8 @@ ${summary}
             if (smsReplying[pid]) return false;
             const p = getPersonaById(pid);
             if (!p) return false;
-            const st = personaStatus(p);
-            if (st === 'active' && !(getReconciliation(pid, false) || {}).reconciledAt) return false;
+            // v38 · 不再拦 active：玩家在短信里发了，ta 就该在这里回。
+            // （原来只有"关系断了"才回短信，通讯录里点正常好友发过去永远没人应。）
 
             const api = pickApi();
             smsReplying[pid] = true;
@@ -35455,7 +35784,7 @@ ${summary}
                     await applySmsReply(pid, localSmsFallback(pid), { local: true });
                     return true;
                 }
-                const system = buildSmsSystem(pid);
+                const system = buildSmsSystem(pid, { escalated: !!opts.escalated });
                 const msgs = attachDynamicTail(buildSmsHistory(pid), buildSmsTail(pid, opts));
                 const reply = await callChatRomance({ system, messages: msgs, api, vision: false });
                 // 澄清提示只作用于"紧接着的这一条回复"，用完即清
@@ -35539,12 +35868,10 @@ ${summary}
             if (!pid) return;
             const p = getPersonaById(pid);
             if (!p) return;
-            const st = personaStatus(p);
-            const rec = getReconciliation(pid, false);
-            // 常驻 App：只要这个会话还在（和好过、或有过短信往来），就允许继续发
-            const hasThread = !!(data.smsChats && data.smsChats[pid] && data.smsChats[pid].length);
-            if (st === 'active' && !(rec && rec.reconciledAt) && !hasThread) { toast('对方还在你的微信里'); return; }
-            if (st === 'blocked_me') { toast('对方已把你拉黑'); return; }
+            // v38 · 短信是系统自带 App，通讯录里点谁都能发。
+            // 原来这里拦 active（"对方还在你的微信里"）和 blocked_me（"对方已把你拉黑"），
+            // 导致通讯录里的气泡点进去是个死窗口 —— 按钮上写着"发短信"，却一条也发不出去。
+            // 现在取消拦截：微信链路一字不动，短信只是并行的第二条通道。
 
             const input = document.getElementById('smsInput');
             const text = String(rawText != null ? rawText : (input ? input.value : '')).trim();
@@ -35633,8 +35960,9 @@ ${summary}
             });
 
             if (!rows.length) {
-                box.innerHTML = '<div class="sms-empty">还没有短信<br><span>聊天被切断时，这里是唯一还能送达的地方</span></div>';
+                box.innerHTML = '<div class="sms-empty">还没有短信<br><span>通讯录里点谁都能发，发过的会留在这里</span></div>';
                 updateSmsIcon();
+                if (smsViewMode === 'contacts') renderSmsContacts();
                 return;
             }
 
@@ -35663,6 +35991,7 @@ ${summary}
                 el.addEventListener('click', () => openSmsChat(el.dataset.sms));
             });
             updateSmsIcon();
+            if (smsViewMode === 'contacts') renderSmsContacts();
         }
 
         function closeSmsChat() {
@@ -35947,6 +36276,128 @@ ${summary}
             startCall('voice', { personaId: pid, channel: 'sms', force: true });
         }
 
+        /* ============================================================
+           v37 · 短信通讯录
+           —— 短信页的第二个视图：谁还在微信、谁只能发短信、
+              谁把你拉黑了，一眼看清，并且每个状态都有一条能走的路。
+           ============================================================ */
+        function switchSmsView(mode) {
+            smsViewMode = mode === 'contacts' ? 'contacts' : 'messages';
+            const contacts = smsViewMode === 'contacts';
+            const msgPanel = document.getElementById('smsMessagesPanel');
+            const conPanel = document.getElementById('smsContactsPanel');
+            const btn = document.getElementById('smsContactsBtn');
+            const title = document.querySelector('#pageSms .wx-nav-title');
+            if (msgPanel) msgPanel.classList.toggle('active', !contacts);
+            if (conPanel) conPanel.classList.toggle('active', contacts);
+            if (title) title.textContent = contacts ? '通讯录' : '短信';
+            if (btn) {
+                btn.classList.toggle('active', contacts);
+                btn.title = contacts ? '返回短信' : '通讯录';
+            }
+            if (contacts) renderSmsContacts();
+            else renderSmsList();
+        }
+
+        // 每个联系人"能走哪条路"：active 回微信；blocked_me 短信是发不出去的，只能去微信哄
+        // 每个联系人"能走哪条路"。短信按钮不在这里判定 —— 它永远打开短信聊天。
+        function smsContactMeta(p) {
+            const st = personaStatus(p);
+            if (st === 'active')      return { tagCls: 'ok',     tag: '正常',    sub: '微信正常 · 短信也能发',              call: true  };
+            if (st === 'blocked_me')  return { tagCls: 'danger', tag: '已拉黑你', sub: '被拉黑中 · 短信还送得到，说点软的',   call: false };
+            if (st === 'blocked_by_me') return { tagCls: 'warn', tag: '你已拉黑', sub: '短信通道 · 你已把 ta 拉黑',           call: false };
+            if (st === 'deleted')     return { tagCls: 'warn',   tag: '已删除',  sub: '短信通道 · 好友申请里能加回',         call: true  };
+            return { tagCls: '', tag: '未知', sub: '', call: false };
+        }
+
+        function renderSmsContacts() {
+            const box = document.getElementById('smsContacts');
+            if (!box) return;
+
+            const all = (data.personas || []).slice();
+            const rank = (p) => {
+                const st = personaStatus(p);
+                if (st === 'blocked_me') return 0;
+                if (st === 'blocked_by_me' || st === 'deleted') return 1;
+                return 2;
+            };
+            all.sort((a, b) => {
+                const ra = rank(a), rb = rank(b);
+                if (ra !== rb) return ra - rb;
+                return String(a.nickname || a.name || '').localeCompare(String(b.nickname || b.name || ''), 'zh');
+            });
+
+            if (!all.length) {
+                box.innerHTML = '<div class="sms-empty">通讯录是空的</div>';
+                box.onclick = null;
+                return;
+            }
+
+            const cut = all.filter(p => personaStatus(p) !== 'active').length;
+            const hint = `<div class="sms-contacts-hint">共 ${all.length} 位联系人` +
+                (cut ? ` · <b>${cut} 位</b>已不在微信通道` : '') + '</div>';
+
+            box.innerHTML = hint + all.map(p => {
+                const m = smsContactMeta(p);
+                return `<div class="sms-contact-item" data-contact-pid="${escHtml(p.id)}">
+                    ${avatarHtml(p.id, 44)}
+                    <div class="sms-contact-info">
+                        <div class="sms-contact-name">
+                            <span class="nm">${escHtml(smsDisplayName(p))}</span>
+                            <span class="sms-tag ${m.tagCls}">${m.tag}</span>
+                        </div>
+                        <div class="sms-contact-sub">${escHtml(m.sub)}</div>
+                    </div>
+                    <div class="sms-contact-actions">
+                        <button class="sms-contact-btn${m.call ? '' : ' off'}" data-act="call" data-pid="${escHtml(p.id)}" title="打电话">
+                            <svg viewBox="0 0 24 24"><path d="M6.5 3.5h3l1.5 4-2 1.5a11 11 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4.5 5.7 2 2 0 0 1 6.5 3.5z"/></svg>
+                        </button>
+                        <button class="sms-contact-btn primary" data-act="sms" data-pid="${escHtml(p.id)}" title="发短信">
+                            <svg viewBox="0 0 24 24"><path d="M4.6 5.4h14.8v9.4h-8.5l-3.8 3v-3H4.6z"/><path d="M8.4 9.2h7.2M8.4 11.9h4.6"/></svg>
+                        </button>
+                    </div>
+                </div>`;
+            }).join('');
+
+            // 事件委托：列表会频繁重绘，绑在容器上不会重复堆监听
+            box.onclick = (ev) => {
+                const btn = ev.target.closest('[data-act]');
+                if (btn) {
+                    ev.stopPropagation();
+                    smsContactAction(btn.dataset.act, btn.dataset.pid);
+                    return;
+                }
+                const row = ev.target.closest('[data-contact-pid]');
+                if (row) openContactEntry(row.dataset.contactPid);
+            };
+        }
+
+        function smsContactAction(act, pid) {
+            const p = getPersonaById(pid);
+            if (!p) return;
+            const st = personaStatus(p);
+            if (act === 'call') {
+                if (st === 'blocked_by_me') { toast('你已把对方拉黑，先解除拉黑再联系'); return; }
+                if (st === 'blocked_me')    { toast('对方已把你拉黑，电话打不通，发条短信试试'); return; }
+                if (st === 'active')        { startCall('voice', { personaId: pid }); return; }
+                startCall('voice', { personaId: pid, channel: 'sms', force: true });
+                return;
+            }
+            openContactEntry(pid);
+        }
+
+        // 通讯录是短信 App 自己的通讯录：气泡按钮 = 发短信，任何状态都进短信聊天窗口。
+        // 微信那边的事（点外卖 / 一起听 / 试着说话）留在微信里，不从这里跳过去。
+        function openContactEntry(pid) {
+            const p = getPersonaById(pid);
+            if (!p) return;
+            // 已经在短信页就别再走一次 showPage —— 那会把视图重置成消息列表，
+            // 从通讯录点进来、返回时却又落到消息列表，很割裂。
+            const smsPageEl = document.getElementById('pageSms');
+            if (!(smsPageEl && smsPageEl.classList.contains('active'))) showPage('sms');
+            openSmsChat(pid);
+        }
+
         // ---------- 初始化 ----------
         function initSmsModule() {
             ensureSmsData();
@@ -35959,7 +36410,7 @@ ${summary}
                 _showPageSms(name);
                 if (name === 'sms') {
                     closeSmsChat();
-                    renderSmsList();
+                    switchSmsView('messages');
                     updateSmsIcon();
                 }
                 const appEl = document.getElementById('app');
@@ -35968,8 +36419,20 @@ ${summary}
                 if (name === 'home') updateSmsIcon();
             };
 
+            // v37 · 通讯录切换按钮
+            const contactsBtn = document.getElementById('smsContactsBtn');
+            if (contactsBtn) {
+                contactsBtn.addEventListener('click', () => {
+                    switchSmsView(smsViewMode === 'contacts' ? 'messages' : 'contacts');
+                });
+            }
+
             const back = document.getElementById('smsChatBack');
-            if (back) back.addEventListener('click', () => { closeSmsChat(); renderSmsList(); });
+            if (back) back.addEventListener('click', () => {
+                closeSmsChat();
+                if (smsViewMode === 'contacts') renderSmsContacts();
+                else renderSmsList();
+            });
 
             const send = document.getElementById('smsSendBtn');
             if (send) send.addEventListener('click', () => sendSmsMessage());
@@ -36156,10 +36619,8 @@ ${summary}
         const NOTICE_KEY = 'aiPhoneNoticeVersion';
         const NOTICE_VERSION = 'v21-2026-11-1';
         const NOTICE_TITLE = '📢 更新公告';
-        const NOTICE_CONTENT = `· 优化了通话功能，现在ios端无法听到声音的bug应该解决了
-· 增加了主动语音电话功能，现在触发关键词可以让他们主动给你打电话了
-·增加了导出存档和导入存档的功能，可以备份与跨设备迁移数据了
-·在游戏界面新增了我个人游戏整合网站的入口
+        const NOTICE_CONTENT = `· 优化了部分已知bug并改进了聊天体验
+· 优化了吵架系统，现在可以获得非常真实的吵架体验了，可以互相拉黑然后去短信和电话里接着吵架
 · 新增了语音模型接入，设置界面在录音中，教程请前往我的微博（花生可可-）查看～
 如有问题欢迎反馈
 by 花生可可`;
