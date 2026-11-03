@@ -23636,6 +23636,9 @@ ${tonePrompt}
         //  模型只写标记 + 原文，能不能发、发多长、什么时候发，全在下面这几道闸门里。
         // ------------------------------------------------------------
         const VOICE_MAX_CHARS = 40;         // 一条语音最多 40 字
+        // 文字短到这个长度以下（"喏""嗯""好"），就当它只是应声——真内容在语音里。
+        // 模型既然写了 [voice]，说明这一轮它想发；此时不该再拿这句应声去算情绪浓度。
+        const SHORT_TEXT_VOICE_MAX = 5;
         const VOICE_REQUEST_RE = /发(条|个)?语音|语音(消息|回复|说)|说句话(给我)?(听|听听)|让我听听|用语音|发个声音|说给我听/;
         // 否定优先：「别发语音」「不用语音」是拒绝，不是请求
         const VOICE_REQUEST_NEG_RE = /(不要|不用|别|不想|免了|没必要)[^，。！？\n]{0,6}语音/;
@@ -23839,18 +23842,32 @@ ${tonePrompt}
             // 4. 玩家强请求 → 直接放行（连发也照发，不然"发条语音听听"会被上一轮的语音挡掉）
             if (opts.force) return true;
 
-            // 纯语音回复（只发语音、不发文字）也要能判：文字为空时退回语音内容本身打分，
-            // 否则 prompt 里"或者只发语音不发文字"这条永远发不出来。
+            // 文字与语音必须分开看：模型常写「喏 [voice] 今天好累啊」——
+            // 文字只是应声，真正要说的话在语音里。旧版 body 优先取 text，
+            // 等于拿"喏"去打分（0 分 → 冷却 4 轮 + 保底概率 12%），语音几乎必被吃掉。
             const spoken = String(opts.voiceContent || '').trim();
-            const body = String(text || '').trim() || spoken;
+            const textBody = String(text || '').trim();
+            // 5. 严肃语境不发：道歉/吵架/坏消息里冒出语音最出戏（文字和语音都要过一遍）
+            if (SERIOUS_RE.test(textBody) || SERIOUS_RE.test(spoken)) return false;
+
+            // 6. 模型明确写了 [voice]，且文字为空或极短（<5 字）→ 语音才是主要内容，直接放行。
+            //    这是「喏 + 没语音」的根因修复；概率与冷却都不再参与。
+            //    唯一保留的底线：上一条 AI 语音之后玩家还没说过话（sinceLast = 0），
+            //    这时再发就是机器人自己连刷，仍拦掉；会话里从没发过语音（开场白）不算连刷。
+            if (spoken && (!textBody || textBody.length < SHORT_TEXT_VOICE_MAX)) {
+                if (userRoundsSinceLastAIVoice(personaId) >= 1) return true;
+                const msgs = data.chats[personaId] || [];
+                return !msgs.some(m => m && m.sender === 'assistant' && m.type === 'voice' && m.via === 'aiVoice');
+            }
+
+            // 有实质文字 + 有语音 → 用语音内容评估情绪浓度（而不是用文字）
+            const body = spoken || textBody;
             if (!body) return false;
-            // 5. 严肃语境不发：道歉/吵架/坏消息里冒出语音最出戏
-            if (SERIOUS_RE.test(body)) return false;
 
             const mood = voiceMoodScore(body);
             const sinceLast = userRoundsSinceLastAIVoice(personaId);
 
-            // 6. 冷却：按这句的浓度决定"最短间隔"
+            // 7. 冷却：按这句的浓度决定"最短间隔"
             //    浓度越高越允许密一点（2 轮），普通情绪词 4 轮。
             //    这比原来"一刀切 6 轮"合理：说"我爱你"等 6 轮太久了。
             const baseGap = mood.tier === 'strong' ? 2
@@ -23858,11 +23875,11 @@ ${tonePrompt}
                 : 4;
             if (sinceLast < baseGap) return false;
 
-            // 7. 保底：太久没发语音了（12 轮以上），只要这句有点情感就发一条，
+            // 8. 保底：太久没发语音了（12 轮以上），只要这句有点情感就发一条，
             //    不然语音功能会"存在感为零"，玩家以为坏了。
             if (sinceLast >= 12 && mood.score > 0) return true;
 
-            // 8. 概率：浓度为基础，叠加关系档 / 玩家情绪 / 长度 / 节奏
+            // 9. 概率：浓度为基础，叠加关系档 / 玩家情绪 / 长度 / 节奏
             let p = mood.score > 0 ? mood.score : 0.12;
             p += [0, 0.05, 0.10, 0.18][relationTier(personaId)] || 0;
             p += playerMoodBoost(personaId);
@@ -23922,6 +23939,12 @@ ${tonePrompt}
                 });
             } catch (e) {
                 console.warn('[aiVoice] 合成失败', (e && e.message) || e);
+                // 手机上根本没有 console：只打日志 = 玩家分不清"没发"和"发了但失败"。
+                // 这里必须给一句人话，否则这个 case 永远查不出来。
+                // 文案单独算、单独兜底：拼接本身抛错时也不能把提示吞掉。
+                let errText = '未知错误';
+                try { errText = ttsErrText(e); } catch (e2) { errText = String((e && e.message) || '合成失败').slice(0, 20); }
+                try { toast('语音合成失败：' + errText, 3200); } catch (e3) {}
                 if (opts.force) {
                     // 玩家明确要了语音却没发出来：补一句话，别让人干等
                     addMessage(personaId, 'assistant', 'text', '（这条语音没能发出去，等下再给你说）');
@@ -23930,7 +23953,12 @@ ${tonePrompt}
                 }
                 return false;
             }
-            if (!blob || !blob.size) return false;
+            if (!blob || !blob.size) {
+                // 同样是失败：服务端 200 但 data.audio 为空，不提示就等于静默吞掉
+                console.warn('[aiVoice] 合成返回空音频');
+                try { toast('语音合成返回空音频，请稍后重试', 3200); } catch (e3) {}
+                return false;
+            }
 
             const duration = await blobDuration(blob);
             const audioId = 'v_' + genId();
@@ -24205,7 +24233,8 @@ ${tonePrompt}
                         console.warn('[aiVoice] 后台合成异常', e);
                     });
                 } else {
-                    console.debug('[voice] 已拦截不发', { content: voicePlan.content, force });
+                    // 带上文字和语音原文：不然只知道"被拦了"，不知道是拿哪句话判的
+                    console.debug('[voice] 已拦截不发', { content: voicePlan.content, text: parsed.text, force });
                 }
             }
 
