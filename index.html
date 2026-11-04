@@ -1303,7 +1303,9 @@
             color: rgba(255, 255, 255, 0.7);
             margin-top: 10px;
         }
-        .modal input,
+        /* 只针对文字/数字/日期等输入框；checkbox、radio 必须保留原生外观，
+           否则勾选后看不到勾（appearance:none 会把勾抹掉） */
+        .modal input:not([type="checkbox"]):not([type="radio"]),
         .modal select,
         .modal textarea {
             width: 100%;
@@ -1329,7 +1331,7 @@
             background-size: 16px;
             padding-right: 32px;
         }
-        .modal input:focus,
+        .modal input:not([type="checkbox"]):not([type="radio"]):focus,
         .modal select:focus,
         .modal textarea:focus {
             border-color: var(--glass-accent);
@@ -13393,8 +13395,8 @@ ${tonePrompt}
                 <label>模型 (可手动输入或选择)</label>
                 <input list="modelList" id="apiModel" value="${api.model || DEFAULT_API.model}" placeholder="deepseek-flash" />
                 <datalist id="modelList">${modelListHtml}</datalist>
-                <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:#e8e8f0;">
-                    <input type="checkbox" id="apiVision" ${api.vision !== false ? 'checked' : ''} style="width:auto;margin:0;accent-color:#7c9cff;" />
+                <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:#e8e8f0;cursor:pointer;">
+                    <input type="checkbox" id="apiVision" ${api.vision !== false ? 'checked' : ''} style="width:16px;height:16px;margin:0;accent-color:#7c9cff;flex-shrink:0;padding:0;border:0;border-radius:0;background:none;-webkit-appearance:auto;appearance:auto;cursor:pointer;" />
                     这个模型支持图片（视觉）
                 </label>
                 <div style="font-size:11px;color:rgba(255,255,255,.42);margin-top:4px;line-height:1.7;">
@@ -13508,8 +13510,8 @@ ${tonePrompt}
                 <label>模型 (可手动输入或选择)</label>
                 <input list="modelListNew" id="newApiModel" value="${DEFAULT_API.model}" placeholder="deepseek-flash" />
                 <datalist id="modelListNew">${modelListHtml}</datalist>
-                <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:#e8e8f0;">
-                    <input type="checkbox" id="newApiVision" style="width:auto;margin:0;accent-color:#7c9cff;" />
+                <label style="display:flex;align-items:center;gap:8px;margin-top:12px;font-size:13px;color:#e8e8f0;cursor:pointer;">
+                    <input type="checkbox" id="newApiVision" style="width:16px;height:16px;margin:0;accent-color:#7c9cff;flex-shrink:0;padding:0;border:0;border-radius:0;background:none;-webkit-appearance:auto;appearance:auto;cursor:pointer;" />
                     这个模型支持图片（视觉）
                 </label>
                 <div class="btn-row">
