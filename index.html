@@ -19627,19 +19627,6 @@ ${tonePrompt}
             if (files.length) await uploadMusicFiles(files);
         });
 
-        async function readAudioDuration(file) {
-            return new Promise((resolve) => {
-                const url = URL.createObjectURL(file);
-                const a = new Audio();
-                const done = (v) => { URL.revokeObjectURL(url); resolve(v); };
-                a.preload = 'metadata';
-                a.onloadedmetadata = () => done(isFinite(a.duration) ? a.duration : 0);
-                a.onerror = () => done(0);
-                setTimeout(() => done(0), 4000);
-                a.src = url;
-            });
-        }
-
         async function uploadMusicFiles(files) {
             const auds = files.filter(f => f.type && f.type.startsWith('audio/'));
             if (!auds.length) { toast('只支持音频文件'); return; }
@@ -31538,30 +31525,109 @@ ${ev.type === 'period' ? '经期话题要克制：不要追问细节，不要开
         }
 
         // 尽力探测时长：解不出 metadata 就返回 0，交给服务端兜底
+        //
+        // v40 修复：
+        //  · 旧版只监听 loadedmetadata。iOS Safari / 微信 WebView 在这一刻 duration 常常还没定稿，
+        //    会先给一个假的小值（0.05s、3s 这种），一分钟的音频也被判"太短"。
+        //  · 加 durationchange 兜住"后到的真值"，并显式 load()。
+        //  · 读到可疑小值时，用 Web Audio 解码复核一次；复核也读不出 → 当作"读不出"（返回 0，
+        //    上层跳过检查），绝不拿一个不可信的读数去卡用户。
+        //  · 超过 8MB 的文件不可能短于 10 秒，直接认为合规，省去解码开销。
         function readAudioDuration(file) {
+            if (!file || !file.size) return Promise.resolve(0);
+            const MB = 1024 * 1024;
+            return readDurationByAudio(file).then(first => {
+                if (first === 0 || first >= 9.5) return first;          // 读不出 / 已合规
+                if (file.size > 8 * MB) return Math.max(first, 10);     // 大文件不可能"太短"
+                return readDurationByDecode(file).then(second => {
+                    if (second > 0) return second;                      // 复核成功，以复核值为准
+                    return 0;                                           // 复核失败 = 读不准，放行
+                });
+            });
+        }
+
+        // 方案 A：<audio> 读 metadata（快，但不同浏览器可信度不一）
+        function readDurationByAudio(file) {
             return new Promise(resolve => {
                 let url = '';
                 let timer = 0;
                 let settled = false;
+                let audio = null;
                 const finish = v => {
                     if (settled) return;
                     settled = true;
                     if (timer) clearTimeout(timer);
+                    try {
+                        if (audio) {
+                            audio.onloadedmetadata = null;
+                            audio.ondurationchange = null;
+                            audio.onerror = null;
+                        }
+                    } catch (e) {}
                     try { if (url) URL.revokeObjectURL(url); } catch (e) {}
                     resolve(v);
                 };
                 try {
                     url = URL.createObjectURL(file);
-                    const a = document.createElement('audio');
-                    a.preload = 'metadata';
-                    a.onloadedmetadata = () => {
-                        const d = a.duration;
-                        finish(isFinite(d) && d > 0 ? d : 0);
+                    audio = document.createElement('audio');
+                    audio.preload = 'metadata';
+                    // durationchange 会随后到的真值再触发一次，兜住 loadedmetadata 时不准的情况
+                    audio.ondurationchange = () => {
+                        const d = audio.duration;
+                        if (isFinite(d) && d > 0) finish(d);
                     };
-                    a.onerror = () => finish(0);
-                    timer = setTimeout(() => finish(0), 4000);
-                    a.src = url;
+                    audio.onloadedmetadata = () => {
+                        const d = audio.duration;
+                        if (isFinite(d) && d > 0) finish(d);
+                    };
+                    audio.onerror = () => finish(0);
+                    timer = setTimeout(() => finish(0), 6000);
+                    audio.src = url;
+                    try { audio.load(); } catch (e) {}
                 } catch (e) { finish(0); }
+            });
+        }
+
+        // 方案 B：Web Audio 解码读时长（慢一点，但能读到真实时长，兜住 VBR / 容器头不准的情况）
+        function readDurationByDecode(file) {
+            return new Promise(resolve => {
+                const Ctx = window.AudioContext || window.webkitAudioContext;
+                if (!Ctx) { resolve(0); return; }
+                let ctx = null;
+                try { ctx = new Ctx(); } catch (e) { resolve(0); return; }
+
+                let settled = false;
+                const finish = v => {
+                    if (settled) return;
+                    settled = true;
+                    try { ctx.close(); } catch (e) {}
+                    resolve(v);
+                };
+                const timer = setTimeout(() => finish(0), 10000);   // 大文件给足时间
+                const cleanup = v => { clearTimeout(timer); finish(v); };
+
+                try {
+                    const fr = new FileReader();
+                    fr.onload = () => {
+                        const buf = fr.result;
+                        if (!buf) { cleanup(0); return; }
+                        try {
+                            const ret = ctx.decodeAudioData(
+                                buf,
+                                audio => cleanup(audio && isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 0),
+                                () => cleanup(0)
+                            );
+                            if (ret && typeof ret.then === 'function') {
+                                ret.then(
+                                    audio => cleanup(audio && isFinite(audio.duration) && audio.duration > 0 ? audio.duration : 0),
+                                    () => cleanup(0)
+                                );
+                            }
+                        } catch (e) { cleanup(0); }
+                    };
+                    fr.onerror = () => cleanup(0);
+                    fr.readAsArrayBuffer(file);
+                } catch (e) { cleanup(0); }
             });
         }
 
